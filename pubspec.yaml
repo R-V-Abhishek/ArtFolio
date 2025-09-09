@@ -1,5 +1,5 @@
-name: runes
-description: "Local Lore - An interactive map app for exploring and sharing local folklore, hidden histories, and cultural landmarks."
+name: artfolio
+description: "A professional network where creatives can showcase their project stories."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -11,12 +11,11 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # build by specifying --build-name and --build-number, respectively.
 # In Android, build-name is used as versionName while build-number used as versionCode.
 # Read more about Android versioning at https://developer.android.com/studio/publish/versioning
-# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
-# Read more about iOS versioning at
-# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-# In Windows, build-name is used as the major, minor, and patch parts
-# of the product and file versions while build-number is used as the build suffix.
 version: 1.0.0+1
+
+# Platforms this app supports - Android only
+platforms:
+  android:
 
 environment:
   sdk: ^3.10.0-158.0.dev
@@ -38,8 +37,7 @@ dependencies:
   firebase_storage: ^11.7.7 # For image storage
   google_maps_flutter: ^2.6.1
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+  # Material design icons
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
@@ -52,6 +50,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  rename: ^3.1.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -1,4 +1,4 @@
-package com.example.runes
+package com.artfolio
 
 import io.flutter.embedding.android.FlutterActivity
 
