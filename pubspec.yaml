@@ -18,7 +18,8 @@ platforms:
   android:
 
 environment:
-  sdk: ^3.10.0-158.0.dev
+  sdk: ">=3.9.0 <4.0.0" # Adjusted to match installed Dart 3.9.2 (Flutter 3.35 stable)
+  flutter: ">=3.22.0" # Minimum Flutter version; current is 3.35.4
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -32,13 +33,11 @@ dependencies:
 
   # Minimal Firebase packages for Android
   firebase_core: ^2.32.0
-  firebase_auth: ^4.20.0
-  cloud_firestore: ^4.17.5
-  firebase_storage: ^11.7.7
-  
-  # Use standard Google Sign-In but only for Android
+  firebase_auth: ^4.20.0 # For authentication
+  cloud_firestore: ^4.17.5 # For the database
+  firebase_storage: ^11.7.7 # For image storage
   google_sign_in: ^6.3.0
-  
+  # google_maps_flutter: ^2.6.1 # Uncomment if maps needed later
   # Material design icons
   cupertino_icons: ^1.0.8
 
@@ -67,6 +66,11 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -2,12 +2,26 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
-    id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
+    // (Google Services plugin applied conditionally below to allow placeholder builds)
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Apply Google Services plugin ONLY if a real google-services.json is present (not a placeholder)
+// This prevents build failures ("Missing project_info object") when using a dummy file.
+val googleServicesFile = file("google-services.json")
+if (googleServicesFile.exists()) {
+    val text = googleServicesFile.readText()
+    val looksPlaceholder = listOf("placeholder-project", "AIplaceholderKEY1234567890").any { text.contains(it) }
+    if (!looksPlaceholder) {
+        apply(plugin = "com.google.gms.google-services")
+        println("Applying Google Services plugin (real google-services.json detected)")
+    } else {
+        println("Skipping Google Services plugin: placeholder google-services.json detected")
+    }
+} else {
+    println("Skipping Google Services plugin: no google-services.json file found")
 }
 
 android {
