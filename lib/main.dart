@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'services/auth_service.dart';
+import 'services/firestore_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -86,6 +87,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   final _authService = AuthService();
+  final _firestoreService = FirestoreService();
+  bool _isSeeding = false;
 
   void _incrementCounter() {
     setState(() {
@@ -96,6 +99,39 @@ class _MyHomePageState extends State<MyHomePage> {
       // called again, and so nothing would appear to happen.
       _counter++;
     });
+  }
+
+  Future<void> _seedMockData() async {
+    setState(() {
+      _isSeeding = true;
+    });
+
+    try {
+      await _firestoreService.seedMockData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Mock data seeded successfully! 🎉'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error seeding data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSeeding = false;
+        });
+      }
+    }
   }
 
   Future<void> _signOut() async {
@@ -204,6 +240,26 @@ class _MyHomePageState extends State<MyHomePage> {
             Text(
               'Counter: $_counter',
               style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton.icon(
+              onPressed: _isSeeding ? null : _seedMockData,
+              icon: _isSeeding 
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.cloud_upload),
+              label: Text(_isSeeding ? 'Seeding Data...' : 'Seed Mock Data'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Creates sample users and posts in Firestore',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),
