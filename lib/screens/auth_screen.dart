@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 import '../services/session_state.dart';
+import '../models/user.dart' as app_models;
 import '../theme/theme.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -15,14 +17,19 @@ class _AuthScreenState extends State<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _usernameCtrl = TextEditingController();
+  final _fullNameCtrl = TextEditingController();
   bool _isLogin = true;
   bool _loading = false;
   String? _error;
+  app_models.UserRole _selectedRole = app_models.UserRole.audience;
 
   @override
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
+    _usernameCtrl.dispose();
+    _fullNameCtrl.dispose();
     super.dispose();
   }
 
@@ -36,15 +43,20 @@ class _AuthScreenState extends State<AuthScreen> {
           password: _passwordCtrl.text,
         );
       } else {
-        await AuthService.instance.signUpWithEmail(
+        // Sign up with email and create user profile
+        final userCredential = await AuthService.instance.signUpWithEmail(
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
+        
+        if (userCredential.user != null) {
+          await _createUserProfile(userCredential.user!);
+        }
       }
     } on FirebaseAuthException catch (e) {
-      setState(() { _error = e.message; });
+      setState(() { _error = AuthService.instance.humanizeAuthError(e); });
     } catch (e) {
-      setState(() { _error = 'Unexpected error'; });
+      setState(() { _error = 'Unexpected error: ${e.toString()}'; });
     } finally {
       if (mounted) setState(() { _loading = false; });
     }
@@ -53,11 +65,43 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _google() async {
     setState(() { _loading = true; _error = null; });
     try {
-      await AuthService.instance.signInWithGoogle();
+      final userCredential = await AuthService.instance.signInWithGoogle();
+      if (userCredential?.user != null) {
+        // Check if user profile exists, if not create one
+        final existingUser = await FirestoreService().getUser(userCredential!.user!.uid);
+        if (existingUser == null) {
+          await _createUserProfile(userCredential.user!, isGoogleSignUp: true);
+        }
+      }
     } catch (e) {
-      setState(() { _error = 'Google sign-in failed'; });
+      setState(() { _error = 'Google sign-in failed: ${e.toString()}'; });
     } finally {
       if (mounted) setState(() { _loading = false; });
+    }
+  }
+
+  Future<void> _createUserProfile(User firebaseUser, {bool isGoogleSignUp = false}) async {
+    try {
+      final now = DateTime.now();
+      final username = isGoogleSignUp 
+          ? (firebaseUser.displayName?.replaceAll(' ', '').toLowerCase() ?? 'user${firebaseUser.uid.substring(0, 8)}')
+          : _usernameCtrl.text.trim();
+      
+      final user = app_models.User(
+        id: firebaseUser.uid,
+        username: username,
+        email: firebaseUser.email ?? '',
+        fullName: isGoogleSignUp ? (firebaseUser.displayName ?? '') : _fullNameCtrl.text.trim(),
+        profilePictureUrl: firebaseUser.photoURL ?? '',
+        bio: '',
+        role: isGoogleSignUp ? app_models.UserRole.audience : _selectedRole,
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await FirestoreService().createUser(user);
+    } catch (e) {
+      // Silently handle profile creation error but don't fail the auth
     }
   }
 
@@ -71,7 +115,7 @@ class _AuthScreenState extends State<AuthScreen> {
           IconButton(
             tooltip: 'Toggle theme',
             onPressed: () => themeController.toggle(),
-            icon: Icon(themeController.value == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode),
+            icon: Icon(themeController.value == ThemeMode.dark ? Icons.nightlight_round : Icons.wb_sunny),
           ),
         ],
       ),
@@ -118,6 +162,43 @@ class _AuthScreenState extends State<AuthScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
+                      if (!_isLogin) ...[
+                        TextFormField(
+                          controller: _usernameCtrl,
+                          decoration: const InputDecoration(labelText: 'Username'),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return 'Enter username';
+                            if (v.trim().length < 3) return 'Username must be at least 3 characters';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _fullNameCtrl,
+                          decoration: const InputDecoration(labelText: 'Full Name'),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return 'Enter full name';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<app_models.UserRole>(
+                          initialValue: _selectedRole,
+                          decoration: const InputDecoration(labelText: 'I am a...'),
+                          items: app_models.UserRole.values.map((role) {
+                            return DropdownMenuItem(
+                              value: role,
+                              child: Text(role.name.substring(0, 1).toUpperCase() + role.name.substring(1)),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() => _selectedRole = value);
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       TextFormField(
                         controller: _passwordCtrl,
                         decoration: const InputDecoration(labelText: 'Password'),

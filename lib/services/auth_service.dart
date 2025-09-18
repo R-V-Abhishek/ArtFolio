@@ -4,10 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 /// Unified authentication service combining extended capabilities with
 /// a singleton pattern for easy access across the app.
 class AuthService {
-  AuthService._internal() {
-    // You may remove this in production; useful while testing phone/email flows.
-    _auth.setSettings(appVerificationDisabledForTesting: true);
-  }
+  AuthService._internal();
   static final AuthService instance = AuthService._internal();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;

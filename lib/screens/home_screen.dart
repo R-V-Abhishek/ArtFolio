@@ -13,6 +13,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final isGuest = SessionState.instance.guestMode.value || user == null;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('ArtFolio'),
@@ -20,7 +21,7 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Toggle theme',
             onPressed: () => themeController.toggle(),
-            icon: Icon(themeController.value == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode),
+            icon: Icon(themeController.value == ThemeMode.dark ? Icons.nightlight_round : Icons.wb_sunny),
           ),
           IconButton(
             tooltip: isGuest ? 'Sign In' : 'Sign Out',
@@ -46,6 +47,7 @@ class HomeScreen extends StatelessWidget {
                       : constraints.maxWidth > 500
                           ? 3
                           : 2;
+          
           return CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
@@ -60,9 +62,9 @@ class HomeScreen extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                isGuest
-                  ? 'Exploring as Guest'
-                  : 'Welcome, ${user.email ?? 'Creator'}',
+                              isGuest
+                                  ? 'Exploring as Guest'
+                                  : 'Welcome back, ${user.email ?? 'Creator'}!',
                               style: Theme.of(context).textTheme.titleLarge,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -71,7 +73,9 @@ class HomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Featured concepts (placeholder data). Replace with Firestore query later.',
+                        isGuest 
+                            ? 'Browse amazing artwork from our community'
+                            : 'Discover and share creative inspiration',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],

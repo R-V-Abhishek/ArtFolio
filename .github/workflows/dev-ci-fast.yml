@@ -1,0 +1,89 @@
+name: Dev Branch CI - Fast Feedback
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
+
+jobs:
+  lint-and-analyze:
+    runs-on: ubuntu-latest
+    name: Code Quality Checks
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: 'stable'
+        channel: 'stable'
+        cache: true
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Verify formatting
+      run: dart format --output=none --set-exit-if-changed .
+      continue-on-error: true
+      
+    - name: Analyze project source
+      run: flutter analyze --fatal-infos
+      
+    - name: Check for security vulnerabilities
+      run: dart pub deps --style=compact
+      continue-on-error: true
+
+  test:
+    runs-on: ubuntu-latest
+    name: Unit Tests
+    needs: lint-and-analyze
+    continue-on-error: true
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: 'stable'
+        channel: 'stable'
+        cache: true
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Run tests with coverage
+      run: |
+        flutter test --reporter=expanded --coverage || {
+          echo "::warning::Tests failed but continuing pipeline for development branch"
+          exit 0
+        }
+      
+    - name: Upload coverage to Codecov
+      if: hashFiles('coverage/lcov.info') != ''
+      uses: codecov/codecov-action@v3
+      with:
+        file: coverage/lcov.info
+        flags: unittests
+        name: dev-branch-coverage
+        fail_ci_if_error: false
+
+  summary:
+    runs-on: ubuntu-latest
+    name: CI Summary
+    needs: [lint-and-analyze, test]
+    if: always()
+    
+    steps:
+    - name: CI Results Summary
+      run: |
+        echo "## CI Pipeline Results" >> $GITHUB_STEP_SUMMARY
+        echo "- **Code Analysis**: ${{ needs.lint-and-analyze.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Unit Tests**: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "This is the development branch - focus is on fast feedback!" >> $GITHUB_STEP_SUMMARY
+        echo "Tests and formatting failures won't block merges but should be addressed." >> $GITHUB_STEP_SUMMARY

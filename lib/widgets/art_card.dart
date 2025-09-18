@@ -18,7 +18,7 @@ class ArtCard extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                color: scheme.surfaceVariant,
+                color: scheme.surfaceContainerHighest,
                 child: Image.asset(
                   piece.imagePath,
                   fit: BoxFit.cover,

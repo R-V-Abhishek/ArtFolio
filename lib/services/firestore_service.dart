@@ -355,7 +355,6 @@ class FirestoreService {
       // Check if data already exists
       final existingPosts = await _postsCollection.limit(1).get();
       if (existingPosts.docs.isNotEmpty) {
-        print('Mock data already exists, skipping seed.');
         return;
       }
 
@@ -365,7 +364,6 @@ class FirestoreService {
       // Create mock posts
       await _createMockPosts();
       
-      print('Mock data seeded successfully!');
     } catch (e) {
       throw Exception('Failed to seed mock data: $e');
     }

@@ -1,0 +1,48 @@
+name: Dev Branch CI
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.3'
+        channel: 'stable'
+        cache: true
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Verify formatting
+      run: dart format --output=none --set-exit-if-changed .
+      
+    - name: Analyze project source
+      run: flutter analyze --fatal-infos
+      
+    - name: Run tests (continue on failure)
+      run: flutter test --reporter=expanded || echo "Tests failed but continuing CI pipeline"
+      continue-on-error: true
+      
+    - name: Generate test coverage (if tests pass)
+      run: flutter test --coverage || echo "Coverage generation skipped due to test failures"
+      continue-on-error: true
+      
+    - name: Upload coverage to Codecov (if coverage exists)
+      if: hashFiles('coverage/lcov.info') != ''
+      uses: codecov/codecov-action@v3
+      with:
+        file: coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false

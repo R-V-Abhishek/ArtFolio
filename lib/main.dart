@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
       valueListenable: themeController,
       builder: (context, mode, _) => ValueListenableBuilder<bool>(
         valueListenable: SessionState.instance.guestMode,
-        builder: (context, isGuest, __) => MaterialApp(
+        builder: (context, isGuest, _) => MaterialApp(
           title: 'ArtFolio',
             theme: lightTheme,
             darkTheme: darkTheme,
@@ -50,5 +50,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// Legacy MyHomePage removed in favor of new feature-rich HomeScreen.
