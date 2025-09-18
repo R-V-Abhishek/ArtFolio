@@ -29,6 +29,8 @@ android {
 
     kotlinOptions {
         jvmTarget = "11"
+        // Suppress deprecation warnings
+        freeCompilerArgs += "-Xsuppress-version-warnings"
     }
 
     defaultConfig {

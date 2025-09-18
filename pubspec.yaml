@@ -30,15 +30,20 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Add these Firebase packages
+  # Minimal Firebase packages for Android
   firebase_core: ^2.32.0
-  firebase_auth: ^4.20.0 # For authentication
-  cloud_firestore: ^4.17.5 # For the database
-  firebase_storage: ^11.7.7 # For image storage
-  google_maps_flutter: ^2.6.1
-
+  firebase_auth: ^4.20.0
+  cloud_firestore: ^4.17.5
+  firebase_storage: ^11.7.7
+  
+  # Use standard Google Sign-In but only for Android
+  google_sign_in: ^6.3.0
+  
   # Material design icons
   cupertino_icons: ^1.0.8
+
+# Remove Google Maps to reduce bloat
+# google_maps_flutter: ^2.6.1  # Commented out - add back if needed
 
 dev_dependencies:
   flutter_test:
