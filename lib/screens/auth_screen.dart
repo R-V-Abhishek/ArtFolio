@@ -65,10 +65,11 @@ class _AuthScreenState extends State<AuthScreen> {
         _error = 'Unexpected error: ${e.toString()}';
       });
     } finally {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
         });
+      }
     }
   }
 
@@ -93,10 +94,11 @@ class _AuthScreenState extends State<AuthScreen> {
         _error = 'Google sign-in failed: ${e.toString()}';
       });
     } finally {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
         });
+      }
     }
   }
 
@@ -186,12 +188,14 @@ class _AuthScreenState extends State<AuthScreen> {
                         decoration: const InputDecoration(labelText: 'Email'),
                         keyboardType: TextInputType.emailAddress,
                         validator: (v) {
-                          if (v == null || v.trim().isEmpty)
+                          if (v == null || v.trim().isEmpty) {
                             return 'Enter email';
+                          }
                           if (!RegExp(
                             r'^[^@]+@[^@]+\.[^@]+',
-                          ).hasMatch(v.trim()))
+                          ).hasMatch(v.trim())) {
                             return 'Invalid email';
+                          }
                           return null;
                         },
                       ),
@@ -203,10 +207,12 @@ class _AuthScreenState extends State<AuthScreen> {
                             labelText: 'Username',
                           ),
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty)
+                            if (v == null || v.trim().isEmpty) {
                               return 'Enter username';
-                            if (v.trim().length < 3)
+                            }
+                            if (v.trim().length < 3) {
                               return 'Username must be at least 3 characters';
+                            }
                             return null;
                           },
                         ),
@@ -217,8 +223,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             labelText: 'Full Name',
                           ),
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty)
+                            if (v == null || v.trim().isEmpty) {
                               return 'Enter full name';
+                            }
                             return null;
                           },
                         ),

@@ -155,8 +155,9 @@ class FirestoreService {
           break;
         case UserRole.organisation:
           final organisation = await getOrganisation(userId);
-          if (organisation != null)
+          if (organisation != null) {
             userData['organisation'] = organisation.toMap();
+          }
           break;
       }
 
