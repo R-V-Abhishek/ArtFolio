@@ -23,6 +23,13 @@ jobs:
     - name: Get dependencies
       run: flutter pub get
       
+    - name: Setup Firebase options for CI
+      run: |
+        if [ ! -f lib/firebase_options.dart ]; then
+          echo "Creating mock firebase_options.dart for CI environment"
+          cp lib/firebase_options_mock.dart lib/firebase_options.dart
+        fi
+      
     - name: Verify formatting
       run: |
         dart format --output=none --set-exit-if-changed . || {
