@@ -1,32 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Central color palette for the app.
 class AppColors {
-  // Seed / brand colors
-  static const Color seed = Color(0xFF3949AB); // Indigo shade
-  static const Color accent = Color(0xFFFFB300); // Amber accent
-  static const Color success = Color(0xFF2E7D32);
-  static const Color warning = Color(0xFFF9A825);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color info = Color(0xFF0288D1);
+  // Luminous Canvas palette
+  static const Color primary = Color(0xFFFF6B6B); // Coral Red
+  static const Color secondary = Color(0xFF4ECDC4); // Turquoise Mint
+  static const Color accentYellow = Color(0xFFFFD93D); // Bright Golden Yellow
+  static const Color deepTeal = Color(0xFF1A535C); // For icons/app bar text
 
-  // Neutral scale
-  static const Color neutral0 = Color(0xFFFFFFFF);
-  static const Color neutral10 = Color(0xFFF5F6F8);
-  static const Color neutral20 = Color(0xFFE0E3E8);
-  static const Color neutral30 = Color(0xFFCDD1D8);
-  static const Color neutral40 = Color(0xFFB6BBC4);
-  static const Color neutral50 = Color(0xFF9EA5B1);
-  static const Color neutral60 = Color(0xFF848C99);
-  static const Color neutral70 = Color(0xFF6A7280);
-  static const Color neutral80 = Color(0xFF505866);
-  static const Color neutral90 = Color(0xFF363E4A);
-  static const Color neutral100 = Color(0xFF1E242C);
+  static const Color background = Color(0xFFFAFAFA); // Soft Off-White
+  static const Color surface = Color(0xFFFFFFFF); // Cards
+
+  static const Color textPrimary = Color(0xFF1A1A1A);
+  static const Color textSecondary = Color(0xFF555555);
 }
 
 /// Manages light/dark theme mode with [ValueNotifier].
 class ThemeController extends ValueNotifier<ThemeMode> {
-  ThemeController() : super(ThemeMode.dark);
+  ThemeController() : super(ThemeMode.light);
   void toggle() {
     value = value == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
   }
@@ -34,43 +26,171 @@ class ThemeController extends ValueNotifier<ThemeMode> {
 
 final ThemeController themeController = ThemeController();
 
-ThemeData _baseLight(ColorScheme scheme) => ThemeData(
-  useMaterial3: true,
-  colorScheme: scheme,
-  scaffoldBackgroundColor: scheme.surface,
-  visualDensity: VisualDensity.adaptivePlatformDensity,
-  appBarTheme: AppBarTheme(
-    backgroundColor: scheme.surface,
-    foregroundColor: scheme.onSurface,
-    elevation: 0,
-    centerTitle: false,
-  ),
-  inputDecorationTheme: InputDecorationTheme(
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-  ),
-  cardTheme: CardThemeData(
-    elevation: 1,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-  ),
-  floatingActionButtonTheme: FloatingActionButtonThemeData(
-    backgroundColor: scheme.primary,
-  ),
-);
+ThemeData _baseLight(ColorScheme scheme) {
+  final textTheme = GoogleFonts.quicksandTextTheme().apply(
+    bodyColor: AppColors.textSecondary,
+    displayColor: AppColors.textPrimary,
+  );
+  final display = GoogleFonts.poppinsTextTheme(textTheme).copyWith(
+    headlineLarge: GoogleFonts.poppins(
+      fontWeight: FontWeight.bold,
+      fontSize: 28,
+      color: AppColors.textPrimary,
+    ),
+    headlineMedium: GoogleFonts.poppins(
+      fontWeight: FontWeight.w600,
+      fontSize: 22,
+      color: AppColors.textPrimary,
+    ),
+    titleLarge: GoogleFonts.poppins(
+      fontWeight: FontWeight.w600,
+      fontSize: 20,
+      color: AppColors.textPrimary,
+    ),
+    bodyMedium: GoogleFonts.quicksand(
+      fontSize: 16,
+      color: AppColors.textSecondary,
+    ),
+  );
 
-ThemeData _baseDark(ColorScheme scheme) => _baseLight(scheme).copyWith(
-  brightness: Brightness.dark,
-  scaffoldBackgroundColor: scheme.surface,
-);
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: scheme,
+    scaffoldBackgroundColor: AppColors.background,
+    visualDensity: VisualDensity.adaptivePlatformDensity,
+    textTheme: display,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.transparent,
+      foregroundColor: AppColors.deepTeal,
+      elevation: 0,
+      centerTitle: false,
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    cardTheme: CardThemeData(
+      color: AppColors.surface,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: AppColors.primary.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.deepTeal,
+  side: BorderSide(color: AppColors.deepTeal.withValues(alpha: 0.3)),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+    ),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: AppColors.secondary,
+      foregroundColor: Colors.white,
+    ),
+  );
+}
+
+ThemeData _baseDark(ColorScheme scheme) {
+  final textTheme = GoogleFonts.quicksandTextTheme().apply(
+    bodyColor: Colors.white70,
+    displayColor: Colors.white,
+  );
+  final display = GoogleFonts.poppinsTextTheme(textTheme).copyWith(
+    headlineLarge: GoogleFonts.poppins(
+      fontWeight: FontWeight.bold,
+      fontSize: 28,
+      color: Colors.white,
+    ),
+    headlineMedium: GoogleFonts.poppins(
+      fontWeight: FontWeight.w600,
+      fontSize: 22,
+      color: Colors.white,
+    ),
+    titleLarge: GoogleFonts.poppins(
+      fontWeight: FontWeight.w600,
+      fontSize: 20,
+      color: Colors.white,
+    ),
+    bodyMedium: GoogleFonts.quicksand(
+      fontSize: 16,
+      color: Colors.white70,
+    ),
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: scheme,
+    brightness: Brightness.dark,
+    scaffoldBackgroundColor: const Color(0xFF121212),
+    visualDensity: VisualDensity.adaptivePlatformDensity,
+    textTheme: display,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.transparent,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: false,
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    cardTheme: CardThemeData(
+      color: const Color(0xFF1E1E1E),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Colors.white.withValues(alpha: 0.06),
+          width: 1,
+        ),
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white,
+  side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+    ),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: AppColors.secondary,
+      foregroundColor: Colors.white,
+    ),
+  );
+}
 
 /// Light color scheme.
 final ColorScheme _lightScheme = ColorScheme.fromSeed(
-  seedColor: AppColors.seed,
+  seedColor: AppColors.primary,
   brightness: Brightness.light,
+).copyWith(
+  secondary: AppColors.secondary,
+  surface: AppColors.surface,
 );
 
 /// Dark color scheme.
 final ColorScheme _darkScheme = ColorScheme.fromSeed(
-  seedColor: AppColors.seed,
+  seedColor: AppColors.primary,
   brightness: Brightness.dark,
 );
 

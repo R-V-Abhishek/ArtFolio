@@ -5,6 +5,7 @@ import 'theme/theme.dart';
 import 'services/auth_service.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/session_state.dart';
 
 void main() async {
@@ -27,9 +28,10 @@ class MyApp extends StatelessWidget {
           theme: lightTheme,
           darkTheme: darkTheme,
           themeMode: mode,
-          home: isGuest
-              ? const HomeScreen()
-              : StreamBuilder(
+          home: SplashScreen(
+            next: isGuest
+                ? const HomeScreen()
+                : StreamBuilder(
                   stream: AuthService.instance.authStateChanges(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -43,6 +45,7 @@ class MyApp extends StatelessWidget {
                     return const AuthScreen();
                   },
                 ),
+          ),
         ),
       ),
     );

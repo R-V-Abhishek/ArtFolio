@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
@@ -23,6 +24,7 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _loading = false;
   String? _error;
   app_models.UserRole _selectedRole = app_models.UserRole.audience;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -33,6 +35,28 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
+  Future<void> _forgotPassword() async {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty) {
+      setState(() => _error = 'Enter your email to receive a reset link.');
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await AuthService.instance.sendPasswordResetEmail(email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password reset email sent')),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() => _error = AuthService.instance.humanizeAuthError(e));
+    } catch (e) {
+      setState(() => _error = 'Failed to send reset email: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
@@ -138,7 +162,24 @@ class _AuthScreenState extends State<AuthScreen> {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Authenticate'),
+        title: Row(
+          children: [
+            SvgPicture.asset(
+              'assets/icons/logo.svg',
+              height: 28,
+              semanticsLabel: 'ArtFolio',
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'ArtFolio',
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    // More artistic weight and size for brand title
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Toggle theme',
@@ -155,37 +196,51 @@ class _AuthScreenState extends State<AuthScreen> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Icon(Icons.palette, size: 72, color: scheme.primary),
-                const SizedBox(height: 16),
-                Text(
-                  _isLogin ? 'Welcome back' : 'Create your account',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 24),
-                if (_error != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: scheme.errorContainer,
-                      borderRadius: BorderRadius.circular(8),
+            padding: const EdgeInsets.all(20),
+            child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Title only (remove colored square/icon next to text)
+                    Center(
+                      child: Text(
+                        _isLogin ? 'Welcome back' : 'Create your account',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
                     ),
-                    child: Text(
-                      _error!,
-                      style: TextStyle(color: scheme.onErrorContainer),
-                    ),
-                  ),
-                if (_error != null) const SizedBox(height: 16),
-                Form(
+                    const SizedBox(height: 16),
+                    if (_error != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: scheme.errorContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _error!,
+                          style: TextStyle(color: scheme.onErrorContainer),
+                        ),
+                      ),
+                    if (_error != null) const SizedBox(height: 12),
+                    Form(
                   key: _formKey,
                   child: Column(
                     children: [
                       TextFormField(
                         controller: _emailCtrl,
-                        decoration: const InputDecoration(labelText: 'Email'),
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                              prefixIcon: Icon(Icons.email_outlined),
+                            ),
                         keyboardType: TextInputType.emailAddress,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
@@ -205,6 +260,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           controller: _usernameCtrl,
                           decoration: const InputDecoration(
                             labelText: 'Username',
+                                prefixIcon: Icon(Icons.person_outline),
                           ),
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) {
@@ -221,6 +277,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           controller: _fullNameCtrl,
                           decoration: const InputDecoration(
                             labelText: 'Full Name',
+                                prefixIcon: Icon(Icons.badge_outlined),
                           ),
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) {
@@ -232,9 +289,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         const SizedBox(height: 16),
                         DropdownButtonFormField<app_models.UserRole>(
                           initialValue: _selectedRole,
-                          decoration: const InputDecoration(
-                            labelText: 'I am a...',
-                          ),
+                              decoration: const InputDecoration(
+                                labelText: 'I am a...',
+                                prefixIcon: Icon(Icons.interests_outlined),
+                              ),
                           items: app_models.UserRole.values.map((role) {
                             return DropdownMenuItem(
                               value: role,
@@ -254,22 +312,53 @@ class _AuthScreenState extends State<AuthScreen> {
                       ],
                       TextFormField(
                         controller: _passwordCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
-                        ),
-                        obscureText: true,
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: StatefulBuilder(
+                                builder: (context, setIconState) {
+                                  return IconButton(
+                                    tooltip: 'Show/Hide password',
+                                    icon: Icon(
+                                      _obscurePassword
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                    ),
+                                    onPressed: () {
+                                      setState(() => _obscurePassword = !_obscurePassword);
+                                      setIconState(() {});
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                            obscureText: _obscurePassword,
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'Enter password';
                           if (v.length < 6) return 'Min 6 characters';
                           return null;
                         },
                       ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _loading ? null : _forgotPassword,
+                              child: const Text('Forgot password?'),
+                            ),
+                          ),
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
-                          onPressed: _loading ? null : _submit,
-                          child: Text(_isLogin ? 'Login' : 'Sign Up'),
+                              onPressed: _loading ? null : _submit,
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(_isLogin ? 'Login' : 'Sign Up'),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -285,42 +374,54 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: <Widget>[
-                    Expanded(child: Divider(color: scheme.outlineVariant)),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text('or'),
                     ),
-                    Expanded(child: Divider(color: scheme.outlineVariant)),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: <Widget>[
+                        Expanded(child: Divider(color: scheme.outlineVariant)),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text('or'),
+                        ),
+                        Expanded(child: Divider(color: scheme.outlineVariant)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        icon: SvgPicture.asset(
+                          'assets/icons/google_g_multicolor.svg',
+                          height: 20,
+                          semanticsLabel: 'Google',
+                        ),
+                        label: const Text('Continue with Google'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: _loading ? null : _google,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: _loading
+                          ? null
+                          : () {
+                              SessionState.instance.enterGuest();
+                            },
+                      icon: const Icon(Icons.visibility),
+                      label: const Text('Skip for now (Guest)'),
+                    ),
+                    if (_loading) ...[
+                      const SizedBox(height: 16),
+                      const Center(child: CircularProgressIndicator()),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.login),
-                    label: const Text('Continue with Google'),
-                    onPressed: _loading ? null : _google,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextButton.icon(
-                  onPressed: _loading
-                      ? null
-                      : () {
-                          SessionState.instance.enterGuest();
-                        },
-                  icon: const Icon(Icons.visibility),
-                  label: const Text('Skip for now (Guest)'),
-                ),
-                if (_loading) ...[
-                  const SizedBox(height: 24),
-                  const Center(child: CircularProgressIndicator()),
-                ],
-              ],
+              ),
             ),
           ),
         ),

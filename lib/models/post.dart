@@ -234,6 +234,50 @@ class Post {
     return Post.fromMap(data, snapshot.id);
   }
 
+  // Create Post from a generic JSON map (e.g., from assets), supporting
+  // ISO-8601 string timestamps and optional fields.
+  factory Post.fromJson(Map<String, dynamic> map) {
+    DateTime parseTs(dynamic v) {
+      if (v == null) return DateTime.now();
+      if (v is String) return DateTime.tryParse(v) ?? DateTime.now();
+      if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+      return DateTime.now();
+    }
+
+    PostType parseType(String? t) {
+      if (t == null) return PostType.image;
+      return PostType.values.firstWhere(
+        (e) => e.name.toLowerCase() == t.toLowerCase(),
+        orElse: () => PostType.image,
+      );
+    }
+
+    return Post(
+      id: map['id']?.toString() ?? '',
+      userId: map['userId']?.toString() ?? '',
+      type: parseType(map['type'] as String?),
+      mediaUrl: map['mediaUrl'] as String?,
+      mediaUrls: map['mediaUrls'] != null
+          ? List<String>.from(map['mediaUrls'])
+          : null,
+      caption: map['caption']?.toString() ?? '',
+      description: map['description'] as String?,
+      skills: List<String>.from(map['skills'] ?? const <String>[]),
+      tags: List<String>.from(map['tags'] ?? const <String>[]),
+      timestamp: parseTs(map['timestamp']),
+      updatedAt: map['updatedAt'] != null ? parseTs(map['updatedAt']) : null,
+      likesCount: (map['likesCount'] as num?)?.toInt() ?? 0,
+      commentsCount: (map['commentsCount'] as num?)?.toInt() ?? 0,
+      sharesCount: (map['sharesCount'] as num?)?.toInt() ?? 0,
+      viewsCount: (map['viewsCount'] as num?)?.toInt() ?? 0,
+      thumbnailUrl: map['thumbnailUrl'] as String?,
+      aspectRatio: (map['aspectRatio'] as num?)?.toDouble(),
+      allowComments: map['allowComments'] as bool? ?? true,
+      allowSharing: map['allowSharing'] as bool? ?? true,
+      isPinned: map['isPinned'] as bool? ?? false,
+    );
+  }
+
   // Copy with method for updating posts
   Post copyWith({
     String? id,
