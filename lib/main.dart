@@ -9,9 +9,7 @@ import 'services/session_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -26,25 +24,25 @@ class MyApp extends StatelessWidget {
         valueListenable: SessionState.instance.guestMode,
         builder: (context, isGuest, _) => MaterialApp(
           title: 'ArtFolio',
-            theme: lightTheme,
-            darkTheme: darkTheme,
-            themeMode: mode,
-            home: isGuest
-                ? const HomeScreen()
-                : StreamBuilder(
-                    stream: AuthService.instance.authStateChanges(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Scaffold(
-                          body: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                      if (snapshot.hasData) {
-                        return const HomeScreen();
-                      }
-                      return const AuthScreen();
-                    },
-                  ),
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: mode,
+          home: isGuest
+              ? const HomeScreen()
+              : StreamBuilder(
+                  stream: AuthService.instance.authStateChanges(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                    if (snapshot.hasData) {
+                      return const HomeScreen();
+                    }
+                    return const AuthScreen();
+                  },
+                ),
         ),
       ),
     );

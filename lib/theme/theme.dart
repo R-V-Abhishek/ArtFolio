@@ -35,33 +35,32 @@ class ThemeController extends ValueNotifier<ThemeMode> {
 final ThemeController themeController = ThemeController();
 
 ThemeData _baseLight(ColorScheme scheme) => ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      scaffoldBackgroundColor: scheme.surface,
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-      appBarTheme: AppBarTheme(
-        backgroundColor: scheme.surface,
-        foregroundColor: scheme.onSurface,
-        elevation: 0,
-        centerTitle: false,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      cardTheme: CardThemeData(
-        elevation: 1,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      floatingActionButtonTheme:
-          FloatingActionButtonThemeData(backgroundColor: scheme.primary),
-    );
+  useMaterial3: true,
+  colorScheme: scheme,
+  scaffoldBackgroundColor: scheme.surface,
+  visualDensity: VisualDensity.adaptivePlatformDensity,
+  appBarTheme: AppBarTheme(
+    backgroundColor: scheme.surface,
+    foregroundColor: scheme.onSurface,
+    elevation: 0,
+    centerTitle: false,
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+  ),
+  cardTheme: CardThemeData(
+    elevation: 1,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  ),
+  floatingActionButtonTheme: FloatingActionButtonThemeData(
+    backgroundColor: scheme.primary,
+  ),
+);
 
 ThemeData _baseDark(ColorScheme scheme) => _baseLight(scheme).copyWith(
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: scheme.surface,
-    );
+  brightness: Brightness.dark,
+  scaffoldBackgroundColor: scheme.surface,
+);
 
 /// Light color scheme.
 final ColorScheme _lightScheme = ColorScheme.fromSeed(

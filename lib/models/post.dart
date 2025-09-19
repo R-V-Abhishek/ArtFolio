@@ -90,28 +90,28 @@ class Post {
   final DateTime timestamp;
   final DateTime? updatedAt;
   final PostVisibility visibility;
-  
+
   // Engagement metrics
   final int likesCount;
   final int commentsCount;
   final int sharesCount;
   final int viewsCount;
   final List<String> likedBy; // User IDs who liked
-  
+
   // Location and collaboration
   final PostLocation? location;
   final CollaborationInfo? collaboration;
-  
+
   // Media metadata
   final int? duration; // For videos/reels in seconds
   final String? thumbnailUrl; // For videos
   final double? aspectRatio; // For proper display
-  
+
   // Engagement features
   final bool allowComments;
   final bool allowSharing;
   final bool isPinned; // Artist can pin posts
-  
+
   // Analytics
   final Map<String, int>? demographics; // View demographics
   final DateTime? lastEngagement; // Last like/comment time
@@ -175,7 +175,9 @@ class Post {
       'allowSharing': allowSharing,
       'isPinned': isPinned,
       'demographics': demographics,
-      'lastEngagement': lastEngagement != null ? Timestamp.fromDate(lastEngagement!) : null,
+      'lastEngagement': lastEngagement != null
+          ? Timestamp.fromDate(lastEngagement!)
+          : null,
     };
   }
 
@@ -189,7 +191,9 @@ class Post {
         orElse: () => PostType.image,
       ),
       mediaUrl: map['mediaUrl'],
-      mediaUrls: map['mediaUrls'] != null ? List<String>.from(map['mediaUrls']) : null,
+      mediaUrls: map['mediaUrls'] != null
+          ? List<String>.from(map['mediaUrls'])
+          : null,
       caption: map['caption'] ?? '',
       description: map['description'],
       skills: List<String>.from(map['skills'] ?? []),
@@ -205,15 +209,21 @@ class Post {
       sharesCount: map['sharesCount'] ?? 0,
       viewsCount: map['viewsCount'] ?? 0,
       likedBy: List<String>.from(map['likedBy'] ?? []),
-      location: map['location'] != null ? PostLocation.fromMap(map['location']) : null,
-      collaboration: map['collaboration'] != null ? CollaborationInfo.fromMap(map['collaboration']) : null,
+      location: map['location'] != null
+          ? PostLocation.fromMap(map['location'])
+          : null,
+      collaboration: map['collaboration'] != null
+          ? CollaborationInfo.fromMap(map['collaboration'])
+          : null,
       duration: map['duration'],
       thumbnailUrl: map['thumbnailUrl'],
       aspectRatio: map['aspectRatio']?.toDouble(),
       allowComments: map['allowComments'] ?? true,
       allowSharing: map['allowSharing'] ?? true,
       isPinned: map['isPinned'] ?? false,
-      demographics: map['demographics'] != null ? Map<String, int>.from(map['demographics']) : null,
+      demographics: map['demographics'] != null
+          ? Map<String, int>.from(map['demographics'])
+          : null,
       lastEngagement: (map['lastEngagement'] as Timestamp?)?.toDate(),
     );
   }
@@ -287,15 +297,17 @@ class Post {
 
   // Helper methods for engagement
   bool isLikedBy(String userId) => likedBy.contains(userId);
-  
+
   bool get hasLocation => location != null;
-  
+
   bool get isSponsored => collaboration?.isSponsored ?? false;
-  
-  bool get hasCollaborators => collaboration?.collaboratorIds.isNotEmpty ?? false;
+
+  bool get hasCollaborators =>
+      collaboration?.collaboratorIds.isNotEmpty ?? false;
 
   // Get main media URL (for backward compatibility)
-  String get primaryMediaUrl => mediaUrl ?? (mediaUrls?.isNotEmpty == true ? mediaUrls!.first : '');
+  String get primaryMediaUrl =>
+      mediaUrl ?? (mediaUrls?.isNotEmpty == true ? mediaUrls!.first : '');
 
   @override
   String toString() {
@@ -305,7 +317,7 @@ class Post {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
+
     return other is Post &&
         other.id == id &&
         other.userId == userId &&

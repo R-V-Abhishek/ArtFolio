@@ -13,7 +13,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final isGuest = SessionState.instance.guestMode.value || user == null;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('ArtFolio'),
@@ -21,7 +21,11 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Toggle theme',
             onPressed: () => themeController.toggle(),
-            icon: Icon(themeController.value == ThemeMode.dark ? Icons.nightlight_round : Icons.wb_sunny),
+            icon: Icon(
+              themeController.value == ThemeMode.dark
+                  ? Icons.nightlight_round
+                  : Icons.wb_sunny,
+            ),
           ),
           IconButton(
             tooltip: isGuest ? 'Sign In' : 'Sign Out',
@@ -41,13 +45,13 @@ class HomeScreen extends StatelessWidget {
           final crossAxisCount = constraints.maxWidth > 1200
               ? 6
               : constraints.maxWidth > 900
-                  ? 5
-                  : constraints.maxWidth > 700
-                      ? 4
-                      : constraints.maxWidth > 500
-                          ? 3
-                          : 2;
-          
+              ? 5
+              : constraints.maxWidth > 700
+              ? 4
+              : constraints.maxWidth > 500
+              ? 3
+              : 2;
+
           return CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
@@ -58,7 +62,11 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.palette, size: 40, color: Theme.of(context).colorScheme.primary),
+                          Icon(
+                            Icons.palette,
+                            size: 40,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -73,7 +81,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        isGuest 
+                        isGuest
                             ? 'Browse amazing artwork from our community'
                             : 'Discover and share creative inspiration',
                         style: Theme.of(context).textTheme.bodySmall,
@@ -89,7 +97,7 @@ class HomeScreen extends StatelessWidget {
                     crossAxisCount: crossAxisCount,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
-                    childAspectRatio: 3/4,
+                    childAspectRatio: 3 / 4,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => ArtCard(piece: ArtPiece.dummy[index]),

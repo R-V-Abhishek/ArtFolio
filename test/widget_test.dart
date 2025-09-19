@@ -17,7 +17,12 @@ void main() {
 
     // Verify that the welcome text is displayed.
     expect(find.text('Welcome to ArtFolio'), findsOneWidget);
-    expect(find.text('A professional network where creatives\ncan showcase their project stories.'), findsOneWidget);
+    expect(
+      find.text(
+        'A professional network where creatives\ncan showcase their project stories.',
+      ),
+      findsOneWidget,
+    );
 
     // Verify that the palette icon is present.
     expect(find.byIcon(Icons.palette), findsOneWidget);

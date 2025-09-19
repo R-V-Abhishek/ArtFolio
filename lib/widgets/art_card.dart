@@ -23,7 +23,10 @@ class ArtCard extends StatelessWidget {
                   piece.imagePath,
                   fit: BoxFit.cover,
                   errorBuilder: (c, e, s) => Center(
-                    child: Icon(Icons.image_not_supported, color: scheme.outline),
+                    child: Icon(
+                      Icons.image_not_supported,
+                      color: scheme.outline,
+                    ),
                   ),
                 ),
               ),
@@ -41,7 +44,9 @@ class ArtCard extends StatelessWidget {
                   ),
                   Text(
                     piece.author,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(color: scheme.secondary),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelMedium?.copyWith(color: scheme.secondary),
                   ),
                 ],
               ),
@@ -62,12 +67,18 @@ class ArtCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(piece.title, style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                piece.title,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
               const SizedBox(height: 8),
-              Text('by ${piece.author}', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'by ${piece.author}',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 12),
               AspectRatio(
-                aspectRatio: 16/9,
+                aspectRatio: 16 / 9,
                 child: Image.asset(piece.imagePath, fit: BoxFit.cover),
               ),
               const SizedBox(height: 12),

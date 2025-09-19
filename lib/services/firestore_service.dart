@@ -13,11 +13,12 @@ class FirestoreService {
   CollectionReference get _artistsCollection => _db.collection('artists');
   CollectionReference get _audiencesCollection => _db.collection('audiences');
   CollectionReference get _sponsorsCollection => _db.collection('sponsors');
-  CollectionReference get _organisationsCollection => _db.collection('organisations');
+  CollectionReference get _organisationsCollection =>
+      _db.collection('organisations');
   CollectionReference get _postsCollection => _db.collection('posts');
 
   // ===== USER MANAGEMENT =====
-  
+
   // Create base user profile
   Future<void> createUser(User user) async {
     try {
@@ -40,9 +41,9 @@ class FirestoreService {
   // Update user profile
   Future<void> updateUser(User user) async {
     try {
-      await _usersCollection.doc(user.id).update(
-        user.copyWith(updatedAt: DateTime.now()).toMap(),
-      );
+      await _usersCollection
+          .doc(user.id)
+          .update(user.copyWith(updatedAt: DateTime.now()).toMap());
     } catch (e) {
       throw Exception('Failed to update user: $e');
     }
@@ -110,7 +111,9 @@ class FirestoreService {
   // Create organisation profile
   Future<void> createOrganisation(Organisation organisation) async {
     try {
-      await _organisationsCollection.doc(organisation.userId).set(organisation.toMap());
+      await _organisationsCollection
+          .doc(organisation.userId)
+          .set(organisation.toMap());
     } catch (e) {
       throw Exception('Failed to create organisation profile: $e');
     }
@@ -134,9 +137,7 @@ class FirestoreService {
       final user = await getUser(userId);
       if (user == null) return null;
 
-      Map<String, dynamic> userData = {
-        'user': user.toMap(),
-      };
+      Map<String, dynamic> userData = {'user': user.toMap()};
 
       // Get role-specific data based on user role
       switch (user.role) {
@@ -154,7 +155,8 @@ class FirestoreService {
           break;
         case UserRole.organisation:
           final organisation = await getOrganisation(userId);
-          if (organisation != null) userData['organisation'] = organisation.toMap();
+          if (organisation != null)
+            userData['organisation'] = organisation.toMap();
           break;
       }
 
@@ -181,9 +183,7 @@ class FirestoreService {
           .orderBy('timestamp', descending: true)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => Post.fromSnapshot(doc))
-          .toList();
+      return querySnapshot.docs.map((doc) => Post.fromSnapshot(doc)).toList();
     } catch (e) {
       throw Exception('Failed to get user posts: $e');
     }
@@ -196,9 +196,7 @@ class FirestoreService {
           .orderBy('timestamp', descending: true)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => Post.fromSnapshot(doc))
-          .toList();
+      return querySnapshot.docs.map((doc) => Post.fromSnapshot(doc)).toList();
     } catch (e) {
       throw Exception('Failed to get posts: $e');
     }
@@ -214,9 +212,7 @@ class FirestoreService {
           .orderBy('timestamp', descending: true)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => Post.fromSnapshot(doc))
-          .toList();
+      return querySnapshot.docs.map((doc) => Post.fromSnapshot(doc)).toList();
     } catch (e) {
       throw Exception('Failed to get posts by type: $e');
     }
@@ -231,9 +227,7 @@ class FirestoreService {
           .limit(limit)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => Post.fromSnapshot(doc))
-          .toList();
+      return querySnapshot.docs.map((doc) => Post.fromSnapshot(doc)).toList();
     } catch (e) {
       throw Exception('Failed to get trending posts: $e');
     }
@@ -247,9 +241,7 @@ class FirestoreService {
           .orderBy('timestamp', descending: true)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => Post.fromSnapshot(doc))
-          .toList();
+      return querySnapshot.docs.map((doc) => Post.fromSnapshot(doc)).toList();
     } catch (e) {
       throw Exception('Failed to get posts by skill: $e');
     }
@@ -260,7 +252,7 @@ class FirestoreService {
     try {
       final postRef = _postsCollection.doc(postId);
       final postSnapshot = await postRef.get();
-      
+
       if (!postSnapshot.exists) {
         throw Exception('Post not found');
       }
@@ -295,9 +287,7 @@ class FirestoreService {
   Future<void> incrementPostViews(String postId) async {
     try {
       final postRef = _postsCollection.doc(postId);
-      await postRef.update({
-        'viewsCount': FieldValue.increment(1),
-      });
+      await postRef.update({'viewsCount': FieldValue.increment(1)});
     } catch (e) {
       throw Exception('Failed to increment post views: $e');
     }
@@ -317,9 +307,7 @@ class FirestoreService {
 
       final querySnapshot = await query.limit(limit).get();
 
-      return querySnapshot.docs
-          .map((doc) => Post.fromSnapshot(doc))
-          .toList();
+      return querySnapshot.docs.map((doc) => Post.fromSnapshot(doc)).toList();
     } catch (e) {
       throw Exception('Failed to get feed posts: $e');
     }
@@ -335,11 +323,20 @@ class FirestoreService {
 
       return querySnapshot.docs
           .map((doc) => Post.fromSnapshot(doc))
-          .where((post) => 
-            post.caption.toLowerCase().contains(searchTerm.toLowerCase()) ||
-            (post.description?.toLowerCase().contains(searchTerm.toLowerCase()) ?? false) ||
-            post.skills.any((skill) => skill.toLowerCase().contains(searchTerm.toLowerCase())) ||
-            post.tags.any((tag) => tag.toLowerCase().contains(searchTerm.toLowerCase()))
+          .where(
+            (post) =>
+                post.caption.toLowerCase().contains(searchTerm.toLowerCase()) ||
+                (post.description?.toLowerCase().contains(
+                      searchTerm.toLowerCase(),
+                    ) ??
+                    false) ||
+                post.skills.any(
+                  (skill) =>
+                      skill.toLowerCase().contains(searchTerm.toLowerCase()),
+                ) ||
+                post.tags.any(
+                  (tag) => tag.toLowerCase().contains(searchTerm.toLowerCase()),
+                ),
           )
           .toList();
     } catch (e) {
@@ -360,10 +357,9 @@ class FirestoreService {
 
       // Create mock users
       await _createMockUsers();
-      
+
       // Create mock posts
       await _createMockPosts();
-      
     } catch (e) {
       throw Exception('Failed to seed mock data: $e');
     }
@@ -372,7 +368,7 @@ class FirestoreService {
   // Private method to create mock users with new schema
   Future<void> _createMockUsers() async {
     final now = DateTime.now();
-    
+
     // Create Artist user
     final artistUser = User(
       id: 'artist1',
@@ -385,7 +381,7 @@ class FirestoreService {
       createdAt: DateTime.parse('2025-09-18T12:00:00Z'),
       updatedAt: now,
     );
-    
+
     final artistProfile = Artist(
       userId: 'artist1',
       artForms: ['OilPainting', 'Sketching'],
@@ -449,7 +445,7 @@ class FirestoreService {
   // Private method to create enhanced mock posts
   Future<void> _createMockPosts() async {
     final now = DateTime.now();
-    
+
     final mockPosts = [
       // Image post with high engagement
       Post(
@@ -457,10 +453,18 @@ class FirestoreService {
         userId: 'artist1',
         type: PostType.image,
         mediaUrl: 'https://placekitten.com/400/600',
-        caption: 'Latest oil painting - exploring textures and light. Really excited about how this landscape turned out! 🎨✨',
-        description: 'This piece took me 3 weeks to complete. I wanted to capture the golden hour light hitting the mountains. Used traditional oil painting techniques with modern color theory.',
+        caption:
+            'Latest oil painting - exploring textures and light. Really excited about how this landscape turned out! 🎨✨',
+        description:
+            'This piece took me 3 weeks to complete. I wanted to capture the golden hour light hitting the mountains. Used traditional oil painting techniques with modern color theory.',
         skills: ['OilPainting', 'Landscape', 'ColorTheory'],
-        tags: ['#OilPainting', '#Landscape', '#Art', '#GoldenHour', '#Mountains'],
+        tags: [
+          '#OilPainting',
+          '#Landscape',
+          '#Art',
+          '#GoldenHour',
+          '#Mountains',
+        ],
         timestamp: now.subtract(const Duration(hours: 2)),
         visibility: PostVisibility.public,
         likesCount: 47,
@@ -480,18 +484,27 @@ class FirestoreService {
         allowSharing: true,
         lastEngagement: now.subtract(const Duration(minutes: 15)),
       ),
-      
+
       // Reel with collaboration
       Post(
         id: '',
         userId: 'artist1',
         type: PostType.reel,
-        mediaUrl: 'https://sample-videos.com/zip/10/mp4/480p/mp4-file_sample.mp4',
+        mediaUrl:
+            'https://sample-videos.com/zip/10/mp4/480p/mp4-file_sample.mp4',
         thumbnailUrl: 'https://placekitten.com/600/400',
-        caption: 'Quick sketch from life drawing session today. Love capturing the essence of a moment with just a few lines. ✏️',
-        description: 'Collaborated with @local_art_studio for this live sketching session. Amazing energy and fellow artists!',
+        caption:
+            'Quick sketch from life drawing session today. Love capturing the essence of a moment with just a few lines. ✏️',
+        description:
+            'Collaborated with @local_art_studio for this live sketching session. Amazing energy and fellow artists!',
         skills: ['Sketching', 'LifeDrawing', 'QuickStudy'],
-        tags: ['#Sketching', '#LifeDrawing', '#Art', '#LiveSession', '#Collaboration'],
+        tags: [
+          '#Sketching',
+          '#LifeDrawing',
+          '#Art',
+          '#LiveSession',
+          '#Collaboration',
+        ],
         timestamp: now.subtract(const Duration(days: 1)),
         visibility: PostVisibility.public,
         likesCount: 32,
@@ -509,7 +522,7 @@ class FirestoreService {
         allowSharing: true,
         lastEngagement: now.subtract(const Duration(hours: 3)),
       ),
-      
+
       // Sponsored gallery post
       Post(
         id: '',
@@ -520,10 +533,18 @@ class FirestoreService {
           'https://placekitten.com/500/501',
           'https://placekitten.com/500/502',
         ],
-        caption: 'Portrait study series in oils. Been practicing capturing personality and emotion through brushwork. 🎭',
-        description: 'This series represents my exploration of human emotion through traditional oil painting. Each portrait tells a different story. Thanks to @CreativeFunds for supporting this project!',
+        caption:
+            'Portrait study series in oils. Been practicing capturing personality and emotion through brushwork. 🎭',
+        description:
+            'This series represents my exploration of human emotion through traditional oil painting. Each portrait tells a different story. Thanks to @CreativeFunds for supporting this project!',
         skills: ['OilPainting', 'Portrait', 'EmotionalExpression'],
-        tags: ['#OilPainting', '#Portrait', '#Study', '#Sponsored', '#ArtSeries'],
+        tags: [
+          '#OilPainting',
+          '#Portrait',
+          '#Study',
+          '#Sponsored',
+          '#ArtSeries',
+        ],
         timestamp: now.subtract(const Duration(days: 3)),
         visibility: PostVisibility.public,
         likesCount: 78,
@@ -541,23 +562,27 @@ class FirestoreService {
         allowComments: true,
         allowSharing: true,
         isPinned: true, // Artist pinned this post
-        demographics: {
-          'artists': 45,
-          'audience': 35,
-          'sponsors': 20,
-        },
+        demographics: {'artists': 45, 'audience': 35, 'sponsors': 20},
         lastEngagement: now.subtract(const Duration(minutes: 45)),
       ),
-      
+
       // Idea post (text-heavy)
       Post(
         id: '',
         userId: 'artist1',
         type: PostType.idea,
-        caption: '💡 Idea: What if we created a community art space where artists can showcase work AND teach workshops?',
-        description: 'I\'ve been thinking about how we can make art more accessible to everyone. Imagine a space where:\n\n• Artists display their work\n• Conduct workshops for all skill levels\n• Collaborate on community projects\n• Host art therapy sessions\n\nWould love to hear your thoughts! Who would be interested in something like this?',
+        caption:
+            '💡 Idea: What if we created a community art space where artists can showcase work AND teach workshops?',
+        description:
+            'I\'ve been thinking about how we can make art more accessible to everyone. Imagine a space where:\n\n• Artists display their work\n• Conduct workshops for all skill levels\n• Collaborate on community projects\n• Host art therapy sessions\n\nWould love to hear your thoughts! Who would be interested in something like this?',
         skills: ['CommunityBuilding', 'ArtEducation', 'SocialImpact'],
-        tags: ['#ArtCommunity', '#Ideas', '#Collaboration', '#ArtEducation', '#SocialImpact'],
+        tags: [
+          '#ArtCommunity',
+          '#Ideas',
+          '#Collaboration',
+          '#ArtEducation',
+          '#SocialImpact',
+        ],
         timestamp: now.subtract(const Duration(hours: 18)),
         visibility: PostVisibility.public,
         likesCount: 62,
@@ -569,18 +594,27 @@ class FirestoreService {
         allowSharing: true,
         lastEngagement: now.subtract(const Duration(hours: 2)),
       ),
-      
+
       // Video tutorial
       Post(
         id: '',
         userId: 'artist1',
         type: PostType.video,
-        mediaUrl: 'https://sample-videos.com/zip/10/mp4/720p/mp4-file_sample.mp4',
+        mediaUrl:
+            'https://sample-videos.com/zip/10/mp4/720p/mp4-file_sample.mp4',
         thumbnailUrl: 'https://placekitten.com/640/360',
-        caption: '🎨 Oil Painting Tutorial: Creating depth with layering techniques',
-        description: 'In this 10-minute tutorial, I show you my favorite layering technique for creating depth in oil paintings. Perfect for intermediate artists looking to improve their landscape work.',
+        caption:
+            '🎨 Oil Painting Tutorial: Creating depth with layering techniques',
+        description:
+            'In this 10-minute tutorial, I show you my favorite layering technique for creating depth in oil paintings. Perfect for intermediate artists looking to improve their landscape work.',
         skills: ['OilPainting', 'Teaching', 'Tutorials', 'Layering'],
-        tags: ['#Tutorial', '#OilPainting', '#ArtEducation', '#Techniques', '#LearnArt'],
+        tags: [
+          '#Tutorial',
+          '#OilPainting',
+          '#ArtEducation',
+          '#Techniques',
+          '#LearnArt',
+        ],
         timestamp: now.subtract(const Duration(days: 5)),
         visibility: PostVisibility.public,
         likesCount: 156,
@@ -592,11 +626,7 @@ class FirestoreService {
         aspectRatio: 1.78, // 16:9
         allowComments: true,
         allowSharing: true,
-        demographics: {
-          'beginners': 60,
-          'intermediate': 30,
-          'advanced': 10,
-        },
+        demographics: {'beginners': 60, 'intermediate': 30, 'advanced': 10},
         lastEngagement: now.subtract(const Duration(minutes: 30)),
       ),
     ];
@@ -615,7 +645,7 @@ class FirestoreService {
   Future<bool> hasUserProfile() async {
     final userId = getCurrentUserId();
     if (userId == null) return false;
-    
+
     final profile = await getUser(userId);
     return profile != null;
   }

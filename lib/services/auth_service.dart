@@ -13,19 +13,32 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
   Stream<User?> authStateChanges() => _auth.authStateChanges();
 
-  Future<UserCredential> signUpWithEmail({required String email, required String password}) async {
-    final cred = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+  Future<UserCredential> signUpWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    final cred = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
     // Fire and forget email verification (ignore errors silently for now)
-    try { await cred.user?.sendEmailVerification(); } catch (_) {}
+    try {
+      await cred.user?.sendEmailVerification();
+    } catch (_) {}
     return cred;
   }
 
-  Future<UserCredential> signInWithEmail({required String email, required String password}) async {
+  Future<UserCredential> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
     return _auth.signInWithEmailAndPassword(email: email, password: password);
   }
 
-  Future<void> sendPasswordResetEmail(String email) => _auth.sendPasswordResetEmail(email: email);
-  Future<void> resendEmailVerification() async => currentUser?.sendEmailVerification();
+  Future<void> sendPasswordResetEmail(String email) =>
+      _auth.sendPasswordResetEmail(email: email);
+  Future<void> resendEmailVerification() async =>
+      currentUser?.sendEmailVerification();
 
   Future<UserCredential?> signInWithGoogle() async {
     final googleUser = await _google.signIn();
@@ -39,20 +52,30 @@ class AuthService {
   }
 
   Future<void> signOut() async {
-    try { await _google.signOut(); } catch (_) {}
+    try {
+      await _google.signOut();
+    } catch (_) {}
     await _auth.signOut();
   }
 
   String humanizeAuthError(FirebaseAuthException e) {
     switch (e.code) {
-      case 'weak-password': return 'The password provided is too weak.';
-      case 'email-already-in-use': return 'An account already exists for that email.';
-      case 'user-not-found': return 'No user found for that email.';
-      case 'wrong-password': return 'Incorrect password.';
-      case 'invalid-email': return 'Invalid email address.';
-      case 'user-disabled': return 'This user account has been disabled.';
-      case 'too-many-requests': return 'Too many attempts, try again later.';
-      default: return e.message ?? e.code;
+      case 'weak-password':
+        return 'The password provided is too weak.';
+      case 'email-already-in-use':
+        return 'An account already exists for that email.';
+      case 'user-not-found':
+        return 'No user found for that email.';
+      case 'wrong-password':
+        return 'Incorrect password.';
+      case 'invalid-email':
+        return 'Invalid email address.';
+      case 'user-disabled':
+        return 'This user account has been disabled.';
+      case 'too-many-requests':
+        return 'Too many attempts, try again later.';
+      default:
+        return e.message ?? e.code;
     }
   }
 }

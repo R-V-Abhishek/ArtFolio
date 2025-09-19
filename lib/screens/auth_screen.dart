@@ -35,7 +35,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       if (_isLogin) {
         await AuthService.instance.signInWithEmail(
@@ -48,50 +51,73 @@ class _AuthScreenState extends State<AuthScreen> {
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
-        
+
         if (userCredential.user != null) {
           await _createUserProfile(userCredential.user!);
         }
       }
     } on FirebaseAuthException catch (e) {
-      setState(() { _error = AuthService.instance.humanizeAuthError(e); });
+      setState(() {
+        _error = AuthService.instance.humanizeAuthError(e);
+      });
     } catch (e) {
-      setState(() { _error = 'Unexpected error: ${e.toString()}'; });
+      setState(() {
+        _error = 'Unexpected error: ${e.toString()}';
+      });
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
   Future<void> _google() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final userCredential = await AuthService.instance.signInWithGoogle();
       if (userCredential?.user != null) {
         // Check if user profile exists, if not create one
-        final existingUser = await FirestoreService().getUser(userCredential!.user!.uid);
+        final existingUser = await FirestoreService().getUser(
+          userCredential!.user!.uid,
+        );
         if (existingUser == null) {
           await _createUserProfile(userCredential.user!, isGoogleSignUp: true);
         }
       }
     } catch (e) {
-      setState(() { _error = 'Google sign-in failed: ${e.toString()}'; });
+      setState(() {
+        _error = 'Google sign-in failed: ${e.toString()}';
+      });
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
-  Future<void> _createUserProfile(User firebaseUser, {bool isGoogleSignUp = false}) async {
+  Future<void> _createUserProfile(
+    User firebaseUser, {
+    bool isGoogleSignUp = false,
+  }) async {
     try {
       final now = DateTime.now();
-      final username = isGoogleSignUp 
-          ? (firebaseUser.displayName?.replaceAll(' ', '').toLowerCase() ?? 'user${firebaseUser.uid.substring(0, 8)}')
+      final username = isGoogleSignUp
+          ? (firebaseUser.displayName?.replaceAll(' ', '').toLowerCase() ??
+                'user${firebaseUser.uid.substring(0, 8)}')
           : _usernameCtrl.text.trim();
-      
+
       final user = app_models.User(
         id: firebaseUser.uid,
         username: username,
         email: firebaseUser.email ?? '',
-        fullName: isGoogleSignUp ? (firebaseUser.displayName ?? '') : _fullNameCtrl.text.trim(),
+        fullName: isGoogleSignUp
+            ? (firebaseUser.displayName ?? '')
+            : _fullNameCtrl.text.trim(),
         profilePictureUrl: firebaseUser.photoURL ?? '',
         bio: '',
         role: isGoogleSignUp ? app_models.UserRole.audience : _selectedRole,
@@ -115,7 +141,11 @@ class _AuthScreenState extends State<AuthScreen> {
           IconButton(
             tooltip: 'Toggle theme',
             onPressed: () => themeController.toggle(),
-            icon: Icon(themeController.value == ThemeMode.dark ? Icons.nightlight_round : Icons.wb_sunny),
+            icon: Icon(
+              themeController.value == ThemeMode.dark
+                  ? Icons.nightlight_round
+                  : Icons.wb_sunny,
+            ),
           ),
         ],
       ),
@@ -156,8 +186,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         decoration: const InputDecoration(labelText: 'Email'),
                         keyboardType: TextInputType.emailAddress,
                         validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'Enter email';
-                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) return 'Invalid email';
+                          if (v == null || v.trim().isEmpty)
+                            return 'Enter email';
+                          if (!RegExp(
+                            r'^[^@]+@[^@]+\.[^@]+',
+                          ).hasMatch(v.trim()))
+                            return 'Invalid email';
                           return null;
                         },
                       ),
@@ -165,30 +199,42 @@ class _AuthScreenState extends State<AuthScreen> {
                       if (!_isLogin) ...[
                         TextFormField(
                           controller: _usernameCtrl,
-                          decoration: const InputDecoration(labelText: 'Username'),
+                          decoration: const InputDecoration(
+                            labelText: 'Username',
+                          ),
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Enter username';
-                            if (v.trim().length < 3) return 'Username must be at least 3 characters';
+                            if (v == null || v.trim().isEmpty)
+                              return 'Enter username';
+                            if (v.trim().length < 3)
+                              return 'Username must be at least 3 characters';
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _fullNameCtrl,
-                          decoration: const InputDecoration(labelText: 'Full Name'),
+                          decoration: const InputDecoration(
+                            labelText: 'Full Name',
+                          ),
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Enter full name';
+                            if (v == null || v.trim().isEmpty)
+                              return 'Enter full name';
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<app_models.UserRole>(
                           initialValue: _selectedRole,
-                          decoration: const InputDecoration(labelText: 'I am a...'),
+                          decoration: const InputDecoration(
+                            labelText: 'I am a...',
+                          ),
                           items: app_models.UserRole.values.map((role) {
                             return DropdownMenuItem(
                               value: role,
-                              child: Text(role.name.substring(0, 1).toUpperCase() + role.name.substring(1)),
+                              child: Text(
+                                role.name.substring(0, 1).toUpperCase() +
+                                    role.name.substring(1),
+                              ),
                             );
                           }).toList(),
                           onChanged: (value) {
@@ -201,7 +247,9 @@ class _AuthScreenState extends State<AuthScreen> {
                       ],
                       TextFormField(
                         controller: _passwordCtrl,
-                        decoration: const InputDecoration(labelText: 'Password'),
+                        decoration: const InputDecoration(
+                          labelText: 'Password',
+                        ),
                         obscureText: true,
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'Enter password';
@@ -222,22 +270,26 @@ class _AuthScreenState extends State<AuthScreen> {
                         onPressed: _loading
                             ? null
                             : () => setState(() => _isLogin = !_isLogin),
-                        child: Text(_isLogin
-                            ? 'Need an account? Sign Up'
-                            : 'Have an account? Login'),
+                        child: Text(
+                          _isLogin
+                              ? 'Need an account? Sign Up'
+                              : 'Have an account? Login',
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
-                Row(children: <Widget>[
-                  Expanded(child: Divider(color: scheme.outlineVariant)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text('or'),
-                  ),
-                  Expanded(child: Divider(color: scheme.outlineVariant)),
-                ]),
+                Row(
+                  children: <Widget>[
+                    Expanded(child: Divider(color: scheme.outlineVariant)),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text('or'),
+                    ),
+                    Expanded(child: Divider(color: scheme.outlineVariant)),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
