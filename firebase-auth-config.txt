@@ -1,0 +1,22 @@
+// Firebase Authentication Configuration for ArtFolio
+
+// ENABLE ANONYMOUS AUTHENTICATION:
+// This allows Storage uploads without requiring user sign-up
+
+// INSTRUCTIONS:
+// 1. Go to Firebase Console: https://console.firebase.google.com/
+// 2. Select your project: artfolio-app-4fda7
+// 3. Navigate to Authentication > Sign-in method
+// 4. Find "Anonymous" in the list
+// 5. Click the toggle to "Enable"
+// 6. Click "Save"
+
+// BENEFITS:
+// - Allows Storage uploads for testing
+// - No user registration required
+// - Simple implementation
+// - Can upgrade to full auth later
+
+// CODE INTEGRATION:
+// The app will automatically use anonymous auth when needed
+// No code changes required for basic functionality

@@ -39,6 +39,8 @@ dependencies:
   google_sign_in: ^6.1.5
   flutter_svg: ^2.0.10+1
   google_fonts: ^6.2.1
+  image_picker: ^1.1.2 # For selecting images from gallery/camera
+  path: ^1.9.0 # For file path operations
   # google_maps_flutter: ^2.6.1 # Uncomment if maps needed later
   # Material design icons
   cupertino_icons: ^1.0.8

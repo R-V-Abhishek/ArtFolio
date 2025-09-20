@@ -96,9 +96,9 @@ class _FeedScreenState extends State<FeedScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load feed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load feed: $e')));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -125,9 +125,9 @@ class _FeedScreenState extends State<FeedScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load more: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load more: $e')));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -162,8 +162,11 @@ class _FeedScreenState extends State<FeedScreen> {
           controller: _scrollController,
           children: [
             const SizedBox(height: 80),
-            Icon(Icons.palette,
-                size: 64, color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.palette,
+              size: 64,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             const SizedBox(height: 16),
             Text(
               'No posts yet',
@@ -201,9 +204,7 @@ class _FeedScreenState extends State<FeedScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                PostCard(post: post),
-              ],
+              children: [PostCard(post: post)],
             ),
           );
         },

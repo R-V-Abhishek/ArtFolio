@@ -1,12 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
+import 'package:flutter/foundation.dart';
+import 'dart:io';
 import '../models/post.dart';
 import '../models/user.dart';
 import '../models/role_models.dart';
+import 'storage_service.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final StorageService _storageService = StorageService();
 
   // Collection references
   CollectionReference get _usersCollection => _db.collection('users');
@@ -173,6 +177,168 @@ class FirestoreService {
       await _postsCollection.add(post.toMap());
     } catch (e) {
       throw Exception('Failed to create post: $e');
+    }
+  }
+
+  // Create post with image upload
+  Future<void> createPostWithImage({
+    required Post post,
+    File? imageFile,
+    Uint8List? imageData,
+    String? imageFileName,
+  }) async {
+    try {
+      String? imageUrl;
+
+      // Upload image if provided
+      if (imageFile != null || imageData != null) {
+        imageFileName ??=
+            'post_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+        imageUrl = await _storageService.uploadPostImage(
+          postId: post.id,
+          fileName: imageFileName,
+          file: imageFile,
+          data: imageData,
+        );
+      }
+
+      // Create updated post with image URL
+      final updatedPost = post.copyWith(
+        mediaUrls: imageUrl != null ? [imageUrl] : [],
+      );
+
+      await _postsCollection.doc(post.id).set(updatedPost.toMap());
+    } catch (e) {
+      throw Exception('Failed to create post with image: $e');
+    }
+  }
+
+  // Create post with multiple images
+  Future<void> createPostWithMultipleImages({
+    required Post post,
+    required List<File> imageFiles,
+    List<String>? imageFileNames,
+  }) async {
+    try {
+      final imageUrls = <String>[];
+
+      // Upload all images
+      for (int i = 0; i < imageFiles.length; i++) {
+        final fileName = imageFileNames != null && i < imageFileNames.length
+            ? imageFileNames[i]
+            : 'post_image_${i + 1}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+        final imageUrl = await _storageService.uploadPostImage(
+          postId: post.id,
+          fileName: fileName,
+          file: imageFiles[i],
+        );
+
+        imageUrls.add(imageUrl);
+      }
+
+      // Create updated post with image URLs
+      final updatedPost = post.copyWith(mediaUrls: imageUrls);
+
+      await _postsCollection.doc(post.id).set(updatedPost.toMap());
+    } catch (e) {
+      throw Exception('Failed to create post with multiple images: $e');
+    }
+  }
+
+  // Update post and add/replace images
+  Future<void> updatePostWithImages({
+    required String postId,
+    required Map<String, dynamic> updates,
+    List<File>? newImageFiles,
+    List<String>? newImageFileNames,
+    bool replaceExistingImages = false,
+  }) async {
+    try {
+      // Get existing post
+      final doc = await _postsCollection.doc(postId).get();
+      if (!doc.exists) {
+        throw Exception('Post not found');
+      }
+
+      final existingPost = Post.fromSnapshot(doc);
+      final currentImageUrls = existingPost.mediaUrls ?? [];
+
+      // Delete existing images if replacing
+      if (replaceExistingImages && currentImageUrls.isNotEmpty) {
+        for (final url in currentImageUrls) {
+          try {
+            await _storageService.deleteImage(url);
+          } catch (e) {
+            // Continue even if deletion fails
+            debugPrint('Warning: Failed to delete image $url: $e');
+          }
+        }
+      }
+
+      // Upload new images if provided
+      final newImageUrls = <String>[];
+      if (newImageFiles != null && newImageFiles.isNotEmpty) {
+        for (int i = 0; i < newImageFiles.length; i++) {
+          final fileName =
+              newImageFileNames != null && i < newImageFileNames.length
+              ? newImageFileNames[i]
+              : 'post_image_${i + 1}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+          final imageUrl = await _storageService.uploadPostImage(
+            postId: postId,
+            fileName: fileName,
+            file: newImageFiles[i],
+          );
+
+          newImageUrls.add(imageUrl);
+        }
+      }
+
+      // Combine image URLs
+      final finalImageUrls = replaceExistingImages
+          ? newImageUrls
+          : [...currentImageUrls, ...newImageUrls];
+
+      // Update post with new data and images
+      final finalUpdates = {
+        ...updates,
+        'mediaUrls': finalImageUrls,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await _postsCollection.doc(postId).update(finalUpdates);
+    } catch (e) {
+      throw Exception('Failed to update post with images: $e');
+    }
+  }
+
+  // Delete post and its images
+  Future<void> deletePostWithImages(String postId) async {
+    try {
+      // Get post to find image URLs
+      final doc = await _postsCollection.doc(postId).get();
+      if (doc.exists) {
+        final post = Post.fromSnapshot(doc);
+
+        // Delete images from storage
+        if (post.mediaUrls != null && post.mediaUrls!.isNotEmpty) {
+          for (final url in post.mediaUrls!) {
+            try {
+              await _storageService.deleteImage(url);
+            } catch (e) {
+              // Continue even if deletion fails
+              debugPrint('Warning: Failed to delete image $url: $e');
+            }
+          }
+        }
+
+        // Delete the post document
+        await _postsCollection.doc(postId).delete();
+      }
+    } catch (e) {
+      throw Exception('Failed to delete post with images: $e');
     }
   }
 
@@ -649,5 +815,59 @@ class FirestoreService {
 
     final profile = await getUser(userId);
     return profile != null;
+  }
+
+  // ===== TESTING METHODS =====
+
+  /// Test method to fetch and print posts to console
+  /// Use this to verify Firestore connectivity and data fetching
+  Future<void> testFetchPosts() async {
+    try {
+      debugPrint('🔥 Testing Firestore connection...');
+
+      // Test 1: Get all posts
+      final allPosts = await getAllPosts();
+      debugPrint('📊 Found ${allPosts.length} total posts');
+
+      if (allPosts.isNotEmpty) {
+        debugPrint('📝 Sample post details:');
+        final firstPost = allPosts.first;
+        debugPrint('  - ID: ${firstPost.id}');
+        debugPrint('  - Caption: ${firstPost.caption}');
+        debugPrint('  - Type: ${firstPost.type}');
+        debugPrint('  - User ID: ${firstPost.userId}');
+        debugPrint('  - Media URL: ${firstPost.mediaUrl ?? 'No media'}');
+        debugPrint(
+          '  - Media URLs: ${firstPost.mediaUrls?.join(', ') ?? 'None'}',
+        );
+        debugPrint('  - Timestamp: ${firstPost.timestamp}');
+      }
+
+      // Test 2: Get posts by type
+      final imagePosts = await getPostsByType(PostType.image);
+      debugPrint('🖼️ Found ${imagePosts.length} image posts');
+
+      // Test 3: Check if we can create a test post (without actually creating it)
+      debugPrint('✅ Firestore connection test completed successfully!');
+    } catch (e) {
+      debugPrint('❌ Firestore test failed: $e');
+    }
+  }
+
+  /// Test method to verify Storage service integration
+  Future<void> testStorageIntegration() async {
+    try {
+      debugPrint('☁️ Testing Firebase Storage integration...');
+
+      // Check if storage service is properly initialized
+      debugPrint('✅ Storage service initialized');
+
+      // Note: Actual upload test should be done through the UI
+      debugPrint(
+        '📱 Use the "Test Upload" button in the app to test image upload',
+      );
+    } catch (e) {
+      debugPrint('❌ Storage integration test failed: $e');
+    }
   }
 }

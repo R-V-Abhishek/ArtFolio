@@ -32,19 +32,19 @@ class MyApp extends StatelessWidget {
             next: isGuest
                 ? const HomeScreen()
                 : StreamBuilder(
-                  stream: AuthService.instance.authStateChanges(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Scaffold(
-                        body: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    if (snapshot.hasData) {
-                      return const HomeScreen();
-                    }
-                    return const AuthScreen();
-                  },
-                ),
+                    stream: AuthService.instance.authStateChanges(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Scaffold(
+                          body: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      if (snapshot.hasData) {
+                        return const HomeScreen();
+                      }
+                      return const AuthScreen();
+                    },
+                  ),
           ),
         ),
       ),

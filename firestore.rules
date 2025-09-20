@@ -29,5 +29,13 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read, write: if true; // Allow for development/testing
     }
+    
+    // Images collection - for Firestore-based image storage
+    match /images/{imageId} {
+      allow read: if true; // Allow reading images for public display
+      allow write: if true; // Allow for development/testing
+      allow create: if true; // Allow image uploads
+      allow delete: if true; // Allow image deletion for development/testing
+    }
   }
 }

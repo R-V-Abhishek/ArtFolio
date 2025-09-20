@@ -57,6 +57,7 @@ class _AuthScreenState extends State<AuthScreen> {
       if (mounted) setState(() => _loading = false);
     }
   }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
@@ -173,10 +174,10 @@ class _AuthScreenState extends State<AuthScreen> {
             Text(
               'ArtFolio',
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    // More artistic weight and size for brand title
-                    fontSize: 30,
-                    fontWeight: FontWeight.w700,
-                  ),
+                // More artistic weight and size for brand title
+                fontSize: 30,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
@@ -203,7 +204,10 @@ class _AuthScreenState extends State<AuthScreen> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -211,10 +215,9 @@ class _AuthScreenState extends State<AuthScreen> {
                     Center(
                       child: Text(
                         _isLogin ? 'Welcome back' : 'Create your account',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -232,86 +235,86 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                     if (_error != null) const SizedBox(height: 12),
                     Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _emailCtrl,
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _emailCtrl,
                             decoration: const InputDecoration(
                               labelText: 'Email',
                               prefixIcon: Icon(Icons.email_outlined),
                             ),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Enter email';
-                          }
-                          if (!RegExp(
-                            r'^[^@]+@[^@]+\.[^@]+',
-                          ).hasMatch(v.trim())) {
-                            return 'Invalid email';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      if (!_isLogin) ...[
-                        TextFormField(
-                          controller: _usernameCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Username',
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) {
+                                return 'Enter email';
+                              }
+                              if (!RegExp(
+                                r'^[^@]+@[^@]+\.[^@]+',
+                              ).hasMatch(v.trim())) {
+                                return 'Invalid email';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          if (!_isLogin) ...[
+                            TextFormField(
+                              controller: _usernameCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'Username',
                                 prefixIcon: Icon(Icons.person_outline),
-                          ),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'Enter username';
-                            }
-                            if (v.trim().length < 3) {
-                              return 'Username must be at least 3 characters';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _fullNameCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Full Name',
+                              ),
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'Enter username';
+                                }
+                                if (v.trim().length < 3) {
+                                  return 'Username must be at least 3 characters';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _fullNameCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'Full Name',
                                 prefixIcon: Icon(Icons.badge_outlined),
-                          ),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'Enter full name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<app_models.UserRole>(
-                          initialValue: _selectedRole,
+                              ),
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'Enter full name';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<app_models.UserRole>(
+                              initialValue: _selectedRole,
                               decoration: const InputDecoration(
                                 labelText: 'I am a...',
                                 prefixIcon: Icon(Icons.interests_outlined),
                               ),
-                          items: app_models.UserRole.values.map((role) {
-                            return DropdownMenuItem(
-                              value: role,
-                              child: Text(
-                                role.name.substring(0, 1).toUpperCase() +
-                                    role.name.substring(1),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() => _selectedRole = value);
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                      TextFormField(
-                        controller: _passwordCtrl,
+                              items: app_models.UserRole.values.map((role) {
+                                return DropdownMenuItem(
+                                  value: role,
+                                  child: Text(
+                                    role.name.substring(0, 1).toUpperCase() +
+                                        role.name.substring(1),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => _selectedRole = value);
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          TextFormField(
+                            controller: _passwordCtrl,
                             decoration: InputDecoration(
                               labelText: 'Password',
                               prefixIcon: const Icon(Icons.lock_outline),
@@ -325,7 +328,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                           : Icons.visibility_off,
                                     ),
                                     onPressed: () {
-                                      setState(() => _obscurePassword = !_obscurePassword);
+                                      setState(
+                                        () => _obscurePassword =
+                                            !_obscurePassword,
+                                      );
                                       setIconState(() {});
                                     },
                                   );
@@ -333,12 +339,16 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                             ),
                             obscureText: _obscurePassword,
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Enter password';
-                          if (v.length < 6) return 'Min 6 characters';
-                          return null;
-                        },
-                      ),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return 'Enter password';
+                              }
+                              if (v.length < 6) {
+                                return 'Min 6 characters';
+                              }
+                              return null;
+                            },
+                          ),
                           const SizedBox(height: 8),
                           Align(
                             alignment: Alignment.centerRight,
@@ -347,33 +357,35 @@ class _AuthScreenState extends State<AuthScreen> {
                               child: const Text('Forgot password?'),
                             ),
                           ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
                               onPressed: _loading ? null : _submit,
                               style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                               child: Text(_isLogin ? 'Login' : 'Sign Up'),
-                        ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _loading
+                                ? null
+                                : () => setState(() => _isLogin = !_isLogin),
+                            child: Text(
+                              _isLogin
+                                  ? 'Need an account? Sign Up'
+                                  : 'Have an account? Login',
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: _loading
-                            ? null
-                            : () => setState(() => _isLogin = !_isLogin),
-                        child: Text(
-                          _isLogin
-                              ? 'Need an account? Sign Up'
-                              : 'Have an account? Login',
-                        ),
-                      ),
-                    ],
-                  ),
                     ),
                     const SizedBox(height: 20),
                     Row(

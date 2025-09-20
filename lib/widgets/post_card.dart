@@ -40,8 +40,8 @@ class _PostCardState extends State<PostCard> {
       final user = await _firestore.getUser(widget.post.userId);
       if (mounted) {
         setState(() {
-        _author = user;
-      });
+          _author = user;
+        });
       }
     } catch (_) {
       // ignore
@@ -60,9 +60,9 @@ class _PostCardState extends State<PostCard> {
     final uid = _auth.currentUser?.uid;
     if (uid == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sign in to like posts')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Sign in to like posts')));
       }
       return;
     }
@@ -81,9 +81,9 @@ class _PostCardState extends State<PostCard> {
           _isLiked = !_isLiked;
           _likesCount += _isLiked ? 1 : -1;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update like: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update like: $e')));
       }
     }
   }
@@ -104,10 +104,12 @@ class _PostCardState extends State<PostCard> {
               CircleAvatar(
                 radius: 18,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                backgroundImage: ((_author != null) && _author!.profilePictureUrl.isNotEmpty)
+                backgroundImage:
+                    ((_author != null) && _author!.profilePictureUrl.isNotEmpty)
                     ? NetworkImage(_author!.profilePictureUrl)
                     : null,
-                child: ((_author != null) && _author!.profilePictureUrl.isNotEmpty)
+                child:
+                    ((_author != null) && _author!.profilePictureUrl.isNotEmpty)
                     ? null
                     : Text(
                         ((_author != null && _author!.username.isNotEmpty)
@@ -132,16 +134,15 @@ class _PostCardState extends State<PostCard> {
                     Text(
                       _timeAgo(widget.post.timestamp),
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                        color: theme.textTheme.bodySmall?.color?.withValues(
+                          alpha: 0.7,
+                        ),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.more_horiz),
-                onPressed: () {},
-              ),
+              IconButton(icon: const Icon(Icons.more_horiz), onPressed: () {}),
             ],
           ),
         ),
@@ -166,11 +167,13 @@ class _PostCardState extends State<PostCard> {
               ),
               IconButton(
                 iconSize: 28,
-                onPressed: widget.onCommentTap ?? () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Comments coming soon')),
-                  );
-                },
+                onPressed:
+                    widget.onCommentTap ??
+                    () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Comments coming soon')),
+                      );
+                    },
                 icon: const Icon(Icons.mode_comment_outlined),
               ),
               IconButton(
@@ -186,7 +189,7 @@ class _PostCardState extends State<PostCard> {
               IconButton(
                 icon: const Icon(Icons.bookmark_border),
                 onPressed: () {},
-              )
+              ),
             ],
           ),
         ),
@@ -232,7 +235,8 @@ class _PostCardState extends State<PostCard> {
     final aspect = widget.post.aspectRatio ?? 1.0;
 
     Widget child;
-    if (type == PostType.gallery && (widget.post.mediaUrls?.isNotEmpty ?? false)) {
+    if (type == PostType.gallery &&
+        (widget.post.mediaUrls?.isNotEmpty ?? false)) {
       child = Stack(
         children: [
           PageView.builder(
@@ -271,14 +275,16 @@ class _PostCardState extends State<PostCard> {
         children: [
           thumb.isNotEmpty
               ? _NetworkImage(url: thumb)
-              : Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+              : Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                ),
           const Center(
             child: CircleAvatar(
               radius: 28,
               backgroundColor: Colors.black54,
               child: Icon(Icons.play_arrow, color: Colors.white, size: 36),
             ),
-          )
+          ),
         ],
       );
     }
@@ -323,9 +329,12 @@ class _NetworkImage extends StatelessWidget {
         return Container(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           alignment: Alignment.center,
-          child: CircularProgressIndicator(value: progress.expectedTotalBytes != null
-              ? progress.cumulativeBytesLoaded / (progress.expectedTotalBytes ?? 1)
-              : null),
+          child: CircularProgressIndicator(
+            value: progress.expectedTotalBytes != null
+                ? progress.cumulativeBytesLoaded /
+                      (progress.expectedTotalBytes ?? 1)
+                : null,
+          ),
         );
       },
       errorBuilder: (context, error, stackTrace) => Container(

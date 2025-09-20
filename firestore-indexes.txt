@@ -1,0 +1,46 @@
+// Firestore Database Indexes for ArtFolio
+// Apply these indexes in Firebase Console > Firestore Database > Indexes
+
+// COMPOSITE INDEXES NEEDED:
+
+// 1. Posts collection - visibility + timestamp (for public feed)
+Collection: posts
+Fields:
+- visibility (Ascending)
+- timestamp (Descending)
+- __name__ (Descending)
+
+// 2. Posts collection - type + timestamp (for filtered posts by type)
+Collection: posts
+Fields:
+- type (Ascending)  
+- timestamp (Descending)
+- __name__ (Descending)
+
+// 3. Posts collection - userId + timestamp (for user's posts)
+Collection: posts
+Fields:
+- userId (Ascending)
+- timestamp (Descending)
+- __name__ (Descending)
+
+// 4. Posts collection - skills + timestamp (for skill-based filtering)
+Collection: posts
+Fields:
+- skills (Arrays)
+- timestamp (Descending)
+- __name__ (Descending)
+
+// INSTRUCTIONS TO APPLY:
+// 1. Go to Firebase Console: https://console.firebase.google.com/
+// 2. Select your project: artfolio-app-4fda7
+// 3. Navigate to Firestore Database > Indexes > Composite
+// 4. Click "Add Index" for each composite index above
+// 5. Or use the direct links from error messages in the console
+
+// DIRECT LINKS FROM ERROR MESSAGES:
+// For visibility + timestamp:
+// https://console.firebase.google.com/v1/r/project/artfolio-app-4fda7/firestore/indexes?create_composite=ClBwcm9qZWN0cy9hcnRmb2xpby1hcHAtNGZkYTcvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL3Bvc3RzL2luZGV4ZXMvXxABGg4KCnZpc2liaWxpdHkQARoNCgl0aW1lc3RhbXAQAhoMCghfX25hbWVfXxAC
+
+// For type + timestamp:
+// https://console.firebase.google.com/v1/r/project/artfolio-app-4fda7/firestore/indexes?create_composite=ClBwcm9qZWN0cy9hcnRmb2xpby1hcHAtNGZkYTcvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL3Bvc3RzL2luZGV4ZXMvXxABGggKBHR5cGUQARoNCgl0aW1lc3RhbXAQAhoMCghfX25hbWVfXhAC

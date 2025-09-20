@@ -90,7 +90,7 @@ ThemeData _baseLight(ColorScheme scheme) {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.deepTeal,
-  side: BorderSide(color: AppColors.deepTeal.withValues(alpha: 0.3)),
+        side: BorderSide(color: AppColors.deepTeal.withValues(alpha: 0.3)),
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
@@ -123,10 +123,7 @@ ThemeData _baseDark(ColorScheme scheme) {
       fontSize: 20,
       color: Colors.white,
     ),
-    bodyMedium: GoogleFonts.quicksand(
-      fontSize: 16,
-      color: Colors.white70,
-    ),
+    bodyMedium: GoogleFonts.quicksand(fontSize: 16, color: Colors.white70),
   );
 
   return ThemeData(
@@ -150,10 +147,7 @@ ThemeData _baseDark(ColorScheme scheme) {
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: Colors.white.withValues(alpha: 0.06),
-          width: 1,
-        ),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.06), width: 1),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -167,7 +161,7 @@ ThemeData _baseDark(ColorScheme scheme) {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: Colors.white,
-  side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
@@ -183,10 +177,7 @@ ThemeData _baseDark(ColorScheme scheme) {
 final ColorScheme _lightScheme = ColorScheme.fromSeed(
   seedColor: AppColors.primary,
   brightness: Brightness.light,
-).copyWith(
-  secondary: AppColors.secondary,
-  surface: AppColors.surface,
-);
+).copyWith(secondary: AppColors.secondary, surface: AppColors.surface);
 
 /// Dark color scheme.
 final ColorScheme _darkScheme = ColorScheme.fromSeed(
