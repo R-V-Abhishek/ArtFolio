@@ -44,6 +44,8 @@ dependencies:
   # google_maps_flutter: ^2.6.1 # Uncomment if maps needed later
   # Material design icons
   cupertino_icons: ^1.0.8
+  shared_preferences: ^2.5.3
+  image_cropper: ^11.0.0
 
 # Remove Google Maps to reduce bloat
 # google_maps_flutter: ^2.6.1  # Commented out - add back if needed

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/post.dart';
 import '../models/user.dart' as model;
 import '../services/firestore_service.dart';
+import 'firestore_image.dart';
 
 class PostCard extends StatefulWidget {
   final Post post;
@@ -230,6 +231,16 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
+  // Selects appropriate image widget: FirestoreImage for non-URL IDs, Image.network for URLs
+  Widget _buildImage(String ref) {
+    final isUrl = ref.startsWith('http://') || ref.startsWith('https://');
+    if (isUrl) {
+      return _NetworkImage(url: ref);
+    }
+    // Treat as Firestore image document ID
+    return FirestoreImage(imageId: ref, fit: BoxFit.cover);
+  }
+
   Widget _buildMedia(BuildContext context, BorderRadius radius) {
     final type = widget.post.type;
     final aspect = widget.post.aspectRatio ?? 1.0;
@@ -244,7 +255,7 @@ class _PostCardState extends State<PostCard> {
             onPageChanged: (i) => setState(() => _currentPage = i),
             itemBuilder: (context, index) {
               final url = widget.post.mediaUrls![index];
-              return _NetworkImage(url: url);
+              return _buildImage(url);
             },
           ),
           // indicator
@@ -261,7 +272,7 @@ class _PostCardState extends State<PostCard> {
     } else if (type == PostType.image || type == PostType.idea) {
       final url = widget.post.primaryMediaUrl;
       child = url.isNotEmpty
-          ? _NetworkImage(url: url)
+          ? _buildImage(url)
           : Container(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               alignment: Alignment.center,
@@ -274,7 +285,7 @@ class _PostCardState extends State<PostCard> {
         fit: StackFit.expand,
         children: [
           thumb.isNotEmpty
-              ? _NetworkImage(url: thumb)
+              ? _buildImage(thumb)
               : Container(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 ),

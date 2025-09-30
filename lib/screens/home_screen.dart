@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// import '../models/art_piece.dart';
-// import '../widgets/art_card.dart';
 import 'feed_screen.dart';
 import 'image_upload_test_screen.dart';
+import 'create_post_screen.dart';
+import 'search_screen.dart';
+import 'profile_screen.dart';
 import '../services/auth_service.dart';
 import '../services/session_state.dart';
 import '../services/firestore_service.dart';
 import '../theme/theme.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +29,16 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('ArtFolio'),
         actions: [
+          // Notifications button requested in top-right
+          IconButton(
+            tooltip: 'Notifications',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Notifications coming soon')),
+              );
+            },
+            icon: const Icon(Icons.notifications_outlined),
+          ),
           IconButton(
             tooltip: 'Toggle theme',
             onPressed: () => themeController.toggle(),
@@ -70,8 +88,8 @@ class HomeScreen extends StatelessWidget {
                   break;
               }
             },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
+            itemBuilder: (context) => const [
+              PopupMenuItem(
                 value: 'test_firestore',
                 child: ListTile(
                   leading: Icon(Icons.cloud),
@@ -79,7 +97,7 @@ class HomeScreen extends StatelessWidget {
                   subtitle: Text('Fetch posts from database'),
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'test_storage',
                 child: ListTile(
                   leading: Icon(Icons.cloud_upload),
@@ -91,7 +109,53 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: const FeedScreen(),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: const [
+          FeedScreen(),
+          SearchScreen(),
+          SizedBox.shrink(), // Create handled via FAB/center action
+          ProfileScreen(),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (i) {
+          if (i == 2) {
+            // Create tab acts as central action: open create post
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const CreatePostScreen(),
+                fullscreenDialog: true,
+              ),
+            );
+            return;
+          }
+          setState(() => _currentIndex = i);
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Feed',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.search_outlined),
+            selectedIcon: Icon(Icons.search),
+            label: 'Search',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.add_circle_outline),
+            selectedIcon: Icon(Icons.add_circle),
+            label: 'Create',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
     );
   }
 }
