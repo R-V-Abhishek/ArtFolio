@@ -5,7 +5,15 @@ import 'dart:io';
 import '../models/post.dart';
 import '../models/user.dart';
 import '../models/role_models.dart';
+import '../models/app_notification.dart';
 import 'storage_service.dart';
+
+// Pagination result for notifications
+class NotificationsPage {
+  final List<AppNotification> items;
+  final DocumentSnapshot? lastDoc;
+  const NotificationsPage(this.items, this.lastDoc);
+}
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -20,6 +28,8 @@ class FirestoreService {
   CollectionReference get _organisationsCollection =>
       _db.collection('organisations');
   CollectionReference get _postsCollection => _db.collection('posts');
+  CollectionReference get _notificationsCollection =>
+      _db.collection('notifications');
 
   // ===== USER MANAGEMENT =====
 
@@ -356,6 +366,126 @@ class FirestoreService {
     }
   }
 
+  // ===== FOLLOW SYSTEM (basic) =====
+
+  /// Check if [viewerUserId] follows [targetUserId]. Currently supports targets with role Artist.
+  Future<bool> isFollowing(String viewerUserId, String targetUserId) async {
+    try {
+      final targetUser = await getUser(targetUserId);
+      if (targetUser == null) return false;
+      if (targetUser.role != UserRole.artist) return false;
+
+      final artistDoc = await _artistsCollection.doc(targetUserId).get();
+      if (!artistDoc.exists) return false;
+      final data = artistDoc.data() as Map<String, dynamic>;
+      final followers = List<String>.from(data['followers'] ?? []);
+      return followers.contains(viewerUserId);
+    } catch (e) {
+      throw Exception('Failed to check following state: $e');
+    }
+  }
+
+  /// Toggle follow between [viewerUserId] and artist [targetUserId]. Returns the new following state (true if now following).
+  Future<bool> toggleFollow({
+    required String viewerUserId,
+    required String targetUserId,
+  }) async {
+    try {
+      final targetUser = await getUser(targetUserId);
+      if (targetUser == null) {
+        throw Exception('Target user not found');
+      }
+      if (targetUser.role != UserRole.artist) {
+        throw Exception('Following is only enabled for artists at the moment');
+      }
+
+      // Fetch viewer role to update their following list appropriately
+      final viewerUser = await getUser(viewerUserId);
+      if (viewerUser == null) {
+        throw Exception('Viewer user not found');
+      }
+
+      final artistRef = _artistsCollection.doc(targetUserId);
+      final artistSnap = await artistRef.get();
+      if (!artistSnap.exists) {
+        throw Exception('Artist profile not found');
+      }
+      final artistData = artistSnap.data() as Map<String, dynamic>;
+      final followers = List<String>.from(artistData['followers'] ?? []);
+      final alreadyFollowing = followers.contains(viewerUserId);
+
+      if (alreadyFollowing) {
+        // Unfollow
+        await artistRef.update({
+          'followers': FieldValue.arrayRemove([viewerUserId]),
+        });
+
+        // Update viewer following list based on role
+        if (viewerUser.role == UserRole.artist) {
+          await _artistsCollection.doc(viewerUserId).update({
+            'following': FieldValue.arrayRemove([targetUserId]),
+          });
+        } else if (viewerUser.role == UserRole.audience) {
+          await _audiencesCollection.doc(viewerUserId).update({
+            'followingArtists': FieldValue.arrayRemove([targetUserId]),
+          });
+        }
+
+        return false;
+      } else {
+        // Follow
+        await artistRef.update({
+          'followers': FieldValue.arrayUnion([viewerUserId]),
+        });
+
+        if (viewerUser.role == UserRole.artist) {
+          await _artistsCollection.doc(viewerUserId).update({
+            'following': FieldValue.arrayUnion([targetUserId]),
+          });
+        } else if (viewerUser.role == UserRole.audience) {
+          await _audiencesCollection.doc(viewerUserId).update({
+            'followingArtists': FieldValue.arrayUnion([targetUserId]),
+          });
+        }
+
+        return true;
+      }
+    } catch (e) {
+      throw Exception('Failed to toggle follow: $e');
+    }
+  }
+
+  /// Get follower/following counts for a user. For artists, uses artists doc; for audience, uses audiences doc.
+  Future<Map<String, int>> getFollowCounts(String userId) async {
+    try {
+      final user = await getUser(userId);
+      if (user == null) return {'followers': 0, 'following': 0};
+
+      switch (user.role) {
+        case UserRole.artist:
+          final artistDoc = await _artistsCollection.doc(userId).get();
+          if (!artistDoc.exists) return {'followers': 0, 'following': 0};
+          final data = artistDoc.data() as Map<String, dynamic>;
+          final followers = List<String>.from(data['followers'] ?? []);
+          final following = List<String>.from(data['following'] ?? []);
+          return {'followers': followers.length, 'following': following.length};
+        case UserRole.audience:
+          final audDoc = await _audiencesCollection.doc(userId).get();
+          if (!audDoc.exists) return {'followers': 0, 'following': 0};
+          final data = audDoc.data() as Map<String, dynamic>;
+          final followingArtists = List<String>.from(
+            data['followingArtists'] ?? [],
+          );
+          return {'followers': 0, 'following': followingArtists.length};
+        case UserRole.sponsor:
+        case UserRole.organisation:
+          return {'followers': 0, 'following': 0};
+      }
+    } catch (e) {
+      throw Exception('Failed to get follow counts: $e');
+    }
+  }
+
   // Get all posts
   Future<List<Post>> getAllPosts() async {
     try {
@@ -513,6 +643,121 @@ class FirestoreService {
 
   // ===== END ENHANCED POST OPERATIONS =====
 
+  // ===== NOTIFICATIONS =====
+
+  /// Stream unread count badge for current user
+  Stream<int> unreadNotificationsCountStream(String userId) {
+    return _notificationsCollection
+        .where('userId', isEqualTo: userId)
+        .where('read', isEqualTo: false)
+        .snapshots()
+        .map((snap) => snap.size);
+  }
+
+  /// Fetch notifications page for a user ordered by createdAt desc
+  Future<NotificationsPage> getNotificationsPage({
+    required String userId,
+    int limit = 20,
+    DocumentSnapshot? startAfter,
+  }) async {
+    try {
+      Query q = _notificationsCollection
+          .where('userId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .limit(limit);
+      if (startAfter != null) {
+        q = q.startAfterDocument(startAfter);
+      }
+      final snap = await q.get();
+      final items = snap.docs.map(AppNotification.fromSnapshot).toList();
+      final last = snap.docs.isNotEmpty ? snap.docs.last : null;
+      return NotificationsPage(items, last);
+    } catch (e) {
+      throw Exception('Failed to fetch notifications: $e');
+    }
+  }
+
+  // Backwards-compatible simple fetch (first page only)
+  Future<List<AppNotification>> getNotifications({
+    required String userId,
+    int limit = 20,
+  }) async {
+    final page = await getNotificationsPage(userId: userId, limit: limit);
+    return page.items;
+  }
+
+  Future<void> markNotificationRead(String notificationId) async {
+    try {
+      await _notificationsCollection.doc(notificationId).update({'read': true});
+    } catch (e) {
+      throw Exception('Failed to mark notification read: $e');
+    }
+  }
+
+  Future<void> markAllNotificationsRead(String userId) async {
+    try {
+      final batch = _db.batch();
+      final snap = await _notificationsCollection
+          .where('userId', isEqualTo: userId)
+          .where('read', isEqualTo: false)
+          .get();
+      for (final d in snap.docs) {
+        batch.update(d.reference, {'read': true});
+      }
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to mark all notifications read: $e');
+    }
+  }
+
+  /// Seed a few mock notifications for quick UI testing
+  Future<void> seedMockNotifications(String userId) async {
+    final now = DateTime.now();
+    final docs = [
+      AppNotification(
+        id: '',
+        userId: userId,
+        type: NotificationType.like,
+        title: 'Someone liked your post',
+        createdAt: now.subtract(const Duration(minutes: 5)),
+      ),
+      AppNotification(
+        id: '',
+        userId: userId,
+        type: NotificationType.comment,
+        title: 'New comment on your project',
+        createdAt: now.subtract(const Duration(hours: 1)),
+      ),
+      AppNotification(
+        id: '',
+        userId: userId,
+        type: NotificationType.follow,
+        title: 'You have a new follower',
+        createdAt: now.subtract(const Duration(days: 1)),
+      ),
+      AppNotification(
+        id: '',
+        userId: userId,
+        type: NotificationType.collab,
+        title: 'Collaboration request received',
+        createdAt: now.subtract(const Duration(days: 2)),
+      ),
+      AppNotification(
+        id: '',
+        userId: userId,
+        type: NotificationType.sponsor,
+        title: 'Sponsor viewed your profile',
+        createdAt: now.subtract(const Duration(days: 3)),
+      ),
+    ];
+    final batch = _db.batch();
+    for (final n in docs) {
+      final ref = _notificationsCollection.doc();
+      batch.set(ref, n.toMap());
+    }
+    await batch.commit();
+  }
+
   // Seed mock data
   Future<void> seedMockData() async {
     try {
@@ -542,7 +787,7 @@ class FirestoreService {
       username: 'alice_painter',
       email: 'alice@example.com',
       fullName: 'Alice Painter',
-      profilePictureUrl: 'https://placekitten.com/200/200',
+      profilePictureUrl: 'https://picsum.photos/seed/artist1/200/200',
       bio: 'Exploring textures and colors on canvas.',
       role: UserRole.artist,
       createdAt: DateTime.parse('2025-09-18T12:00:00Z'),
@@ -567,7 +812,7 @@ class FirestoreService {
       username: 'bob_viewer',
       email: 'bob@example.com',
       fullName: 'Bob Viewer',
-      profilePictureUrl: 'https://placekitten.com/201/201',
+      profilePictureUrl: 'https://picsum.photos/seed/audience1/201/201',
       bio: 'Loves attending creative festivals and exhibitions.',
       role: UserRole.audience,
       createdAt: DateTime.parse('2025-09-18T12:10:00Z'),
@@ -590,7 +835,7 @@ class FirestoreService {
       username: 'clara_sponsor',
       email: 'clara@example.com',
       fullName: 'Clara Sponsor',
-      profilePictureUrl: 'https://placekitten.com/202/202',
+      profilePictureUrl: 'https://picsum.photos/seed/sponsor1/202/202',
       bio: 'Supporting local talent and creative initiatives.',
       role: UserRole.sponsor,
       createdAt: DateTime.parse('2025-09-18T12:20:00Z'),
@@ -619,7 +864,7 @@ class FirestoreService {
         id: '',
         userId: 'artist1',
         type: PostType.image,
-        mediaUrl: 'https://placekitten.com/400/600',
+        mediaUrl: 'https://picsum.photos/seed/post1/400/600',
         caption:
             'Latest oil painting - exploring textures and light. Really excited about how this landscape turned out! 🎨✨',
         description:
@@ -659,7 +904,7 @@ class FirestoreService {
         type: PostType.reel,
         mediaUrl:
             'https://sample-videos.com/zip/10/mp4/480p/mp4-file_sample.mp4',
-        thumbnailUrl: 'https://placekitten.com/600/400',
+        thumbnailUrl: 'https://picsum.photos/seed/post2thumb/600/400',
         caption:
             'Quick sketch from life drawing session today. Love capturing the essence of a moment with just a few lines. ✏️',
         description:
@@ -696,9 +941,9 @@ class FirestoreService {
         userId: 'artist1',
         type: PostType.gallery,
         mediaUrls: [
-          'https://placekitten.com/500/500',
-          'https://placekitten.com/500/501',
-          'https://placekitten.com/500/502',
+          'https://picsum.photos/seed/post3a/500/500',
+          'https://picsum.photos/seed/post3b/500/501',
+          'https://picsum.photos/seed/post3c/500/502',
         ],
         caption:
             'Portrait study series in oils. Been practicing capturing personality and emotion through brushwork. 🎭',
@@ -769,7 +1014,7 @@ class FirestoreService {
         type: PostType.video,
         mediaUrl:
             'https://sample-videos.com/zip/10/mp4/720p/mp4-file_sample.mp4',
-        thumbnailUrl: 'https://placekitten.com/640/360',
+        thumbnailUrl: 'https://picsum.photos/seed/post5thumb/640/360',
         caption:
             '🎨 Oil Painting Tutorial: Creating depth with layering techniques',
         description:

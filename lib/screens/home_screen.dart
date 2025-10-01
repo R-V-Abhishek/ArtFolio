@@ -9,6 +9,7 @@ import '../services/auth_service.dart';
 import '../services/session_state.dart';
 import '../services/firestore_service.dart';
 import '../theme/theme.dart';
+import 'notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,14 +31,62 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('ArtFolio'),
         actions: [
           // Notifications button requested in top-right
-          IconButton(
-            tooltip: 'Notifications',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notifications coming soon')),
+          Builder(
+            builder: (context) {
+              final uid = FirebaseAuth.instance.currentUser?.uid;
+              if (uid == null) {
+                return IconButton(
+                  tooltip: 'Notifications',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationsScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.notifications_outlined),
+                );
+              }
+              final service = FirestoreService();
+              return StreamBuilder<int>(
+                stream: service.unreadNotificationsCountStream(uid),
+                builder: (context, snap) {
+                  final count = snap.data ?? 0;
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      IconButton(
+                        tooltip: 'Notifications',
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const NotificationsScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.notifications_outlined),
+                      ),
+                      if (count > 0)
+                        Positioned(
+                          right: 10,
+                          top: 10,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.error,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 10,
+                              minHeight: 10,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               );
             },
-            icon: const Icon(Icons.notifications_outlined),
           ),
           IconButton(
             tooltip: 'Toggle theme',

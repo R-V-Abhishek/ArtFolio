@@ -57,7 +57,7 @@ FloatingActionButton(
 // OR implement bottom navigation with create post tab
 ```
 
-### 3️⃣ **MEDIUM PRIORITY - Enhanced Image Gallery**
+### 3️⃣ **MEDIUM PRIORITY - Enhanced Image Gallery**--**✅DONE**
 **File to create:** `lib/screens/image_gallery_screen.dart`
 
 **Features:**
