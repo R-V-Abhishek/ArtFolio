@@ -450,6 +450,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         navigator.maybePop();
       },
       child: Scaffold(
+        // Ensure content shifts for the keyboard on small screens
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(
           title: const Text('Create Post'),
           actions: [
@@ -467,17 +469,37 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               builder: (context, constraints) {
                 final wide = constraints.maxWidth >= 900;
                 if (wide) {
+                  // In wide layouts, make both panes independently scrollable
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: _buildMediaPane()),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _buildMediaPane(),
+                        ),
+                      ),
                       const VerticalDivider(width: 1),
-                      Expanded(child: _buildFormPane()),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.only(
+                            bottom:
+                                MediaQuery.of(context).viewInsets.bottom + 16,
+                          ),
+                          child: _buildFormPane(),
+                        ),
+                      ),
                     ],
                   );
                 }
+                // On narrow layouts, make the whole screen scrollable and keyboard-safe
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    16 + MediaQuery.of(context).viewInsets.bottom,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

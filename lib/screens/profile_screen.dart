@@ -252,30 +252,34 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ),
       ],
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _PostsTab(
-            posts: _posts,
-            gridView: _gridView,
-            onToggleView: () => setState(() => _gridView = !_gridView),
-          ),
-          const _PlaceholderTab(
-            icon: Icons.assignment_outlined,
-            title: 'Projects & Proposals',
-            subtitle: 'Coming soon',
-          ),
-          const _PlaceholderTab(
-            icon: Icons.group_outlined,
-            title: 'Collaborations & Orgs',
-            subtitle: 'Coming soon',
-          ),
-          const _PlaceholderTab(
-            icon: Icons.favorite_border,
-            title: 'Sponsors',
-            subtitle: 'Coming soon',
-          ),
-        ],
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _PostsTab(
+              posts: _posts,
+              gridView: _gridView,
+              onToggleView: () => setState(() => _gridView = !_gridView),
+            ),
+            const _PlaceholderTab(
+              icon: Icons.assignment_outlined,
+              title: 'Projects & Proposals',
+              subtitle: 'Coming soon',
+            ),
+            const _PlaceholderTab(
+              icon: Icons.group_outlined,
+              title: 'Collaborations & Orgs',
+              subtitle: 'Coming soon',
+            ),
+            const _PlaceholderTab(
+              icon: Icons.favorite_border,
+              title: 'Sponsors',
+              subtitle: 'Coming soon',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -502,27 +506,34 @@ class _Grid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spacing = 2.0;
-    return GridView.builder(
-      padding: EdgeInsets.zero,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: spacing,
-        mainAxisSpacing: spacing,
-      ),
-      itemCount: posts.length,
-      itemBuilder: (context, index) {
-        final p = posts[index];
-        final ref = p.thumbnailUrl ?? p.primaryMediaUrl;
-        if (ref.isEmpty) {
-          return Container(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          );
-        }
-        final isUrl = ref.startsWith('http://') || ref.startsWith('https://');
-        return isUrl
-            ? Image.network(ref, fit: BoxFit.cover)
-            : FirestoreImage(imageId: ref, fit: BoxFit.cover);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Compute columns based on available width (min tile ~120px)
+        final crossAxisCount = (constraints.maxWidth / 140).floor().clamp(2, 6);
+        final spacing = 2.0;
+        return GridView.builder(
+          padding: EdgeInsets.zero,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+          ),
+          itemCount: posts.length,
+          itemBuilder: (context, index) {
+            final p = posts[index];
+            final ref = p.thumbnailUrl ?? p.primaryMediaUrl;
+            if (ref.isEmpty) {
+              return Container(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              );
+            }
+            final isUrl =
+                ref.startsWith('http://') || ref.startsWith('https://');
+            return isUrl
+                ? Image.network(ref, fit: BoxFit.cover)
+                : FirestoreImage(imageId: ref, fit: BoxFit.cover);
+          },
+        );
       },
     );
   }

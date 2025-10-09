@@ -122,73 +122,80 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadInitial,
-              child: ListView.separated(
-                controller: _controller,
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: _items.length + (_loadingMore ? 1 : 0),
-                separatorBuilder: (_, i) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  if (index >= _items.length) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-                  final n = _items[index];
-                  return ListTile(
-                    leading: Stack(
-                      alignment: Alignment.topRight,
-                      children: [
-                        CircleAvatar(
-                          backgroundColor:
-                              theme.colorScheme.surfaceContainerHighest,
-                          child: Icon(
-                            _iconForType(n.type),
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                        if (!n.read)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.error,
-                                shape: BoxShape.circle,
+      body: SafeArea(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadInitial,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewPadding.bottom,
+                  ),
+                  child: ListView.separated(
+                    controller: _controller,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: _items.length + (_loadingMore ? 1 : 0),
+                    separatorBuilder: (_, i) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      if (index >= _items.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final n = _items[index];
+                      return ListTile(
+                        leading: Stack(
+                          alignment: Alignment.topRight,
+                          children: [
+                            CircleAvatar(
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerHighest,
+                              child: Icon(
+                                _iconForType(n.type),
+                                color: theme.colorScheme.primary,
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                    title: Text(n.title),
-                    subtitle: Text(_timeAgo(n.createdAt)),
-                    onTap: () async {
-                      await _firestore.markNotificationRead(n.id);
-                      if (!mounted) return;
-                      setState(
-                        () => _items[index] = AppNotification(
-                          id: n.id,
-                          userId: n.userId,
-                          type: n.type,
-                          title: n.title,
-                          actorId: n.actorId,
-                          postId: n.postId,
-                          data: n.data,
-                          createdAt: n.createdAt,
-                          read: true,
+                            if (!n.read)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.error,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
+                        title: Text(n.title),
+                        subtitle: Text(_timeAgo(n.createdAt)),
+                        onTap: () async {
+                          await _firestore.markNotificationRead(n.id);
+                          if (!mounted) return;
+                          setState(
+                            () => _items[index] = AppNotification(
+                              id: n.id,
+                              userId: n.userId,
+                              type: n.type,
+                              title: n.title,
+                              actorId: n.actorId,
+                              postId: n.postId,
+                              data: n.data,
+                              createdAt: n.createdAt,
+                              read: true,
+                            ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
+      ),
     );
   }
 

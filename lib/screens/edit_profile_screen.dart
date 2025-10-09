@@ -58,6 +58,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('Edit Profile'),
         actions: [
@@ -74,40 +75,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextFormField(
-                  controller: _nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Full name',
-                    border: OutlineInputBorder(),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              16 + MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    controller: _nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Full name',
+                      border: OutlineInputBorder(),
+                    ),
+                    textInputAction: TextInputAction.next,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Please enter your name'
+                        : null,
                   ),
-                  textInputAction: TextInputAction.next,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Please enter your name'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _bioCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Bio',
-                    hintText: 'Tell people about yourself',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _bioCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Bio',
+                      hintText: 'Tell people about yourself',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 4,
                   ),
-                  maxLines: 4,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'More fields (profile picture, links, skills) can be added later.',
-                  style: theme.textTheme.bodySmall,
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'More fields (profile picture, links, skills) can be added later.',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -151,63 +151,69 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).viewPadding.bottom;
     if (_loading && _posts.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return SafeArea(child: const Center(child: CircularProgressIndicator()));
     }
 
     if (_posts.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: _refresh,
-        child: ListView(
-          controller: _scrollController,
-          children: [
-            const SizedBox(height: 80),
-            Icon(
-              Icons.palette,
-              size: 64,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No posts yet',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Pull down to refresh or try again later',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 200),
-          ],
+      return SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          child: ListView(
+            controller: _scrollController,
+            padding: EdgeInsets.only(bottom: bottomPad + 16),
+            children: [
+              const SizedBox(height: 80),
+              Icon(
+                Icons.palette,
+                size: 64,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No posts yet',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Pull down to refresh or try again later',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 200),
+            ],
+          ),
         ),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _refresh,
-      child: ListView.separated(
-        controller: _scrollController,
-        padding: const EdgeInsets.only(bottom: 80),
-        itemCount: _posts.length + (_hasMore ? 1 : 0),
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          if (index == _posts.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: CircularProgressIndicator()),
+    return SafeArea(
+      child: RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView.separated(
+          controller: _scrollController,
+          padding: EdgeInsets.only(bottom: bottomPad + 80),
+          itemCount: _posts.length + (_hasMore ? 1 : 0),
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            if (index == _posts.length) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final post = _posts[index];
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [PostCard(post: post)],
+              ),
             );
-          }
-          final post = _posts[index];
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [PostCard(post: post)],
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }

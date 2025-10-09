@@ -10,7 +10,29 @@ import 'services/session_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Attach to auto-initialized default app when present (Android/iOS via Google Services),
+  // otherwise initialize with our options. Add a short wait to avoid race conditions
+  // where native auto-init completes between the check and explicit initialization.
+  if (Firebase.apps.isEmpty) {
+    // Wait up to ~1s for native auto-init (10 x 100ms)
+    for (var i = 0; i < 10 && Firebase.apps.isEmpty; i++) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+  }
+
+  if (Firebase.apps.isEmpty) {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } on FirebaseException catch (e) {
+      // Ignore duplicate-app if native auto-init completed between check and call
+      if (e.code != 'duplicate-app') rethrow;
+    } catch (_) {}
+  } else {
+    // Ensure the default app is accessible; no-op if already set up
+    Firebase.app();
+  }
   runApp(const MyApp());
 }
 
