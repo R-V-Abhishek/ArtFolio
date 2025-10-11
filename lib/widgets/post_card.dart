@@ -5,6 +5,8 @@ import '../models/post.dart';
 import '../models/user.dart' as model;
 import '../services/firestore_service.dart';
 import 'firestore_image.dart';
+import '../theme/scale.dart';
+import 'comments_sheet.dart';
 
 class PostCard extends StatefulWidget {
   final Post post;
@@ -92,6 +94,7 @@ class _PostCardState extends State<PostCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final s = Scale(context);
     final radius = BorderRadius.circular(16);
 
     return Column(
@@ -99,28 +102,76 @@ class _PostCardState extends State<PostCard> {
       children: [
         // Header
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: EdgeInsets.symmetric(
+            horizontal: s.size(12),
+            vertical: s.size(8),
+          ),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                backgroundImage:
-                    ((_author != null) && _author!.profilePictureUrl.isNotEmpty)
-                    ? NetworkImage(_author!.profilePictureUrl)
-                    : null,
-                child:
-                    ((_author != null) && _author!.profilePictureUrl.isNotEmpty)
-                    ? null
-                    : Text(
-                        ((_author != null && _author!.username.isNotEmpty)
-                                ? _author!.username[0]
-                                : 'A')
-                            .toUpperCase(),
-                        style: theme.textTheme.labelLarge,
-                      ),
+              SizedBox(
+                width: s.size(36),
+                height: s.size(36),
+                child: ClipOval(
+                  child:
+                      ((_author != null) &&
+                          _author!.profilePictureUrl.isNotEmpty)
+                      ? (_author!.profilePictureUrl.startsWith('http')
+                            ? Image.network(
+                                _author!.profilePictureUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      color: theme
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        ((_author != null &&
+                                                    _author!
+                                                        .username
+                                                        .isNotEmpty)
+                                                ? _author!.username[0]
+                                                : 'A')
+                                            .toUpperCase(),
+                                        style: theme.textTheme.labelLarge,
+                                      ),
+                                    ),
+                              )
+                            : Image.asset(
+                                _author!.profilePictureUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      color: theme
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        ((_author != null &&
+                                                    _author!
+                                                        .username
+                                                        .isNotEmpty)
+                                                ? _author!.username[0]
+                                                : 'A')
+                                            .toUpperCase(),
+                                        style: theme.textTheme.labelLarge,
+                                      ),
+                                    ),
+                              ))
+                      : Container(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          alignment: Alignment.center,
+                          child: Text(
+                            ((_author != null && _author!.username.isNotEmpty)
+                                    ? _author!.username[0]
+                                    : 'A')
+                                .toUpperCase(),
+                            style: theme.textTheme.labelLarge,
+                          ),
+                        ),
+                ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: s.size(10)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,6 +180,9 @@ class _PostCardState extends State<PostCard> {
                       _author?.username ?? 'Unknown',
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
+                        fontSize: s.font(
+                          theme.textTheme.titleSmall?.fontSize ?? 14,
+                        ),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -138,12 +192,19 @@ class _PostCardState extends State<PostCard> {
                         color: theme.textTheme.bodySmall?.color?.withValues(
                           alpha: 0.7,
                         ),
+                        fontSize: s.font(
+                          theme.textTheme.bodySmall?.fontSize ?? 12,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              IconButton(icon: const Icon(Icons.more_horiz), onPressed: () {}),
+              IconButton(
+                iconSize: s.size(24),
+                icon: const Icon(Icons.more_horiz),
+                onPressed: () {},
+              ),
             ],
           ),
         ),
@@ -153,11 +214,11 @@ class _PostCardState extends State<PostCard> {
 
         // Actions
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: EdgeInsets.symmetric(horizontal: s.size(8)),
           child: Row(
             children: [
               IconButton(
-                iconSize: 28,
+                iconSize: s.size(28),
                 onPressed: _toggleLike,
                 icon: Icon(
                   _isLiked ? Icons.favorite : Icons.favorite_border,
@@ -167,18 +228,25 @@ class _PostCardState extends State<PostCard> {
                 ),
               ),
               IconButton(
-                iconSize: 28,
+                iconSize: s.size(28),
                 onPressed:
                     widget.onCommentTap ??
                     () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Comments coming soon')),
+                      showModalBottomSheet(
+                        context: context,
+                        useSafeArea: true,
+                        isScrollControlled: true,
+                        showDragHandle: true,
+                        builder: (_) => CommentsSheet(
+                          postId: widget.post.id,
+                          allowComments: widget.post.allowComments,
+                        ),
                       );
                     },
                 icon: const Icon(Icons.mode_comment_outlined),
               ),
               IconButton(
-                iconSize: 28,
+                iconSize: s.size(28),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Share coming soon')),
@@ -188,6 +256,7 @@ class _PostCardState extends State<PostCard> {
               ),
               const Spacer(),
               IconButton(
+                iconSize: s.size(24),
                 icon: const Icon(Icons.bookmark_border),
                 onPressed: () {},
               ),
@@ -197,11 +266,12 @@ class _PostCardState extends State<PostCard> {
 
         // Counts
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: s.size(16)),
           child: Text(
             '$_likesCount likes  •  ${widget.post.commentsCount} comments',
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
+              fontSize: s.font(theme.textTheme.bodyMedium?.fontSize ?? 14),
             ),
           ),
         ),
@@ -209,15 +279,25 @@ class _PostCardState extends State<PostCard> {
         // Caption
         if (widget.post.caption.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+            padding: EdgeInsets.fromLTRB(
+              s.size(16),
+              s.size(6),
+              s.size(16),
+              s.size(12),
+            ),
             child: RichText(
               text: TextSpan(
-                style: theme.textTheme.bodyMedium,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: s.font(theme.textTheme.bodyMedium?.fontSize ?? 14),
+                ),
                 children: [
                   TextSpan(
                     text: '${_author?.username ?? 'artist'} ',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w700,
+                      fontSize: s.font(
+                        theme.textTheme.bodyMedium?.fontSize ?? 14,
+                      ),
                     ),
                   ),
                   TextSpan(text: widget.post.caption),

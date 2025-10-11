@@ -10,6 +10,7 @@ import '../services/session_state.dart';
 import '../services/firestore_service.dart';
 import '../theme/theme.dart';
 import 'notifications_screen.dart';
+import '../theme/scale.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = Scale(context);
     final user = FirebaseAuth.instance.currentUser;
     final isGuest = SessionState.instance.guestMode.value || user == null;
 
@@ -68,17 +70,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       if (count > 0)
                         Positioned(
-                          right: 10,
-                          top: 10,
+                          right: s.size(10),
+                          top: s.size(10),
                           child: Container(
-                            padding: const EdgeInsets.all(4),
+                            padding: EdgeInsets.all(s.size(4)),
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.error,
                               shape: BoxShape.circle,
                             ),
-                            constraints: const BoxConstraints(
-                              minWidth: 10,
-                              minHeight: 10,
+                            constraints: BoxConstraints(
+                              minWidth: s.size(10),
+                              minHeight: s.size(10),
                             ),
                           ),
                         ),
@@ -169,15 +171,31 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (i) {
+        onDestinationSelected: (i) async {
           if (i == 2) {
             // Create tab acts as central action: open create post
-            Navigator.of(context).push(
+            final messenger = ScaffoldMessenger.of(context);
+            final navigator = Navigator.of(context);
+            final posted = await navigator.push<bool>(
               MaterialPageRoute(
                 builder: (_) => const CreatePostScreen(),
                 fullscreenDialog: true,
               ),
             );
+            if (!mounted) return;
+            if (posted == true) {
+              // switch to Profile tab and show toast
+              setState(() => _currentIndex = 3);
+              messenger.showSnackBar(
+                SnackBar(
+                  content: const Text('Post published'),
+                  action: SnackBarAction(
+                    label: 'View Profile',
+                    onPressed: () => setState(() => _currentIndex = 3),
+                  ),
+                ),
+              );
+            }
             return;
           }
           setState(() => _currentIndex = i);

@@ -6,6 +6,7 @@ import '../services/firestore_service.dart';
 import '../services/session_state.dart';
 import '../models/user.dart' as app_models;
 import '../theme/theme.dart';
+import '../theme/scale.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -161,6 +162,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final s = Scale(context);
     return Scaffold(
       // Ensure the Scaffold resizes when the keyboard appears
       resizeToAvoidBottomInset: true,
@@ -169,15 +171,15 @@ class _AuthScreenState extends State<AuthScreen> {
           children: [
             SvgPicture.asset(
               'assets/icons/logo.svg',
-              height: 28,
+              height: s.size(28),
               semanticsLabel: 'ArtFolio',
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: s.size(10)),
             Text(
               'ArtFolio',
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                 // More artistic weight and size for brand title
-                fontSize: 30,
+                fontSize: s.font(30),
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -204,10 +206,10 @@ class _AuthScreenState extends State<AuthScreen> {
               constraints: const BoxConstraints(maxWidth: 420),
               child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(
-                  20,
-                  20,
-                  20,
-                  20 + MediaQuery.of(context).viewInsets.bottom,
+                  s.size(20),
+                  s.size(20),
+                  s.size(20),
+                  s.size(20) + MediaQuery.of(context).viewInsets.bottom,
                 ),
                 child: Card(
                   elevation: 2,
@@ -215,9 +217,9 @@ class _AuthScreenState extends State<AuthScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 24,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: s.size(20),
+                      vertical: s.size(24),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -230,10 +232,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                 ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: s.size(16)),
                         if (_error != null)
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: EdgeInsets.all(s.size(12)),
                             decoration: BoxDecoration(
                               color: scheme.errorContainer,
                               borderRadius: BorderRadius.circular(8),
@@ -243,7 +245,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               style: TextStyle(color: scheme.onErrorContainer),
                             ),
                           ),
-                        if (_error != null) const SizedBox(height: 12),
+                        if (_error != null) SizedBox(height: s.size(12)),
                         Form(
                           key: _formKey,
                           child: Column(
@@ -267,7 +269,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   return null;
                                 },
                               ),
-                              const SizedBox(height: 16),
+                              SizedBox(height: s.size(16)),
                               if (!_isLogin) ...[
                                 TextFormField(
                                   controller: _usernameCtrl,
@@ -285,7 +287,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: s.size(16)),
                                 TextFormField(
                                   controller: _fullNameCtrl,
                                   decoration: const InputDecoration(
@@ -299,7 +301,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: s.size(16)),
                                 DropdownButtonFormField<app_models.UserRole>(
                                   initialValue: _selectedRole,
                                   decoration: const InputDecoration(
@@ -323,7 +325,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                     }
                                   },
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: s.size(16)),
                               ],
                               TextFormField(
                                 controller: _passwordCtrl,
@@ -361,7 +363,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   return null;
                                 },
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: s.size(8)),
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
@@ -369,14 +371,14 @@ class _AuthScreenState extends State<AuthScreen> {
                                   child: const Text('Forgot password?'),
                                 ),
                               ),
-                              const SizedBox(height: 24),
+                              SizedBox(height: s.size(24)),
                               SizedBox(
                                 width: double.infinity,
                                 child: FilledButton(
                                   onPressed: _loading ? null : _submit,
                                   style: FilledButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: s.size(16),
                                     ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -385,7 +387,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   child: Text(_isLogin ? 'Login' : 'Sign Up'),
                                 ),
                               ),
-                              const SizedBox(height: 12),
+                              SizedBox(height: s.size(12)),
                               TextButton(
                                 onPressed: _loading
                                     ? null
@@ -400,33 +402,37 @@ class _AuthScreenState extends State<AuthScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: s.size(20)),
                         Row(
                           children: <Widget>[
                             Expanded(
                               child: Divider(color: scheme.outlineVariant),
                             ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Text('or'),
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: s.size(8),
+                              ),
+                              child: const Text('or'),
                             ),
                             Expanded(
                               child: Divider(color: scheme.outlineVariant),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: s.size(12)),
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             icon: SvgPicture.asset(
                               'assets/icons/google_g_multicolor.svg',
-                              height: 20,
+                              height: s.size(20),
                               semanticsLabel: 'Google',
                             ),
                             label: const Text('Continue with Google'),
                             style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: EdgeInsets.symmetric(
+                                vertical: s.size(14),
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -434,7 +440,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             onPressed: _loading ? null : _google,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: s.size(12)),
                         TextButton.icon(
                           onPressed: _loading
                               ? null
@@ -445,7 +451,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           label: const Text('Skip for now (Guest)'),
                         ),
                         if (_loading) ...[
-                          const SizedBox(height: 16),
+                          SizedBox(height: s.size(16)),
                           const Center(child: CircularProgressIndicator()),
                         ],
                       ],

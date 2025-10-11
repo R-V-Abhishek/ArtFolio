@@ -13,6 +13,7 @@ import '../models/post.dart';
 import '../services/firestore_image_service.dart';
 import '../theme/theme.dart';
 import 'image_gallery_screen.dart';
+import '../services/session_state.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -416,6 +417,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           _progress = 1.0;
           _uploadStatus = 'Done';
         });
+        // Notify global listeners (e.g., ProfileScreen) and close
+        SessionState.instance.notifyProfileShouldRefresh();
         Navigator.of(context).pop(true);
       }
     } catch (e) {

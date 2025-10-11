@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'theme/theme.dart';
+import 'theme/responsive.dart'; // ✅ Add this import
 import 'services/auth_service.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/session_state.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   // Attach to auto-initialized default app when present (Android/iOS via Google Services),
   // otherwise initialize with our options. Add a short wait to avoid race conditions
   // where native auto-init completes between the check and explicit initialization.
@@ -30,9 +35,20 @@ void main() async {
       if (e.code != 'duplicate-app') rethrow;
     } catch (_) {}
   } else {
-    // Ensure the default app is accessible; no-op if already set up
     Firebase.app();
   }
+
+  // Ensure Firebase App Check is activated to prevent placeholder token warnings
+  try {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: kDebugMode
+          ? AndroidProvider.debug
+          : AndroidProvider.playIntegrity,
+    );
+  } catch (_) {
+    // In older emulators or missing Play Services, activation may fail; continue gracefully
+  }
+
   runApp(const MyApp());
 }
 
@@ -45,28 +61,40 @@ class MyApp extends StatelessWidget {
       valueListenable: themeController,
       builder: (context, mode, _) => ValueListenableBuilder<bool>(
         valueListenable: SessionState.instance.guestMode,
-        builder: (context, isGuest, _) => MaterialApp(
-          title: 'ArtFolio',
-          theme: lightTheme,
-          darkTheme: darkTheme,
-          themeMode: mode,
-          home: SplashScreen(
-            next: isGuest
-                ? const HomeScreen()
-                : StreamBuilder(
-                    stream: AuthService.instance.authStateChanges(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Scaffold(
-                          body: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                      if (snapshot.hasData) {
-                        return const HomeScreen();
-                      }
-                      return const AuthScreen();
-                    },
-                  ),
+        builder: (context, isGuest, _) => ScreenUtilInit(
+          designSize: const Size(375, 812),
+          minTextAdapt: true,
+          builder: (context, child) => MaterialApp(
+            title: 'ArtFolio',
+            debugShowCheckedModeBanner: false,
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            themeMode: mode,
+
+            /// ✅ Global responsive layout wrapper
+            builder: (context, innerChild) => ResponsiveScaffold(
+              child: innerChild ?? const SizedBox.shrink(),
+            ),
+
+            home: SplashScreen(
+              next: isGuest
+                  ? const HomeScreen()
+                  : StreamBuilder(
+                      stream: AuthService.instance.authStateChanges(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Scaffold(
+                            body: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        if (snapshot.hasData) {
+                          return const HomeScreen();
+                        }
+                        return const AuthScreen();
+                      },
+                    ),
+            ),
           ),
         ),
       ),

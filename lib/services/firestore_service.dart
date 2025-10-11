@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:io';
 import '../models/post.dart';
 import '../models/user.dart';
+import '../models/comment.dart';
 import '../models/role_models.dart';
 import '../models/app_notification.dart';
 import 'storage_service.dart';
@@ -30,6 +31,8 @@ class FirestoreService {
   CollectionReference get _postsCollection => _db.collection('posts');
   CollectionReference get _notificationsCollection =>
       _db.collection('notifications');
+  CollectionReference _commentsCollection(String postId) =>
+      _postsCollection.doc(postId).collection('comments');
 
   // ===== USER MANAGEMENT =====
 
@@ -355,15 +358,70 @@ class FirestoreService {
   // Get posts by user ID
   Future<List<Post>> getUserPosts(String userId) async {
     try {
+      // Use a single-field filter and sort client-side to avoid requiring a composite index
       final querySnapshot = await _postsCollection
           .where('userId', isEqualTo: userId)
-          .orderBy('timestamp', descending: true)
           .get();
 
-      return querySnapshot.docs.map((doc) => Post.fromSnapshot(doc)).toList();
+      final items = querySnapshot.docs
+          .map((doc) => Post.fromSnapshot(doc))
+          .toList();
+      items.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return items;
     } catch (e) {
       throw Exception('Failed to get user posts: $e');
     }
+  }
+
+  // ===== COMMENTS =====
+
+  Stream<List<Comment>> streamComments(String postId, {int limit = 100}) {
+    return _commentsCollection(postId)
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map((d) => Comment.fromSnapshot(d, postId)).toList(),
+        );
+  }
+
+  Future<void> addComment({
+    required String postId,
+    required String userId,
+    required String text,
+  }) async {
+    final user = await getUser(userId);
+    final username = user?.username ?? 'User';
+    final avatarUrl = user?.profilePictureUrl ?? '';
+
+    final batch = _db.batch();
+    final commentsRef = _commentsCollection(postId).doc();
+    batch.set(commentsRef, {
+      'userId': userId,
+      'username': username,
+      'avatarUrl': avatarUrl,
+      'text': text.trim(),
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    batch.update(_postsCollection.doc(postId), {
+      'commentsCount': FieldValue.increment(1),
+      'lastEngagement': FieldValue.serverTimestamp(),
+    });
+    await batch.commit();
+  }
+
+  Future<void> deleteComment({
+    required String postId,
+    required String commentId,
+  }) async {
+    final batch = _db.batch();
+    batch.delete(_commentsCollection(postId).doc(commentId));
+    batch.update(_postsCollection.doc(postId), {
+      'commentsCount': FieldValue.increment(-1),
+      'lastEngagement': FieldValue.serverTimestamp(),
+    });
+    await batch.commit();
   }
 
   // ===== FOLLOW SYSTEM (basic) =====
@@ -787,7 +845,7 @@ class FirestoreService {
       username: 'alice_painter',
       email: 'alice@example.com',
       fullName: 'Alice Painter',
-      profilePictureUrl: 'https://picsum.photos/seed/artist1/200/200',
+      profilePictureUrl: 'assets/images/placeholder.png',
       bio: 'Exploring textures and colors on canvas.',
       role: UserRole.artist,
       createdAt: DateTime.parse('2025-09-18T12:00:00Z'),
@@ -812,7 +870,7 @@ class FirestoreService {
       username: 'bob_viewer',
       email: 'bob@example.com',
       fullName: 'Bob Viewer',
-      profilePictureUrl: 'https://picsum.photos/seed/audience1/201/201',
+      profilePictureUrl: 'assets/images/placeholder.png',
       bio: 'Loves attending creative festivals and exhibitions.',
       role: UserRole.audience,
       createdAt: DateTime.parse('2025-09-18T12:10:00Z'),
@@ -835,7 +893,7 @@ class FirestoreService {
       username: 'clara_sponsor',
       email: 'clara@example.com',
       fullName: 'Clara Sponsor',
-      profilePictureUrl: 'https://picsum.photos/seed/sponsor1/202/202',
+      profilePictureUrl: 'assets/images/placeholder.png',
       bio: 'Supporting local talent and creative initiatives.',
       role: UserRole.sponsor,
       createdAt: DateTime.parse('2025-09-18T12:20:00Z'),
@@ -864,7 +922,7 @@ class FirestoreService {
         id: '',
         userId: 'artist1',
         type: PostType.image,
-        mediaUrl: 'https://picsum.photos/seed/post1/400/600',
+        mediaUrl: 'assets/images/placeholder.png',
         caption:
             'Latest oil painting - exploring textures and light. Really excited about how this landscape turned out! 🎨✨',
         description:
@@ -904,7 +962,7 @@ class FirestoreService {
         type: PostType.reel,
         mediaUrl:
             'https://sample-videos.com/zip/10/mp4/480p/mp4-file_sample.mp4',
-        thumbnailUrl: 'https://picsum.photos/seed/post2thumb/600/400',
+        thumbnailUrl: 'assets/images/placeholder.png',
         caption:
             'Quick sketch from life drawing session today. Love capturing the essence of a moment with just a few lines. ✏️',
         description:
@@ -941,9 +999,9 @@ class FirestoreService {
         userId: 'artist1',
         type: PostType.gallery,
         mediaUrls: [
-          'https://picsum.photos/seed/post3a/500/500',
-          'https://picsum.photos/seed/post3b/500/501',
-          'https://picsum.photos/seed/post3c/500/502',
+          'assets/images/placeholder.png',
+          'assets/images/placeholder.png',
+          'assets/images/placeholder.png',
         ],
         caption:
             'Portrait study series in oils. Been practicing capturing personality and emotion through brushwork. 🎭',
@@ -1014,7 +1072,7 @@ class FirestoreService {
         type: PostType.video,
         mediaUrl:
             'https://sample-videos.com/zip/10/mp4/720p/mp4-file_sample.mp4',
-        thumbnailUrl: 'https://picsum.photos/seed/post5thumb/640/360',
+        thumbnailUrl: 'assets/images/placeholder.png',
         caption:
             '🎨 Oil Painting Tutorial: Creating depth with layering techniques',
         description:

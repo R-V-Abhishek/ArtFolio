@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 
 import '../models/user.dart' as model;
+import '../theme/scale.dart';
 import '../models/role_models.dart' as roles;
 import '../models/post.dart';
 import '../services/firestore_service.dart';
@@ -40,6 +41,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   void initState() {
     super.initState();
     _loadData();
+    // Refresh when notified (e.g., after creating a post)
+    SessionState.instance.profileRefreshTick.addListener(_loadData);
   }
 
   Future<void> _loadData() async {
@@ -84,6 +87,12 @@ class _ProfileScreenState extends State<ProfileScreen>
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to load profile: $e')));
     }
+  }
+
+  @override
+  void dispose() {
+    SessionState.instance.profileRefreshTick.removeListener(_loadData);
+    super.dispose();
   }
 
   bool get _isOwnProfile {
@@ -191,7 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
         SliverAppBar(
           pinned: true,
-          expandedHeight: 260,
+          expandedHeight: 300,
           title: Text(_user!.username),
           actions: [
             if (_isOwnProfile)
@@ -262,6 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               posts: _posts,
               gridView: _gridView,
               onToggleView: () => setState(() => _gridView = !_gridView),
+              onRefreshRequested: _loadData,
             ),
             const _PlaceholderTab(
               icon: Icons.assignment_outlined,
@@ -309,6 +319,9 @@ class _ProfileHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final skills = artist?.artForms ?? const <String>[];
     final links = artist?.portfolioUrls ?? const <String>[];
+    final width = MediaQuery.of(context).size.width;
+    final isNarrow = width < 380;
+    final s = Scale(context);
 
     return Stack(
       fit: StackFit.expand,
@@ -319,30 +332,86 @@ class _ProfileHeader extends StatelessWidget {
         Align(
           alignment: Alignment.bottomLeft,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            // Keep compact bottom padding so content doesn't overflow when collapsed
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header row (avatar, name, follow)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      backgroundImage: user.profilePictureUrl.isNotEmpty
-                          ? NetworkImage(user.profilePictureUrl)
-                          : null,
-                      child: user.profilePictureUrl.isNotEmpty
-                          ? null
-                          : Text(
-                              (user.username.isNotEmpty
-                                      ? user.username[0]
-                                      : 'A')
-                                  .toUpperCase(),
-                              style: theme.textTheme.headlineSmall,
-                            ),
+                    SizedBox(
+                      width: s.size(80),
+                      height: s.size(80),
+                      child: ClipOval(
+                        child: user.profilePictureUrl.isNotEmpty
+                            ? (user.profilePictureUrl.startsWith('http')
+                                  ? Image.network(
+                                      user.profilePictureUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Container(
+                                                color: theme
+                                                    .colorScheme
+                                                    .surfaceContainerHighest,
+                                                alignment: Alignment.center,
+                                                child: Text(
+                                                  (user.username.isNotEmpty
+                                                          ? user.username[0]
+                                                          : 'A')
+                                                      .toUpperCase(),
+                                                  style: theme
+                                                      .textTheme
+                                                      .headlineSmall,
+                                                ),
+                                              ),
+                                    )
+                                  : Image.asset(
+                                      user.profilePictureUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Container(
+                                                color: theme
+                                                    .colorScheme
+                                                    .surfaceContainerHighest,
+                                                alignment: Alignment.center,
+                                                child: Text(
+                                                  (user.username.isNotEmpty
+                                                          ? user.username[0]
+                                                          : 'A')
+                                                      .toUpperCase(),
+                                                  style: theme
+                                                      .textTheme
+                                                      .headlineSmall,
+                                                ),
+                                              ),
+                                    ))
+                            : Container(
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                alignment: Alignment.center,
+                                child: Text(
+                                  (user.username.isNotEmpty
+                                          ? user.username[0]
+                                          : 'A')
+                                      .toUpperCase(),
+                                  style: theme.textTheme.headlineSmall
+                                      ?.copyWith(
+                                        fontSize: s.font(
+                                          theme
+                                                  .textTheme
+                                                  .headlineSmall
+                                                  ?.fontSize ??
+                                              24,
+                                        ),
+                                      ),
+                                ),
+                              ),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -353,38 +422,65 @@ class _ProfileHeader extends StatelessWidget {
                             user.fullName.isNotEmpty
                                 ? user.fullName
                                 : user.username,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w700,
+                              fontSize: s.font(
+                                theme.textTheme.titleLarge?.fontSize ?? 20,
+                              ),
                             ),
                           ),
                           Text(
                             _roleLabel(user.role),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.textTheme.bodyMedium?.color
                                   ?.withValues(alpha: 0.7),
+                              fontSize: s.font(
+                                theme.textTheme.bodyMedium?.fontSize ?? 14,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
                     if (!isOwnProfile)
-                      FilledButton.icon(
-                        onPressed: onFollowToggle,
-                        icon: Icon(
-                          isFollowing ? Icons.check : Icons.person_add_alt_1,
-                        ),
-                        label: Text(isFollowing ? 'Following' : 'Follow'),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: isNarrow
+                            ? IconButton.filledTonal(
+                                tooltip: isFollowing ? 'Following' : 'Follow',
+                                onPressed: onFollowToggle,
+                                icon: Icon(
+                                  isFollowing
+                                      ? Icons.check
+                                      : Icons.person_add_alt_1,
+                                ),
+                              )
+                            : FilledButton.icon(
+                                onPressed: onFollowToggle,
+                                icon: Icon(
+                                  isFollowing
+                                      ? Icons.check
+                                      : Icons.person_add_alt_1,
+                                ),
+                                label: Text(
+                                  isFollowing ? 'Following' : 'Follow',
+                                ),
+                              ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Stats
+                // Stats (force single horizontal row)
                 Row(
                   children: [
                     _Stat(number: counts['followers'] ?? 0, label: 'Followers'),
-                    _Dot(),
+                    const SizedBox(width: 16),
                     _Stat(number: counts['following'] ?? 0, label: 'Following'),
-                    _Dot(),
+                    const SizedBox(width: 16),
                     _Stat(number: postsCount, label: 'Posts'),
                   ],
                 ),
@@ -422,7 +518,8 @@ class _ProfileHeader extends StatelessWidget {
                         )
                         .toList(),
                   ),
-                const SizedBox(height: 8),
+                // Reserve space so content doesn't overlap the TabBar below
+                SizedBox(height: kTextTabBarHeight + 12),
               ],
             ),
           ),
@@ -449,53 +546,66 @@ class _PostsTab extends StatelessWidget {
   final List<Post> posts;
   final bool gridView;
   final VoidCallback onToggleView;
+  final Future<void> Function() onRefreshRequested;
 
   const _PostsTab({
     required this.posts,
     required this.gridView,
     required this.onToggleView,
+    required this.onRefreshRequested,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (posts.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.image_outlined, size: 48),
-            const SizedBox(height: 8),
-            Text('No posts yet', style: theme.textTheme.titleMedium),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-          child: Row(
+    // Always support pull-to-refresh
+    final content = posts.isEmpty
+        ? Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.image_outlined, size: 48),
+                const SizedBox(height: 8),
+                Text('No posts yet', style: theme.textTheme.titleMedium),
+              ],
+            ),
+          )
+        : Column(
             children: [
-              Text('Posts', style: theme.textTheme.titleMedium),
-              const Spacer(),
-              IconButton(
-                onPressed: onToggleView,
-                tooltip: gridView ? 'List view' : 'Grid view',
-                icon: Icon(
-                  gridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                child: Row(
+                  children: [
+                    Text('Posts', style: theme.textTheme.titleMedium),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: onToggleView,
+                      tooltip: gridView ? 'List view' : 'Grid view',
+                      icon: Icon(
+                        gridView
+                            ? Icons.view_list_rounded
+                            : Icons.grid_view_rounded,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              const Divider(height: 1),
+              Expanded(
+                child: gridView ? _Grid(posts: posts) : _List(posts: posts),
+              ),
             ],
-          ),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: gridView ? _Grid(posts: posts) : _List(posts: posts),
-        ),
-      ],
+          );
+
+    return RefreshIndicator(
+      onRefresh: onRefreshRequested,
+      child: posts.isEmpty
+          ? ListView(
+              padding: const EdgeInsets.only(top: 40),
+              children: [SizedBox(height: 200), content],
+            )
+          : content,
     );
   }
 }
@@ -530,7 +640,17 @@ class _Grid extends StatelessWidget {
             final isUrl =
                 ref.startsWith('http://') || ref.startsWith('https://');
             return isUrl
-                ? Image.network(ref, fit: BoxFit.cover)
+                ? Image.network(
+                    ref,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.broken_image),
+                    ),
+                  )
                 : FirestoreImage(imageId: ref, fit: BoxFit.cover);
           },
         );
@@ -567,7 +687,18 @@ class _List extends StatelessWidget {
                     ).colorScheme.surfaceContainerHighest,
                   )
                 : (ref.startsWith('http')
-                      ? Image.network(ref, fit: BoxFit.cover)
+                      ? Image.network(
+                          ref,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                                alignment: Alignment.center,
+                                child: const Icon(Icons.broken_image),
+                              ),
+                        )
                       : FirestoreImage(imageId: ref, fit: BoxFit.cover)),
           ),
           title: Text(p.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -631,23 +762,6 @@ class _Stat extends StatelessWidget {
         const SizedBox(width: 6),
         Text(label, style: theme.textTheme.bodyMedium),
       ],
-    );
-  }
-}
-
-class _Dot extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Container(
-        width: 4,
-        height: 4,
-        decoration: const BoxDecoration(
-          color: Colors.grey,
-          shape: BoxShape.circle,
-        ),
-      ),
     );
   }
 }
