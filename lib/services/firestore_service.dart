@@ -33,6 +33,8 @@ class FirestoreService {
       _db.collection('notifications');
   CollectionReference _commentsCollection(String postId) =>
       _postsCollection.doc(postId).collection('comments');
+  CollectionReference get _userFollowsCollection =>
+      _db.collection('userFollows');
 
   // ===== USER MANAGEMENT =====
 
@@ -426,86 +428,53 @@ class FirestoreService {
 
   // ===== FOLLOW SYSTEM (basic) =====
 
-  /// Check if [viewerUserId] follows [targetUserId]. Currently supports targets with role Artist.
+  /// Check if [viewerUserId] follows [targetUserId]. Universal across roles.
   Future<bool> isFollowing(String viewerUserId, String targetUserId) async {
     try {
-      final targetUser = await getUser(targetUserId);
-      if (targetUser == null) return false;
-      if (targetUser.role != UserRole.artist) return false;
-
-      final artistDoc = await _artistsCollection.doc(targetUserId).get();
-      if (!artistDoc.exists) return false;
-      final data = artistDoc.data() as Map<String, dynamic>;
-      final followers = List<String>.from(data['followers'] ?? []);
-      return followers.contains(viewerUserId);
+      final docId = '${viewerUserId}_$targetUserId';
+      final doc = await _userFollowsCollection.doc(docId).get();
+      return doc.exists;
     } catch (e) {
       throw Exception('Failed to check following state: $e');
     }
   }
 
-  /// Toggle follow between [viewerUserId] and artist [targetUserId]. Returns the new following state (true if now following).
+  /// Toggle follow between any two users. Returns the new following state (true if now following).
   Future<bool> toggleFollow({
     required String viewerUserId,
     required String targetUserId,
   }) async {
     try {
-      final targetUser = await getUser(targetUserId);
-      if (targetUser == null) {
-        throw Exception('Target user not found');
+      if (viewerUserId == targetUserId) {
+        throw Exception('Cannot follow yourself');
       }
-      if (targetUser.role != UserRole.artist) {
-        throw Exception('Following is only enabled for artists at the moment');
-      }
-
-      // Fetch viewer role to update their following list appropriately
-      final viewerUser = await getUser(viewerUserId);
-      if (viewerUser == null) {
-        throw Exception('Viewer user not found');
-      }
-
-      final artistRef = _artistsCollection.doc(targetUserId);
-      final artistSnap = await artistRef.get();
-      if (!artistSnap.exists) {
-        throw Exception('Artist profile not found');
-      }
-      final artistData = artistSnap.data() as Map<String, dynamic>;
-      final followers = List<String>.from(artistData['followers'] ?? []);
-      final alreadyFollowing = followers.contains(viewerUserId);
-
-      if (alreadyFollowing) {
-        // Unfollow
-        await artistRef.update({
-          'followers': FieldValue.arrayRemove([viewerUserId]),
-        });
-
-        // Update viewer following list based on role
-        if (viewerUser.role == UserRole.artist) {
-          await _artistsCollection.doc(viewerUserId).update({
-            'following': FieldValue.arrayRemove([targetUserId]),
-          });
-        } else if (viewerUser.role == UserRole.audience) {
-          await _audiencesCollection.doc(viewerUserId).update({
-            'followingArtists': FieldValue.arrayRemove([targetUserId]),
-          });
-        }
-
+      final docId = '${viewerUserId}_$targetUserId';
+      final ref = _userFollowsCollection.doc(docId);
+      final snap = await ref.get();
+      if (snap.exists) {
+        await ref.delete();
         return false;
       } else {
-        // Follow
-        await artistRef.update({
-          'followers': FieldValue.arrayUnion([viewerUserId]),
+        await ref.set({
+          'viewerId': viewerUserId,
+          'targetId': targetUserId,
+          'createdAt': FieldValue.serverTimestamp(),
         });
-
-        if (viewerUser.role == UserRole.artist) {
-          await _artistsCollection.doc(viewerUserId).update({
-            'following': FieldValue.arrayUnion([targetUserId]),
+        // Create a notification for the target user
+        try {
+          final viewer = await getUser(viewerUserId);
+          final title =
+              '${viewer?.username ?? 'Someone'} started following you';
+          await _notificationsCollection.add({
+            'userId': targetUserId,
+            'type': 'follow',
+            'title': title,
+            'createdAt': FieldValue.serverTimestamp(),
+            'read': false,
           });
-        } else if (viewerUser.role == UserRole.audience) {
-          await _audiencesCollection.doc(viewerUserId).update({
-            'followingArtists': FieldValue.arrayUnion([targetUserId]),
-          });
+        } catch (_) {
+          // Notifications are best-effort; ignore failures
         }
-
         return true;
       }
     } catch (e) {
@@ -513,34 +482,60 @@ class FirestoreService {
     }
   }
 
-  /// Get follower/following counts for a user. For artists, uses artists doc; for audience, uses audiences doc.
+  /// Get follower/following counts for any user using the userFollows collection.
   Future<Map<String, int>> getFollowCounts(String userId) async {
     try {
-      final user = await getUser(userId);
-      if (user == null) return {'followers': 0, 'following': 0};
-
-      switch (user.role) {
-        case UserRole.artist:
-          final artistDoc = await _artistsCollection.doc(userId).get();
-          if (!artistDoc.exists) return {'followers': 0, 'following': 0};
-          final data = artistDoc.data() as Map<String, dynamic>;
-          final followers = List<String>.from(data['followers'] ?? []);
-          final following = List<String>.from(data['following'] ?? []);
-          return {'followers': followers.length, 'following': following.length};
-        case UserRole.audience:
-          final audDoc = await _audiencesCollection.doc(userId).get();
-          if (!audDoc.exists) return {'followers': 0, 'following': 0};
-          final data = audDoc.data() as Map<String, dynamic>;
-          final followingArtists = List<String>.from(
-            data['followingArtists'] ?? [],
-          );
-          return {'followers': 0, 'following': followingArtists.length};
-        case UserRole.sponsor:
-        case UserRole.organisation:
-          return {'followers': 0, 'following': 0};
-      }
+      final followersSnap = await _userFollowsCollection
+          .where('targetId', isEqualTo: userId)
+          .get();
+      final followingSnap = await _userFollowsCollection
+          .where('viewerId', isEqualTo: userId)
+          .get();
+      return {'followers': followersSnap.size, 'following': followingSnap.size};
     } catch (e) {
       throw Exception('Failed to get follow counts: $e');
+    }
+  }
+
+  // ===== FOLLOW LISTS =====
+
+  /// Get the list of users who follow [userId]. Note: simple implementation (N+1 fetches).
+  Future<List<User>> getFollowersUsers(String userId) async {
+    try {
+      final snap = await _userFollowsCollection
+          .where('targetId', isEqualTo: userId)
+          .get();
+      final viewerIds = snap.docs
+          .map((d) => (d.data() as Map)['viewerId'] as String)
+          .toList();
+      final users = <User>[];
+      for (final id in viewerIds) {
+        final u = await getUser(id);
+        if (u != null) users.add(u);
+      }
+      return users;
+    } catch (e) {
+      throw Exception('Failed to get followers: $e');
+    }
+  }
+
+  /// Get the list of users whom [userId] is following. Note: simple implementation (N+1 fetches).
+  Future<List<User>> getFollowingUsers(String userId) async {
+    try {
+      final snap = await _userFollowsCollection
+          .where('viewerId', isEqualTo: userId)
+          .get();
+      final targetIds = snap.docs
+          .map((d) => (d.data() as Map)['targetId'] as String)
+          .toList();
+      final users = <User>[];
+      for (final id in targetIds) {
+        final u = await getUser(id);
+        if (u != null) users.add(u);
+      }
+      return users;
+    } catch (e) {
+      throw Exception('Failed to get following: $e');
     }
   }
 

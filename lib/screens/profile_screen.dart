@@ -8,6 +8,7 @@ import '../models/post.dart';
 import '../services/firestore_service.dart';
 import '../widgets/firestore_image.dart';
 import 'edit_profile_screen.dart';
+import 'follow_list_screen.dart';
 import '../services/session_state.dart';
 import 'auth_screen.dart';
 
@@ -31,6 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool _loading = true;
   List<Post> _posts = const [];
   bool _gridView = true;
+  bool _followBusy = false;
 
   late final TabController _tabController = TabController(
     length: 4,
@@ -43,6 +45,52 @@ class _ProfileScreenState extends State<ProfileScreen>
     _loadData();
     // Refresh when notified (e.g., after creating a post)
     SessionState.instance.profileRefreshTick.addListener(_loadData);
+  }
+
+  Future<void> _editBio() async {
+    if (_user == null) return;
+    final controller = TextEditingController(text: _user!.bio);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Edit bio'),
+          content: TextField(
+            controller: controller,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              hintText: 'Tell people about your art, style, and interests',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    if (result == null) return;
+    try {
+      final updated = _user!.copyWith(bio: result);
+      await _firestore.updateUser(updated);
+      if (!mounted) return;
+      setState(() => _user = updated);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Bio updated')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update bio: $e')));
+    }
   }
 
   Future<void> _loadData() async {
@@ -101,6 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _onFollowToggle() async {
+    if (_followBusy) return;
     final viewer = _auth.currentUser?.uid;
     final target = _user?.id;
     if (viewer == null || target == null) {
@@ -109,7 +158,10 @@ class _ProfileScreenState extends State<ProfileScreen>
       );
       return;
     }
-    setState(() => _isFollowing = !_isFollowing);
+    setState(() {
+      _followBusy = true;
+      _isFollowing = !_isFollowing; // optimistic
+    });
     try {
       final nowFollowing = await _firestore.toggleFollow(
         viewerUserId: viewer,
@@ -121,10 +173,20 @@ class _ProfileScreenState extends State<ProfileScreen>
           'followers': _followCounts['followers']! + (nowFollowing ? 1 : -1),
           'following': _followCounts['following']!,
         };
+        _followBusy = false;
       });
+      final msg = nowFollowing ? 'Started following' : 'Unfollowed';
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+      }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isFollowing = !_isFollowing);
+      setState(() {
+        _isFollowing = !_isFollowing;
+        _followBusy = false;
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -200,25 +262,9 @@ class _ProfileScreenState extends State<ProfileScreen>
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
         SliverAppBar(
           pinned: true,
-          expandedHeight: 300,
           title: Text(_user!.username),
           actions: [
-            if (_isOwnProfile)
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                tooltip: 'Edit Profile',
-                onPressed: () async {
-                  final nav = Navigator.of(context);
-                  await nav.push(
-                    MaterialPageRoute(
-                      builder: (_) => EditProfileScreen(user: _user!),
-                    ),
-                  );
-                  if (!mounted) return;
-                  _loadData();
-                },
-              )
-            else ...[
+            if (!_isOwnProfile) ...[
               IconButton(
                 icon: const Icon(Icons.mail_outline),
                 tooltip: 'Message',
@@ -239,25 +285,45 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
             ],
           ],
-          flexibleSpace: FlexibleSpaceBar(
-            background: _ProfileHeader(
-              user: _user!,
-              artist: _artist,
-              counts: _followCounts,
-              isOwnProfile: _isOwnProfile,
-              isFollowing: _isFollowing,
-              onFollowToggle: _onFollowToggle,
-              postsCount: _posts.length,
-            ),
+        ),
+        SliverToBoxAdapter(
+          child: _ProfileHeader(
+            user: _user!,
+            artist: _artist,
+            counts: _followCounts,
+            isOwnProfile: _isOwnProfile,
+            isFollowing: _isFollowing,
+            followBusy: _followBusy,
+            onFollowToggle: _onFollowToggle,
+            postsCount: _posts.length,
+            onEditProfile: () async {
+              final nav = Navigator.of(context);
+              await nav.push(
+                MaterialPageRoute(
+                  builder: (_) => EditProfileScreen(user: _user!),
+                ),
+              );
+              if (!mounted) return;
+              _loadData();
+            },
+            onEditBio: _editBio,
           ),
-          bottom: TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(icon: Icon(Icons.grid_on_rounded), text: 'Posts'),
-              Tab(icon: Icon(Icons.assignment_outlined), text: 'Projects'),
-              Tab(icon: Icon(Icons.group_outlined), text: 'Collabs'),
-              Tab(icon: Icon(Icons.favorite_border), text: 'Sponsors'),
-            ],
+        ),
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _TabBarHeaderDelegate(
+            TabBar(
+              controller: _tabController,
+              indicatorColor: Theme.of(context).colorScheme.primary,
+              labelColor: Theme.of(context).colorScheme.primary,
+              unselectedLabelColor: Theme.of(context).colorScheme.outline,
+              tabs: const [
+                Tab(icon: Icon(Icons.grid_on_rounded), text: 'Posts'),
+                Tab(icon: Icon(Icons.assignment_outlined), text: 'Projects'),
+                Tab(icon: Icon(Icons.group_outlined), text: 'Collabs'),
+                Tab(icon: Icon(Icons.favorite_border), text: 'Sponsors'),
+              ],
+            ),
           ),
         ),
       ],
@@ -295,14 +361,17 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 }
 
-class _ProfileHeader extends StatelessWidget {
+class _ProfileHeader extends StatefulWidget {
   final model.User user;
   final roles.Artist? artist;
   final Map<String, int> counts;
   final bool isOwnProfile;
   final bool isFollowing;
+  final bool followBusy;
   final VoidCallback onFollowToggle;
   final int postsCount;
+  final VoidCallback onEditProfile;
+  final VoidCallback onEditBio;
 
   const _ProfileHeader({
     required this.user,
@@ -310,93 +379,115 @@ class _ProfileHeader extends StatelessWidget {
     required this.counts,
     required this.isOwnProfile,
     required this.isFollowing,
+    required this.followBusy,
     required this.onFollowToggle,
     required this.postsCount,
+    required this.onEditProfile,
+    required this.onEditBio,
   });
+
+  @override
+  State<_ProfileHeader> createState() => _ProfileHeaderState();
+}
+
+class _ProfileHeaderState extends State<_ProfileHeader> {
+  bool _bioExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final skills = artist?.artForms ?? const <String>[];
-    final links = artist?.portfolioUrls ?? const <String>[];
+    final skills = widget.artist?.artForms ?? const <String>[];
+    final links = widget.artist?.portfolioUrls ?? const <String>[];
     final width = MediaQuery.of(context).size.width;
     final isNarrow = width < 380;
     final s = Scale(context);
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Cover placeholder
-        Container(color: theme.colorScheme.surfaceContainerHighest),
-        // Foreground content
-        Align(
-          alignment: Alignment.bottomLeft,
-          child: Padding(
-            // Keep compact bottom padding so content doesn't overflow when collapsed
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header row (avatar, name, follow)
-                Row(
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            theme.colorScheme.surfaceContainerHighest,
+            theme.colorScheme.surface,
+          ],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row (avatar, name with inline edit, follow)
+            Material(
+              elevation: 2,
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     SizedBox(
-                      width: s.size(80),
-                      height: s.size(80),
+                      width: (s.size(112)).clamp(96.0, 112.0),
+                      height: (s.size(112)).clamp(96.0, 112.0),
                       child: ClipOval(
-                        child: user.profilePictureUrl.isNotEmpty
-                            ? (user.profilePictureUrl.startsWith('http')
+                        child: widget.user.profilePictureUrl.isNotEmpty
+                            ? (widget.user.profilePictureUrl.startsWith('http')
                                   ? Image.network(
-                                      user.profilePictureUrl,
+                                      widget.user.profilePictureUrl,
                                       fit: BoxFit.cover,
                                       errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Container(
-                                                color: theme
-                                                    .colorScheme
-                                                    .surfaceContainerHighest,
-                                                alignment: Alignment.center,
-                                                child: Text(
-                                                  (user.username.isNotEmpty
-                                                          ? user.username[0]
-                                                          : 'A')
-                                                      .toUpperCase(),
-                                                  style: theme
-                                                      .textTheme
-                                                      .headlineSmall,
-                                                ),
-                                              ),
+                                          (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) => Container(
+                                            color: theme
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              (widget.user.username.isNotEmpty
+                                                      ? widget.user.username[0]
+                                                      : 'A')
+                                                  .toUpperCase(),
+                                              style:
+                                                  theme.textTheme.headlineSmall,
+                                            ),
+                                          ),
                                     )
                                   : Image.asset(
-                                      user.profilePictureUrl,
+                                      widget.user.profilePictureUrl,
                                       fit: BoxFit.cover,
                                       errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Container(
-                                                color: theme
-                                                    .colorScheme
-                                                    .surfaceContainerHighest,
-                                                alignment: Alignment.center,
-                                                child: Text(
-                                                  (user.username.isNotEmpty
-                                                          ? user.username[0]
-                                                          : 'A')
-                                                      .toUpperCase(),
-                                                  style: theme
-                                                      .textTheme
-                                                      .headlineSmall,
-                                                ),
-                                              ),
+                                          (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) => Container(
+                                            color: theme
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              (widget.user.username.isNotEmpty
+                                                      ? widget.user.username[0]
+                                                      : 'A')
+                                                  .toUpperCase(),
+                                              style:
+                                                  theme.textTheme.headlineSmall,
+                                            ),
+                                          ),
                                     ))
                             : Container(
                                 color:
                                     theme.colorScheme.surfaceContainerHighest,
                                 alignment: Alignment.center,
                                 child: Text(
-                                  (user.username.isNotEmpty
-                                          ? user.username[0]
+                                  (widget.user.username.isNotEmpty
+                                          ? widget.user.username[0]
                                           : 'A')
                                       .toUpperCase(),
                                   style: theme.textTheme.headlineSmall
@@ -413,118 +504,223 @@ class _ProfileHeader extends StatelessWidget {
                               ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            user.fullName.isNotEmpty
-                                ? user.fullName
-                                : user.username,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              fontSize: s.font(
-                                theme.textTheme.titleLarge?.fontSize ?? 20,
+                          // Name + inline edit button (owner only)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  widget.user.fullName.isNotEmpty
+                                      ? widget.user.fullName
+                                      : widget.user.username,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: s.font(
+                                      theme.textTheme.titleLarge?.fontSize ??
+                                          20,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                              if (widget.isOwnProfile)
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  tooltip: 'Edit Profile',
+                                  onPressed: widget.onEditProfile,
+                                  icon: const Icon(Icons.edit_outlined),
+                                ),
+                            ],
                           ),
-                          Text(
-                            _roleLabel(user.role),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.textTheme.bodyMedium?.color
-                                  ?.withValues(alpha: 0.7),
-                              fontSize: s.font(
-                                theme.textTheme.bodyMedium?.fontSize ?? 14,
+                          const SizedBox(height: 4),
+                          // Role badge/pill
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              _roleLabel(widget.user.role),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    if (!isOwnProfile)
+                    if (!widget.isOwnProfile)
                       Padding(
                         padding: const EdgeInsets.only(left: 8),
                         child: isNarrow
                             ? IconButton.filledTonal(
-                                tooltip: isFollowing ? 'Following' : 'Follow',
-                                onPressed: onFollowToggle,
+                                tooltip: widget.isFollowing
+                                    ? 'Following'
+                                    : 'Follow',
+                                onPressed: widget.followBusy
+                                    ? null
+                                    : widget.onFollowToggle,
                                 icon: Icon(
-                                  isFollowing
+                                  widget.isFollowing
                                       ? Icons.check
                                       : Icons.person_add_alt_1,
                                 ),
                               )
                             : FilledButton.icon(
-                                onPressed: onFollowToggle,
+                                onPressed: widget.followBusy
+                                    ? null
+                                    : widget.onFollowToggle,
                                 icon: Icon(
-                                  isFollowing
+                                  widget.isFollowing
                                       ? Icons.check
                                       : Icons.person_add_alt_1,
                                 ),
                                 label: Text(
-                                  isFollowing ? 'Following' : 'Follow',
+                                  widget.isFollowing ? 'Following' : 'Follow',
                                 ),
                               ),
                       ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                // Stats (force single horizontal row)
-                Row(
-                  children: [
-                    _Stat(number: counts['followers'] ?? 0, label: 'Followers'),
-                    const SizedBox(width: 16),
-                    _Stat(number: counts['following'] ?? 0, label: 'Following'),
-                    const SizedBox(width: 16),
-                    _Stat(number: postsCount, label: 'Posts'),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // Bio
-                if (user.bio.isNotEmpty)
-                  Text(user.bio, style: theme.textTheme.bodyMedium),
-                const SizedBox(height: 8),
-                // Skills
-                if (skills.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: -4,
-                    children: skills
-                        .take(6)
-                        .map((s) => Chip(label: Text(s)))
-                        .toList(),
-                  ),
-                const SizedBox(height: 8),
-                // Links
-                if (links.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    children: links
-                        .take(3)
-                        .map(
-                          (l) => ActionChip(
-                            label: Text(Uri.tryParse(l)?.host ?? l),
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Open link: $l')),
-                              );
-                            },
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Stats (single elegant row, evenly spaced)
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => FollowListScreen(
+                            userId: widget.user.id,
+                            type: FollowListType.followers,
                           ),
-                        )
-                        .toList(),
+                        ),
+                      );
+                    },
+                    child: _Stat(
+                      number: widget.counts['followers'] ?? 0,
+                      label: 'Followers',
+                    ),
                   ),
-                // Reserve space so content doesn't overlap the TabBar below
-                SizedBox(height: kTextTabBarHeight + 12),
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => FollowListScreen(
+                            userId: widget.user.id,
+                            type: FollowListType.following,
+                          ),
+                        ),
+                      );
+                    },
+                    child: _Stat(
+                      number: widget.counts['following'] ?? 0,
+                      label: 'Following',
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: _Stat(number: widget.postsCount, label: 'Posts'),
+                ),
               ],
             ),
-          ),
+            const SizedBox(height: 12),
+            // Bio section with More/Less toggle
+            Builder(
+              builder: (context) {
+                final hasBio = widget.user.bio.trim().isNotEmpty;
+                final rawBio = hasBio
+                    ? widget.user.bio.trim()
+                    : 'Digital artist exploring light and color.';
+                final needsToggle =
+                    rawBio.length > 160 || rawBio.contains('\n');
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      rawBio,
+                      style: theme.textTheme.bodyMedium,
+                      maxLines: needsToggle && !_bioExpanded ? 3 : null,
+                      overflow: needsToggle && !_bioExpanded
+                          ? TextOverflow.fade
+                          : TextOverflow.visible,
+                    ),
+                    Row(
+                      children: [
+                        if (needsToggle)
+                          TextButton(
+                            onPressed: () =>
+                                setState(() => _bioExpanded = !_bioExpanded),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            child: Text(_bioExpanded ? 'Less' : 'More'),
+                          ),
+                        if (widget.isOwnProfile)
+                          TextButton.icon(
+                            onPressed: widget.onEditBio,
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.only(left: 8),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            label: Text(hasBio ? 'Edit bio' : 'Add bio'),
+                          ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            // Skills
+            if (skills.isNotEmpty)
+              Wrap(
+                spacing: 8,
+                runSpacing: -4,
+                children: skills
+                    .take(6)
+                    .map((s) => Chip(label: Text(s)))
+                    .toList(),
+              ),
+            const SizedBox(height: 8),
+            // Links
+            if (links.isNotEmpty)
+              Wrap(
+                spacing: 8,
+                children: links
+                    .take(3)
+                    .map(
+                      (l) => ActionChip(
+                        label: Text(Uri.tryParse(l)?.host ?? l),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Open link: $l')),
+                          );
+                        },
+                      ),
+                    )
+                    .toList(),
+              ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -539,6 +735,35 @@ class _ProfileHeader extends StatelessWidget {
       case model.UserRole.organisation:
         return 'Organisation';
     }
+  }
+}
+
+class _TabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+  _TabBarHeaderDelegate(this.tabBar);
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final color = Theme.of(context).colorScheme.surface;
+    return Container(
+      color: color,
+      child: Material(color: Colors.transparent, child: tabBar),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _TabBarHeaderDelegate oldDelegate) {
+    return oldDelegate.tabBar != tabBar;
   }
 }
 
@@ -751,16 +976,23 @@ class _Stat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           number?.toString() ?? '-',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
           ),
+          textAlign: TextAlign.center,
         ),
-        const SizedBox(width: 6),
-        Text(label, style: theme.textTheme.bodyMedium),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall,
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }

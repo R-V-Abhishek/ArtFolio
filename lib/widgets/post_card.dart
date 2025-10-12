@@ -28,6 +28,9 @@ class _PostCardState extends State<PostCard> {
   int _currentPage = 0; // for gallery
   model.User? _author;
   bool _incrementedView = false;
+  bool _isFollowing = false;
+  bool _followBusy = false;
+  bool _showFollow = false;
 
   @override
   void initState() {
@@ -45,6 +48,23 @@ class _PostCardState extends State<PostCard> {
         setState(() {
           _author = user;
         });
+      }
+      // Determine follow visibility and initial state (any user can be followed)
+      final viewerId = _auth.currentUser?.uid;
+      if (viewerId != null && user != null && user.id != viewerId) {
+        try {
+          final f = await _firestore.isFollowing(viewerId, user.id);
+          if (mounted) {
+            setState(() {
+              _isFollowing = f;
+              _showFollow = true;
+            });
+          }
+        } catch (_) {
+          if (mounted) setState(() => _showFollow = true);
+        }
+      } else if (mounted) {
+        setState(() => _showFollow = false);
       }
     } catch (_) {
       // ignore
@@ -87,6 +107,51 @@ class _PostCardState extends State<PostCard> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Failed to update like: $e')));
+      }
+    }
+  }
+
+  Future<void> _toggleFollowAuthor() async {
+    if (_followBusy) return;
+    final viewerId = _auth.currentUser?.uid;
+    final targetId = _author?.id;
+    if (viewerId == null || targetId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sign in to follow artists')),
+        );
+      }
+      return;
+    }
+    setState(() {
+      _followBusy = true;
+      _isFollowing = !_isFollowing; // optimistic
+    });
+    try {
+      final nowFollowing = await _firestore.toggleFollow(
+        viewerUserId: viewerId,
+        targetUserId: targetId,
+      );
+      if (mounted) {
+        setState(() {
+          _isFollowing = nowFollowing;
+          _followBusy = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(nowFollowing ? 'Started following' : 'Unfollowed'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isFollowing = !_isFollowing; // revert
+          _followBusy = false;
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed: $e')));
       }
     }
   }
@@ -200,6 +265,20 @@ class _PostCardState extends State<PostCard> {
                   ],
                 ),
               ),
+              if (_showFollow)
+                Padding(
+                  padding: EdgeInsets.only(right: s.size(6)),
+                  child: ActionChip(
+                    avatar: Icon(
+                      _isFollowing ? Icons.check : Icons.person_add_alt_1,
+                      size: s.size(16),
+                    ),
+                    label: Text(_isFollowing ? 'Following' : 'Follow'),
+                    onPressed: _followBusy ? null : _toggleFollowAuthor,
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
               IconButton(
                 iconSize: s.size(24),
                 icon: const Icon(Icons.more_horiz),
