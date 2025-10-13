@@ -599,7 +599,7 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
             Row(
               children: [
                 Expanded(
-                  child: InkWell(
+                  child: GestureDetector(
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -617,7 +617,7 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                   ),
                 ),
                 Expanded(
-                  child: InkWell(
+                  child: GestureDetector(
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(

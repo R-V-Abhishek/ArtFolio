@@ -7,6 +7,7 @@ import '../services/firestore_service.dart';
 import 'firestore_image.dart';
 import '../theme/scale.dart';
 import 'comments_sheet.dart';
+import '../screens/profile_screen.dart';
 
 class PostCard extends StatefulWidget {
   final Post post;
@@ -173,98 +174,113 @@ class _PostCardState extends State<PostCard> {
           ),
           child: Row(
             children: [
-              SizedBox(
-                width: s.size(36),
-                height: s.size(36),
-                child: ClipOval(
-                  child:
-                      ((_author != null) &&
-                          _author!.profilePictureUrl.isNotEmpty)
-                      ? (_author!.profilePictureUrl.startsWith('http')
-                            ? Image.network(
-                                _author!.profilePictureUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Container(
-                                      color: theme
-                                          .colorScheme
-                                          .surfaceContainerHighest,
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        ((_author != null &&
-                                                    _author!
-                                                        .username
-                                                        .isNotEmpty)
-                                                ? _author!.username[0]
-                                                : 'A')
-                                            .toUpperCase(),
-                                        style: theme.textTheme.labelLarge,
-                                      ),
-                                    ),
-                              )
-                            : Image.asset(
-                                _author!.profilePictureUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Container(
-                                      color: theme
-                                          .colorScheme
-                                          .surfaceContainerHighest,
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        ((_author != null &&
-                                                    _author!
-                                                        .username
-                                                        .isNotEmpty)
-                                                ? _author!.username[0]
-                                                : 'A')
-                                            .toUpperCase(),
-                                        style: theme.textTheme.labelLarge,
-                                      ),
-                                    ),
-                              ))
-                      : Container(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          alignment: Alignment.center,
-                          child: Text(
-                            ((_author != null && _author!.username.isNotEmpty)
-                                    ? _author!.username[0]
-                                    : 'A')
-                                .toUpperCase(),
-                            style: theme.textTheme.labelLarge,
+              GestureDetector(
+                onTap: () {
+                  if (_author != null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ProfileScreen(userId: _author!.id),
+                      ),
+                    );
+                  }
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: s.size(36),
+                      height: s.size(36),
+                      child: ClipOval(
+                        child:
+                            ((_author != null) &&
+                                _author!.profilePictureUrl.isNotEmpty)
+                            ? (_author!.profilePictureUrl.startsWith('http')
+                                  ? Image.network(
+                                      _author!.profilePictureUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          Container(
+                                            color: theme
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              ((_author != null &&
+                                                          _author!
+                                                              .username
+                                                              .isNotEmpty)
+                                                      ? _author!.username[0]
+                                                      : 'A')
+                                                  .toUpperCase(),
+                                              style: theme.textTheme.labelLarge,
+                                            ),
+                                          ),
+                                    )
+                                  : Image.asset(
+                                      _author!.profilePictureUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          Container(
+                                            color: theme
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              ((_author != null &&
+                                                          _author!
+                                                              .username
+                                                              .isNotEmpty)
+                                                      ? _author!.username[0]
+                                                      : 'A')
+                                                  .toUpperCase(),
+                                              style: theme.textTheme.labelLarge,
+                                            ),
+                                          ),
+                                    ))
+                            : Container(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                                alignment: Alignment.center,
+                                child: Text(
+                                  ((_author != null && _author!.username.isNotEmpty)
+                                          ? _author!.username[0]
+                                          : 'A')
+                                      .toUpperCase(),
+                                  style: theme.textTheme.labelLarge,
+                                ),
+                              ),
+                      ),
+                    ),
+                    SizedBox(width: s.size(10)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _author?.username ?? 'Unknown',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: s.font(
+                              theme.textTheme.titleSmall?.fontSize ?? 14,
+                            ),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          _timeAgo(widget.post.timestamp),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.textTheme.bodySmall?.color?.withValues(
+                              alpha: 0.7,
+                            ),
+                            fontSize: s.font(
+                              theme.textTheme.bodySmall?.fontSize ?? 12,
+                            ),
                           ),
                         ),
-                ),
-              ),
-              SizedBox(width: s.size(10)),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _author?.username ?? 'Unknown',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: s.font(
-                          theme.textTheme.titleSmall?.fontSize ?? 14,
-                        ),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      _timeAgo(widget.post.timestamp),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodySmall?.color?.withValues(
-                          alpha: 0.7,
-                        ),
-                        fontSize: s.font(
-                          theme.textTheme.bodySmall?.fontSize ?? 12,
-                        ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
               ),
+              const Spacer(),
               if (_showFollow)
                 Padding(
                   padding: EdgeInsets.only(right: s.size(6)),
