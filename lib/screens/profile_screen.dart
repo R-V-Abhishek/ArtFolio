@@ -9,6 +9,7 @@ import '../services/firestore_service.dart';
 import '../widgets/firestore_image.dart';
 import 'edit_profile_screen.dart';
 import 'follow_list_screen.dart';
+import 'post_detail_screen.dart';
 import '../services/session_state.dart';
 import 'auth_screen.dart';
 
@@ -258,7 +259,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       );
     }
 
-    return NestedScrollView(
+    // Wrap in Scaffold to ensure consistent themed surface background when
+    // navigating here from other routes (was showing black behind TabBarView).
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      body: NestedScrollView(
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
         SliverAppBar(
           pinned: true,
@@ -330,34 +335,46 @@ class _ProfileScreenState extends State<ProfileScreen>
       body: SafeArea(
         top: false,
         bottom: false,
-        child: TabBarView(
+        // Explicit background so tabs don't inherit a default black from an
+        // ancestor overlay route transition.
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+          ),
+          child: TabBarView(
           controller: _tabController,
           children: [
+            // Posts tab
             _PostsTab(
               posts: _posts,
               gridView: _gridView,
               onToggleView: () => setState(() => _gridView = !_gridView),
               onRefreshRequested: _loadData,
             ),
+            // Projects tab placeholder
             const _PlaceholderTab(
               icon: Icons.assignment_outlined,
               title: 'Projects & Proposals',
               subtitle: 'Coming soon',
             ),
+            // Collabs tab placeholder
             const _PlaceholderTab(
               icon: Icons.group_outlined,
               title: 'Collaborations & Orgs',
               subtitle: 'Coming soon',
             ),
+            // Sponsors tab placeholder
             const _PlaceholderTab(
               icon: Icons.favorite_border,
               title: 'Sponsors',
               subtitle: 'Coming soon',
             ),
           ],
-        ),
-      ),
-    );
+          ), // end TabBarView
+        ), // end DecoratedBox
+      ), // end SafeArea
+    ), // end NestedScrollView
+    ); // end Scaffold
   }
 }
 
@@ -427,7 +444,8 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  // Center vertically so the username sits higher (was bottom-aligned).
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(
                       width: (s.size(112)).clamp(96.0, 112.0),
@@ -512,20 +530,30 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                           // Name + inline edit button (owner only)
                           Row(
                             children: [
+                              // Single-line auto-scaling name: shrinks font to fit available width.
                               Expanded(
-                                child: Text(
-                                  widget.user.fullName.isNotEmpty
-                                      ? widget.user.fullName
-                                      : widget.user.username,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: s.font(
-                                      theme.textTheme.titleLarge?.fontSize ??
-                                          20,
-                                    ),
-                                  ),
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final name = widget.user.fullName.isNotEmpty
+                                        ? widget.user.fullName
+                                        : widget.user.username;
+                                    // Use a FittedBox with scaleDown to ensure single-line fit.
+                                    return FittedBox(
+                                      alignment: Alignment.centerLeft,
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.visible,
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: s.font(
+                                            theme.textTheme.titleLarge?.fontSize ?? 20,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                               if (widget.isOwnProfile)
@@ -864,19 +892,28 @@ class _Grid extends StatelessWidget {
             }
             final isUrl =
                 ref.startsWith('http://') || ref.startsWith('https://');
-            return isUrl
+            final media = isUrl
                 ? Image.network(
                     ref,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       alignment: Alignment.center,
                       child: const Icon(Icons.broken_image),
                     ),
                   )
                 : FirestoreImage(imageId: ref, fit: BoxFit.cover);
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => PostDetailScreen(post: p),
+                  ),
+                );
+              },
+              child: media,
+            );
           },
         );
       },
@@ -929,8 +966,10 @@ class _List extends StatelessWidget {
           title: Text(p.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text(p.type.name.toUpperCase()),
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Post detail coming soon')),
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PostDetailScreen(post: p),
+              ),
             );
           },
         );
