@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../models/user.dart' as model;
 import '../services/firestore_service.dart';
-import 'profile_screen.dart';
+import '../routes/app_routes.dart';
+import '../routes/route_arguments.dart';
 
 enum FollowListType { followers, following }
 
@@ -146,10 +147,9 @@ class _FollowListScreenState extends State<FollowListScreen> {
                           )
                         : null,
                     onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ProfileScreen(userId: u.id),
-                        ),
+                      Navigator.of(context).pushNamed(
+                        AppRoutes.profile,
+                        arguments: ProfileArguments(userId: u.id),
                       );
                     },
                   );

@@ -7,11 +7,11 @@ import '../models/role_models.dart' as roles;
 import '../models/post.dart';
 import '../services/firestore_service.dart';
 import '../widgets/firestore_image.dart';
-import 'edit_profile_screen.dart';
 import 'follow_list_screen.dart';
-import 'post_detail_screen.dart';
 import '../services/session_state.dart';
-import 'auth_screen.dart';
+import '../services/auth_service.dart';
+import '../routes/app_routes.dart';
+import '../routes/route_arguments.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId; // Optional: view other user's profile later
@@ -195,6 +195,39 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
+  Future<void> _handleMenuSelection(String value) async {
+    switch (value) {
+      case 'logout':
+        await _signOut();
+        break;
+      case 'delete_account':
+        Navigator.of(context).pushNamed(AppRoutes.deleteAccount);
+        break;
+    }
+  }
+
+  Future<void> _signOut() async {
+    try {
+      await AuthService.instance.signOut();
+      if (mounted) {
+        // Navigate to auth screen
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.auth,
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to sign out: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -234,9 +267,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   onPressed: () {
                     // Exit guest mode if enabled, then navigate to auth
                     SessionState.instance.exitGuest();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const AuthScreen()),
-                    );
+                    Navigator.of(context).pushNamed(AppRoutes.auth);
                   },
                 ),
               ],
@@ -288,6 +319,31 @@ class _ProfileScreenState extends State<ProfileScreen>
                   );
                 },
               ),
+            ] else ...[
+              // Settings menu for own profile
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                tooltip: 'Settings',
+                onSelected: _handleMenuSelection,
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'logout',
+                    child: ListTile(
+                      leading: Icon(Icons.logout),
+                      title: Text('Sign Out'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete_account',
+                    child: ListTile(
+                      leading: Icon(Icons.delete_forever, color: Colors.red),
+                      title: Text('Delete Account', style: TextStyle(color: Colors.red)),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ],
         ),
@@ -303,10 +359,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             postsCount: _posts.length,
             onEditProfile: () async {
               final nav = Navigator.of(context);
-              await nav.push(
-                MaterialPageRoute(
-                  builder: (_) => EditProfileScreen(user: _user!),
-                ),
+              await nav.pushNamed(
+                AppRoutes.editProfile,
+                arguments: EditProfileArguments(user: _user!),
               );
               if (!mounted) return;
               _loadData();
@@ -629,12 +684,11 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => FollowListScreen(
-                            userId: widget.user.id,
-                            type: FollowListType.followers,
-                          ),
+                      Navigator.of(context).pushNamed(
+                        AppRoutes.followList,
+                        arguments: FollowListArguments(
+                          userId: widget.user.id,
+                          type: FollowListType.followers,
                         ),
                       );
                     },
@@ -647,12 +701,11 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => FollowListScreen(
-                            userId: widget.user.id,
-                            type: FollowListType.following,
-                          ),
+                      Navigator.of(context).pushNamed(
+                        AppRoutes.followList,
+                        arguments: FollowListArguments(
+                          userId: widget.user.id,
+                          type: FollowListType.following,
                         ),
                       );
                     },
@@ -906,10 +959,9 @@ class _Grid extends StatelessWidget {
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PostDetailScreen(post: p),
-                  ),
+                Navigator.of(context).pushNamed(
+                  AppRoutes.postDetail,
+                  arguments: PostDetailArguments(post: p),
                 );
               },
               child: media,
@@ -966,10 +1018,9 @@ class _List extends StatelessWidget {
           title: Text(p.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text(p.type.name.toUpperCase()),
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => PostDetailScreen(post: p),
-              ),
+            Navigator.of(context).pushNamed(
+              AppRoutes.postDetail,
+              arguments: PostDetailArguments(post: p),
             );
           },
         );

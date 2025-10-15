@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firestore_image_service.dart';
 import '../widgets/firestore_image.dart';
 
@@ -47,6 +48,16 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
   Future<void> _uploadImage() async {
     if (_selectedImage == null) return;
 
+    // Get current user
+    final auth = FirebaseAuth.instance;
+    if (auth.currentUser == null) {
+      setState(() {
+        _errorMessage = 'No authenticated user found';
+      });
+      return;
+    }
+    final userId = auth.currentUser!.uid;
+
     setState(() {
       _isUploading = true;
       _uploadProgress = 0.0;
@@ -58,6 +69,7 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
       final progressStream = _imageService.uploadImageWithProgress(
         fileName: 'test_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
         folder: 'test_uploads',
+        userId: userId, // Pass userId for Firestore rules
         file: _selectedImage,
       );
 
@@ -71,6 +83,7 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
       final imageId = await _imageService.uploadImage(
         fileName: 'test_image_${DateTime.now().millisecondsSinceEpoch}.jpg',
         folder: 'test_uploads',
+        userId: userId, // Pass userId for Firestore rules
         file: _selectedImage,
       );
 

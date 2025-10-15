@@ -99,26 +99,27 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  Future<void> _google() async {
+  Future<void> _signInWithGoogle() async {
     setState(() {
       _loading = true;
       _error = null;
     });
+
     try {
-      final userCredential = await AuthService.instance.signInWithGoogle();
-      if (userCredential?.user != null) {
-        // Check if user profile exists, if not create one
-        final existingUser = await FirestoreService().getUser(
-          userCredential!.user!.uid,
-        );
-        if (existingUser == null) {
-          await _createUserProfile(userCredential.user!, isGoogleSignUp: true);
-        }
+      final credential = await AuthService.instance.signInWithGoogle();
+      if (credential?.user != null) {
+        // Let the AuthStateHandler handle navigation
+        // The auth state change will trigger the proper flow
       }
     } catch (e) {
-      setState(() {
-        _error = 'Google sign-in failed: ${e.toString()}';
-      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Google sign-in failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -437,7 +438,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            onPressed: _loading ? null : _google,
+                            onPressed: _loading ? null : _signInWithGoogle,
                           ),
                         ),
                         SizedBox(height: s.size(12)),

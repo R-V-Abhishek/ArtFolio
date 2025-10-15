@@ -359,6 +359,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           final stream = _imageStore.uploadImageWithProgress(
             fileName: fileName,
             folder: 'posts/$postId',
+            userId: userId, // Pass userId for Firestore rules
             file: file,
           );
 
@@ -386,6 +387,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           final imageId = await _imageStore.uploadImage(
             fileName: fileName,
             folder: 'posts/$postId',
+            userId: userId, // Pass userId for Firestore rules
             file: file,
           );
           uploadedIds.add(imageId);

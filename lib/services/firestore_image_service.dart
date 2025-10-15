@@ -11,6 +11,7 @@ class FirestoreImageService {
   Future<String> uploadImage({
     required String fileName,
     required String folder,
+    required String userId, // Add userId parameter for Firestore rules
     File? file,
     Uint8List? data,
   }) async {
@@ -32,6 +33,7 @@ class FirestoreImageService {
       final uniqueFileName = '${timestamp}_$fileName';
 
       final docRef = await _firestore.collection('images').add({
+        'userId': userId, // Include userId for Firestore security rules
         'fileName': uniqueFileName,
         'folder': folder,
         'base64Data': base64Image,
@@ -93,6 +95,7 @@ class FirestoreImageService {
   Stream<double> uploadImageWithProgress({
     required String fileName,
     required String folder,
+    required String userId, // Add userId parameter
     File? file,
     Uint8List? data,
   }) async* {
@@ -104,6 +107,7 @@ class FirestoreImageService {
     await uploadImage(
       fileName: fileName,
       folder: folder,
+      userId: userId, // Pass userId to uploadImage
       file: file,
       data: data,
     );

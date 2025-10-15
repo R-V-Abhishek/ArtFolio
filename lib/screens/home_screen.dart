@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'feed_screen.dart';
-import 'image_upload_test_screen.dart';
-import 'create_post_screen.dart';
 import 'search_screen.dart';
 import 'profile_screen.dart';
 import '../services/auth_service.dart';
 import '../services/session_state.dart';
 import '../services/firestore_service.dart';
 import '../theme/theme.dart';
-import 'notifications_screen.dart';
 import '../theme/scale.dart';
+import '../routes/app_routes.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -40,11 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 return IconButton(
                   tooltip: 'Notifications',
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const NotificationsScreen(),
-                      ),
-                    );
+                    Navigator.of(context).pushNamed(AppRoutes.notifications);
                   },
                   icon: const Icon(Icons.notifications_outlined),
                 );
@@ -60,11 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       IconButton(
                         tooltip: 'Notifications',
                         onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const NotificationsScreen(),
-                            ),
-                          );
+                          Navigator.of(context).pushNamed(AppRoutes.notifications);
                         },
                         icon: const Icon(Icons.notifications_outlined),
                       ),
@@ -130,12 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   break;
                 case 'test_storage':
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ImageUploadTestScreen(),
-                    ),
-                  );
+                  Navigator.of(context).pushNamed(AppRoutes.imageUploadTest);
                   break;
               }
             },
@@ -176,11 +161,8 @@ class _HomeScreenState extends State<HomeScreen> {
             // Create tab acts as central action: open create post
             final messenger = ScaffoldMessenger.of(context);
             final navigator = Navigator.of(context);
-            final posted = await navigator.push<bool>(
-              MaterialPageRoute(
-                builder: (_) => const CreatePostScreen(),
-                fullscreenDialog: true,
-              ),
+            final posted = await navigator.pushNamed<bool>(
+              AppRoutes.createPost,
             );
             if (!mounted) return;
             if (posted == true) {
@@ -189,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
               messenger.showSnackBar(
                 SnackBar(
                   content: const Text('Post published'),
+                  duration: const Duration(seconds: 3), // Auto-dismiss after 3 seconds
                   action: SnackBarAction(
                     label: 'View Profile',
                     onPressed: () => setState(() => _currentIndex = 3),

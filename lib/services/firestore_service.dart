@@ -456,7 +456,8 @@ class FirestoreService {
         return false;
       } else {
         await ref.set({
-          'viewerId': viewerUserId,
+          'followerId': viewerUserId, // Changed from 'viewerId' to 'followerId' to match Firestore rules
+          'viewerId': viewerUserId,   // Keep both for compatibility with existing code
           'targetId': targetUserId,
           'createdAt': FieldValue.serverTimestamp(),
         });

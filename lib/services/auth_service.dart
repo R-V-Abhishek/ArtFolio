@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Unified authentication service combining extended capabilities with
 /// a singleton pattern for easy access across the app.
@@ -50,6 +51,18 @@ class AuthService {
     );
     return _auth.signInWithCredential(credential);
   }
+
+  Future<bool> userExistsInFirestore(String uid) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+      return doc.exists;
+    } catch (e) {
+      return false;
+    }
+}
 
   Future<void> signOut() async {
     try {

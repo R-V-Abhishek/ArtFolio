@@ -4,12 +4,9 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'theme/theme.dart';
-import 'theme/responsive.dart'; // ✅ Add this import
-import 'services/auth_service.dart';
-import 'screens/auth_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/splash_screen.dart';
+import 'theme/responsive.dart';
 import 'services/session_state.dart';
+import 'routes/route_generator.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 void main() async {
@@ -71,30 +68,13 @@ class MyApp extends StatelessWidget {
             darkTheme: darkTheme,
             themeMode: mode,
 
-            /// ✅ Global responsive layout wrapper
             builder: (context, innerChild) => ResponsiveScaffold(
               child: innerChild ?? const SizedBox.shrink(),
             ),
 
-            home: SplashScreen(
-              next: isGuest
-                  ? const HomeScreen()
-                  : StreamBuilder(
-                      stream: AuthService.instance.authStateChanges(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Scaffold(
-                            body: Center(child: CircularProgressIndicator()),
-                          );
-                        }
-                        if (snapshot.hasData) {
-                          return const HomeScreen();
-                        }
-                        return const AuthScreen();
-                      },
-                    ),
-            ),
+            // Use route generator for named navigation
+            onGenerateRoute: RouteGenerator.generateRoute,
+            initialRoute: '/',
           ),
         ),
       ),

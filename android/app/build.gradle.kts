@@ -51,8 +51,12 @@ android {
         applicationId = "com.artfolio"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        val flutterVersionCode = flutter.versionCode ?: 1
+        val flutterVersionName = flutter.versionName ?: "1.0"
+
+        versionCode = flutterVersionCode
+        versionName = flutterVersionName
+
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey ?: ""
     }
 

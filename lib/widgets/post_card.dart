@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/post.dart';
@@ -7,7 +8,8 @@ import '../services/firestore_service.dart';
 import 'firestore_image.dart';
 import '../theme/scale.dart';
 import 'comments_sheet.dart';
-import '../screens/profile_screen.dart';
+import '../routes/app_routes.dart';
+import '../routes/route_arguments.dart';
 
 class PostCard extends StatefulWidget {
   final Post post;
@@ -25,6 +27,7 @@ class _PostCardState extends State<PostCard> {
 
   // Local optimistic state
   late int _likesCount;
+  late int _commentsCount; // Add local comment count
   late bool _isLiked;
   int _currentPage = 0; // for gallery
   model.User? _author;
@@ -37,6 +40,7 @@ class _PostCardState extends State<PostCard> {
   void initState() {
     super.initState();
     _likesCount = widget.post.likesCount;
+    _commentsCount = widget.post.commentsCount; // Initialize local comment count
     final uid = _auth.currentUser?.uid;
     _isLiked = uid != null && widget.post.likedBy.contains(uid);
     _loadAuthor();
@@ -78,6 +82,23 @@ class _PostCardState extends State<PostCard> {
     }
     _incrementedView = true;
     _firestore.incrementPostViews(widget.post.id).catchError((_) {});
+  }
+
+  Future<void> _refreshCommentCount() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(widget.post.id)
+          .get();
+      if (doc.exists && mounted) {
+        final data = doc.data()!;
+        setState(() {
+          _commentsCount = data['commentsCount'] ?? 0;
+        });
+      }
+    } catch (e) {
+      // Ignore errors silently for now
+    }
   }
 
   Future<void> _toggleLike() async {
@@ -177,10 +198,9 @@ class _PostCardState extends State<PostCard> {
               GestureDetector(
                 onTap: () {
                   if (_author != null) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ProfileScreen(userId: _author!.id),
-                      ),
+                    Navigator.of(context).pushNamed(
+                      AppRoutes.profile,
+                      arguments: ProfileArguments(userId: _author!.id),
                     );
                   }
                 },
@@ -326,8 +346,8 @@ class _PostCardState extends State<PostCard> {
                 iconSize: s.size(28),
                 onPressed:
                     widget.onCommentTap ??
-                    () {
-                      showModalBottomSheet(
+                    () async {
+                      await showModalBottomSheet(
                         context: context,
                         useSafeArea: true,
                         isScrollControlled: true,
@@ -337,6 +357,8 @@ class _PostCardState extends State<PostCard> {
                           allowComments: widget.post.allowComments,
                         ),
                       );
+                      // Refresh comment count after the sheet closes
+                      _refreshCommentCount();
                     },
                 icon: const Icon(Icons.mode_comment_outlined),
               ),
@@ -363,7 +385,7 @@ class _PostCardState extends State<PostCard> {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: s.size(16)),
           child: Text(
-            '$_likesCount likes  •  ${widget.post.commentsCount} comments',
+            '$_likesCount likes  •  $_commentsCount comments',
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
               fontSize: s.font(theme.textTheme.bodyMedium?.fontSize ?? 14),
