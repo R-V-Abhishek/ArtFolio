@@ -82,24 +82,67 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
                   final option = _roleOptions[index];
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
-                    child: RadioListTile<UserRole>(
-                      value: option.role,
-                      groupValue: _selectedRole,
-                      onChanged: (UserRole? value) {
+                    child: InkWell(
+                      onTap: () {
                         setState(() {
-                          _selectedRole = value;
+                          _selectedRole = option.role;
                         });
                       },
-                      title: Row(
-                        children: [
-                          Icon(option.icon, color: AppColors.primary),
-                          const SizedBox(width: 12),
-                          Text(option.title),
-                        ],
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(left: 36),
-                        child: Text(option.subtitle),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: _selectedRole == option.role 
+                                    ? AppColors.primary 
+                                    : Colors.grey,
+                                  width: 2,
+                                ),
+                                color: _selectedRole == option.role 
+                                  ? AppColors.primary 
+                                  : Colors.transparent,
+                              ),
+                              child: _selectedRole == option.role
+                                ? const Icon(
+                                    Icons.check,
+                                    size: 16,
+                                    color: Colors.white,
+                                  )
+                                : null,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(option.icon, color: AppColors.primary),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        option.title,
+                                        style: Theme.of(context).textTheme.titleMedium,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 36),
+                                    child: Text(
+                                      option.subtitle,
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );

@@ -209,10 +209,12 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 onPressed: () async {
                   try {
                     await AccountDeletionService.reauthenticateUser();
-                    Navigator.of(context).pop(true);
-                  } catch (e) {
-                    Navigator.of(context).pop(false);
                     if (context.mounted) {
+                      Navigator.of(context).pop(true);
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      Navigator.of(context).pop(false);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Re-authentication failed: $e'),
@@ -269,11 +271,13 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                       password: passwordController.text,
                     );
                     passwordController.dispose();
-                    Navigator.of(context).pop(true);
+                    if (context.mounted) {
+                      Navigator.of(context).pop(true);
+                    }
                   } catch (e) {
                     passwordController.dispose();
-                    Navigator.of(context).pop(false);
                     if (context.mounted) {
+                      Navigator.of(context).pop(false);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Re-authentication failed: $e'),
