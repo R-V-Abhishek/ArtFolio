@@ -20,17 +20,13 @@ class RouteGenerator {
     switch (settings.name) {
       case '/':
         return MaterialPageRoute(
-          builder: (_) => const SplashScreen(
-            next: AuthStateHandler(),
-          ),
+          builder: (_) => const SplashScreen(next: AuthStateHandler()),
         );
 
       case AppRoutes.splash:
         final args = settings.arguments as Widget?;
         return MaterialPageRoute(
-          builder: (_) => SplashScreen(
-            next: args ?? const AuthStateHandler(),
-          ),
+          builder: (_) => SplashScreen(next: args ?? const AuthStateHandler()),
         );
 
       case AppRoutes.auth:
@@ -95,10 +91,8 @@ class RouteGenerator {
           return _errorRoute('FollowList requires arguments');
         }
         return MaterialPageRoute(
-          builder: (_) => FollowListScreen(
-            userId: args.userId,
-            type: args.type,
-          ),
+          builder: (_) =>
+              FollowListScreen(userId: args.userId, type: args.type),
           settings: settings,
         );
 
@@ -148,7 +142,8 @@ class RouteGenerator {
               Text(message),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => Navigator.of(context).pushReplacementNamed(AppRoutes.home),
+                onPressed: () =>
+                    Navigator.of(context).pushReplacementNamed(AppRoutes.home),
                 child: const Text('Go to Home'),
               ),
             ],

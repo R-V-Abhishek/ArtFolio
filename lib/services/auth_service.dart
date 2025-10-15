@@ -62,7 +62,7 @@ class AuthService {
     } catch (e) {
       return false;
     }
-}
+  }
 
   Future<void> signOut() async {
     try {

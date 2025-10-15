@@ -19,7 +19,8 @@ class UserTypeSelectionScreen extends StatefulWidget {
   });
 
   @override
-  State<UserTypeSelectionScreen> createState() => _UserTypeSelectionScreenState();
+  State<UserTypeSelectionScreen> createState() =>
+      _UserTypeSelectionScreenState();
 }
 
 class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
@@ -98,22 +99,22 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: _selectedRole == option.role 
-                                    ? AppColors.primary 
-                                    : Colors.grey,
+                                  color: _selectedRole == option.role
+                                      ? AppColors.primary
+                                      : Colors.grey,
                                   width: 2,
                                 ),
-                                color: _selectedRole == option.role 
-                                  ? AppColors.primary 
-                                  : Colors.transparent,
+                                color: _selectedRole == option.role
+                                    ? AppColors.primary
+                                    : Colors.transparent,
                               ),
                               child: _selectedRole == option.role
-                                ? const Icon(
-                                    Icons.check,
-                                    size: 16,
-                                    color: Colors.white,
-                                  )
-                                : null,
+                                  ? const Icon(
+                                      Icons.check,
+                                      size: 16,
+                                      color: Colors.white,
+                                    )
+                                  : null,
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -122,11 +123,16 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(option.icon, color: AppColors.primary),
+                                      Icon(
+                                        option.icon,
+                                        color: AppColors.primary,
+                                      ),
                                       const SizedBox(width: 12),
                                       Text(
                                         option.title,
-                                        style: Theme.of(context).textTheme.titleMedium,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium,
                                       ),
                                     ],
                                   ),
@@ -135,7 +141,9 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
                                     padding: const EdgeInsets.only(left: 36),
                                     child: Text(
                                       option.subtitle,
-                                      style: Theme.of(context).textTheme.bodySmall,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
                                     ),
                                   ),
                                 ],

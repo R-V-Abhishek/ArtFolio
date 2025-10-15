@@ -397,6 +397,16 @@ class FirestoreService {
     final username = user?.username ?? 'User';
     final avatarUrl = user?.profilePictureUrl ?? '';
 
+    // Fetch post owner for notification
+    String ownerId = '';
+    try {
+      final postDoc = await _postsCollection.doc(postId).get();
+      if (postDoc.exists) {
+        final data = postDoc.data() as Map<String, dynamic>;
+        ownerId = (data['userId'] as String?) ?? '';
+      }
+    } catch (_) {}
+
     final batch = _db.batch();
     final commentsRef = _commentsCollection(postId).doc();
     batch.set(commentsRef, {
@@ -411,6 +421,24 @@ class FirestoreService {
       'lastEngagement': FieldValue.serverTimestamp(),
     });
     await batch.commit();
+
+    // Best-effort notification (skip self-comment)
+    try {
+      if (ownerId.isNotEmpty && ownerId != userId) {
+        final preview = text.trim();
+        final previewShort = preview.length > 40
+            ? '${preview.substring(0, 40)}…'
+            : preview;
+        await _notificationsCollection.add({
+          'userId': ownerId,
+          'type': 'comment',
+          'postId': postId,
+          'title': '$username commented: $previewShort',
+          'createdAt': FieldValue.serverTimestamp(),
+          'read': false,
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> deleteComment({
@@ -456,8 +484,10 @@ class FirestoreService {
         return false;
       } else {
         await ref.set({
-          'followerId': viewerUserId, // Changed from 'viewerId' to 'followerId' to match Firestore rules
-          'viewerId': viewerUserId,   // Keep both for compatibility with existing code
+          'followerId':
+              viewerUserId, // Changed from 'viewerId' to 'followerId' to match Firestore rules
+          'viewerId':
+              viewerUserId, // Keep both for compatibility with existing code
           'targetId': targetUserId,
           'createdAt': FieldValue.serverTimestamp(),
         });
@@ -611,6 +641,7 @@ class FirestoreService {
       final postData = postSnapshot.data() as Map<String, dynamic>;
       final likedBy = List<String>.from(postData['likedBy'] ?? []);
       final currentLikes = postData['likesCount'] ?? 0;
+      final ownerId = (postData['userId'] as String?) ?? '';
 
       if (likedBy.contains(userId)) {
         // Unlike the post
@@ -628,6 +659,23 @@ class FirestoreService {
           'likesCount': currentLikes + 1,
           'lastEngagement': FieldValue.serverTimestamp(),
         });
+
+        // Best-effort notification for post owner (skip self-like)
+        try {
+          if (ownerId.isNotEmpty && ownerId != userId) {
+            final liker = await getUser(userId);
+            await _notificationsCollection.add({
+              'userId': ownerId,
+              'type': 'like',
+              'postId': postId,
+              'title': '${liker?.username ?? 'Someone'} liked your post',
+              'createdAt': FieldValue.serverTimestamp(),
+              'read': false,
+            });
+          }
+        } catch (_) {
+          // ignore notification failures
+        }
       }
     } catch (e) {
       throw Exception('Failed to toggle post like: $e');

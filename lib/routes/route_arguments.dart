@@ -38,18 +38,12 @@ class FollowListArguments {
   final String userId;
   final FollowListType type;
 
-  FollowListArguments({
-    required this.userId,
-    required this.type,
-  });
+  FollowListArguments({required this.userId, required this.type});
 }
 
 class CommentsArguments {
   final String postId;
   final bool allowComments;
 
-  CommentsArguments({
-    required this.postId,
-    required this.allowComments,
-  });
+  CommentsArguments({required this.postId, required this.allowComments});
 }

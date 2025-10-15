@@ -35,12 +35,14 @@ class _PostCardState extends State<PostCard> {
   bool _isFollowing = false;
   bool _followBusy = false;
   bool _showFollow = false;
+  bool _showMeta = false; // toggles tags + location visibility
 
   @override
   void initState() {
     super.initState();
     _likesCount = widget.post.likesCount;
-    _commentsCount = widget.post.commentsCount; // Initialize local comment count
+    _commentsCount =
+        widget.post.commentsCount; // Initialize local comment count
     final uid = _auth.currentUser?.uid;
     _isLiked = uid != null && widget.post.likedBy.contains(uid);
     _loadAuthor();
@@ -218,8 +220,12 @@ class _PostCardState extends State<PostCard> {
                                   ? Image.network(
                                       _author!.profilePictureUrl,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          Container(
+                                      errorBuilder:
+                                          (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) => Container(
                                             color: theme
                                                 .colorScheme
                                                 .surfaceContainerHighest,
@@ -239,8 +245,12 @@ class _PostCardState extends State<PostCard> {
                                   : Image.asset(
                                       _author!.profilePictureUrl,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          Container(
+                                      errorBuilder:
+                                          (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) => Container(
                                             color: theme
                                                 .colorScheme
                                                 .surfaceContainerHighest,
@@ -258,10 +268,12 @@ class _PostCardState extends State<PostCard> {
                                           ),
                                     ))
                             : Container(
-                                color: theme.colorScheme.surfaceContainerHighest,
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
                                 alignment: Alignment.center,
                                 child: Text(
-                                  ((_author != null && _author!.username.isNotEmpty)
+                                  ((_author != null &&
+                                              _author!.username.isNotEmpty)
                                           ? _author!.username[0]
                                           : 'A')
                                       .toUpperCase(),
@@ -400,28 +412,70 @@ class _PostCardState extends State<PostCard> {
               s.size(16),
               s.size(6),
               s.size(16),
-              s.size(12),
+              s.size(8),
             ),
-            child: RichText(
-              text: TextSpan(
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontSize: s.font(theme.textTheme.bodyMedium?.fontSize ?? 14),
-                ),
-                children: [
-                  TextSpan(
-                    text: '${_author?.username ?? 'artist'} ',
+            child: InkWell(
+              onTap: () => setState(() => _showMeta = !_showMeta),
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: RichText(
+                  text: TextSpan(
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
                       fontSize: s.font(
                         theme.textTheme.bodyMedium?.fontSize ?? 14,
                       ),
                     ),
+                    children: [
+                      TextSpan(
+                        text: '${_author?.username ?? 'artist'} ',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: s.font(
+                            theme.textTheme.bodyMedium?.fontSize ?? 14,
+                          ),
+                        ),
+                      ),
+                      TextSpan(text: widget.post.caption),
+                    ],
                   ),
-                  TextSpan(text: widget.post.caption),
-                ],
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+
+        // Tags row (if any)
+        if (_showMeta && widget.post.tags.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.fromLTRB(s.size(12), 0, s.size(12), s.size(8)),
+            child: _TagsWrap(tags: widget.post.tags, maxToShow: 5),
+          ),
+
+        // Location (if any)
+        if (_showMeta && widget.post.location != null)
+          Padding(
+            padding: EdgeInsets.fromLTRB(s.size(16), 0, s.size(16), s.size(10)),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.place_outlined,
+                  size: s.size(16),
+                  color: theme.colorScheme.outline,
+                ),
+                SizedBox(width: s.size(6)),
+                Flexible(
+                  child: Text(
+                    _formatLocation(widget.post.location!),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
       ],
@@ -520,6 +574,38 @@ class _PostCardState extends State<PostCard> {
     if (months < 12) return '${months}mo';
     final years = (diff.inDays / 365).floor();
     return '${years}y';
+  }
+
+  String _formatLocation(PostLocation loc) {
+    final parts = [
+      loc.city,
+      loc.state,
+      loc.country,
+    ].where((e) => (e ?? '').trim().isNotEmpty).map((e) => e!.trim()).toList();
+    return parts.isEmpty ? 'Unknown location' : parts.join(', ');
+  }
+}
+
+class _TagsWrap extends StatelessWidget {
+  final List<String> tags;
+  final int maxToShow;
+  const _TagsWrap({required this.tags, this.maxToShow = 5});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final shown = tags.take(maxToShow).toList();
+    final hidden = tags.length - shown.length;
+    final text = [
+      for (final t in shown) '#$t',
+      if (hidden > 0) '+$hidden',
+    ].join(' ');
+    return Text(
+      text,
+      style: theme.textTheme.bodySmall?.copyWith(color: Colors.blue),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
   }
 }
 

@@ -11,9 +11,12 @@ import 'storage_service.dart';
 class RecentLoginRequiredException implements Exception {
   final String message;
   final FirebaseAuthException originalException;
-  
-  const RecentLoginRequiredException(this.message, {required this.originalException});
-  
+
+  const RecentLoginRequiredException(
+    this.message, {
+    required this.originalException,
+  });
+
   @override
   String toString() => message;
 }
@@ -66,11 +69,13 @@ class AccountDeletionService {
       if (userData.profilePictureUrl.isNotEmpty) {
         try {
           // Validate URL format before attempting deletion
-          if (userData.profilePictureUrl.startsWith('https://') || 
+          if (userData.profilePictureUrl.startsWith('https://') ||
               userData.profilePictureUrl.startsWith('gs://')) {
             await _storage.deleteImage(userData.profilePictureUrl);
           } else {
-            debugPrint('Skipping invalid profile picture URL: ${userData.profilePictureUrl}');
+            debugPrint(
+              'Skipping invalid profile picture URL: ${userData.profilePictureUrl}',
+            );
           }
         } catch (e) {
           debugPrint('Warning: Failed to delete profile picture: $e');
@@ -110,7 +115,7 @@ class AccountDeletionService {
   static Future<void> _deleteUserPosts(String userId) async {
     try {
       debugPrint('Deleting posts for user: $userId');
-      
+
       // Get all posts by the user
       final postsSnapshot = await _firestore
           .collection('posts')
@@ -119,7 +124,7 @@ class AccountDeletionService {
 
       for (final postDoc in postsSnapshot.docs) {
         final post = Post.fromSnapshot(postDoc);
-        
+
         // Delete post images from storage
         final imagesToDelete = <String>[];
         if (post.mediaUrl != null && post.mediaUrl!.isNotEmpty) {
@@ -135,8 +140,9 @@ class AccountDeletionService {
         for (final imageUrl in imagesToDelete) {
           try {
             // Validate URL format before attempting deletion
-            if (imageUrl.isNotEmpty && 
-                (imageUrl.startsWith('https://') || imageUrl.startsWith('gs://'))) {
+            if (imageUrl.isNotEmpty &&
+                (imageUrl.startsWith('https://') ||
+                    imageUrl.startsWith('gs://'))) {
               await _storage.deleteImage(imageUrl);
             } else {
               debugPrint('Skipping invalid image URL: $imageUrl');
@@ -152,7 +158,7 @@ class AccountDeletionService {
             .doc(post.id)
             .collection('comments')
             .get();
-        
+
         for (final commentDoc in commentsSnapshot.docs) {
           await commentDoc.reference.delete();
         }
@@ -160,8 +166,10 @@ class AccountDeletionService {
         // Delete the post document
         await postDoc.reference.delete();
       }
-      
-      debugPrint('Deleted ${postsSnapshot.docs.length} posts for user: $userId');
+
+      debugPrint(
+        'Deleted ${postsSnapshot.docs.length} posts for user: $userId',
+      );
     } catch (e) {
       throw Exception('Failed to delete user posts: $e');
     }
@@ -171,7 +179,7 @@ class AccountDeletionService {
   static Future<void> _deleteUserComments(String userId) async {
     try {
       debugPrint('Deleting comments for user: $userId');
-      
+
       // Get all posts to check their comments
       final postsSnapshot = await _firestore.collection('posts').get();
       int deletedComments = 0;
@@ -193,7 +201,9 @@ class AccountDeletionService {
         // Update post's comment count
         if (commentsSnapshot.docs.isNotEmpty) {
           batch.update(postDoc.reference, {
-            'commentsCount': FieldValue.increment(-commentsSnapshot.docs.length),
+            'commentsCount': FieldValue.increment(
+              -commentsSnapshot.docs.length,
+            ),
           });
         }
 
@@ -201,7 +211,7 @@ class AccountDeletionService {
           await batch.commit();
         }
       }
-      
+
       debugPrint('Deleted $deletedComments comments for user: $userId');
     } catch (e) {
       throw Exception('Failed to delete user comments: $e');
@@ -212,7 +222,7 @@ class AccountDeletionService {
   static Future<void> _removeUserLikes(String userId) async {
     try {
       debugPrint('Removing likes for user: $userId');
-      
+
       // Get all posts where user is in likedBy array
       final postsSnapshot = await _firestore
           .collection('posts')
@@ -230,8 +240,10 @@ class AccountDeletionService {
       if (postsSnapshot.docs.isNotEmpty) {
         await batch.commit();
       }
-      
-      debugPrint('Removed likes from ${postsSnapshot.docs.length} posts for user: $userId');
+
+      debugPrint(
+        'Removed likes from ${postsSnapshot.docs.length} posts for user: $userId',
+      );
     } catch (e) {
       throw Exception('Failed to remove user likes: $e');
     }
@@ -241,7 +253,7 @@ class AccountDeletionService {
   static Future<void> _deleteFollowRelationships(String userId) async {
     try {
       debugPrint('Deleting follow relationships for user: $userId');
-      
+
       // Delete where user is the follower (user following others)
       final followingSnapshot = await _firestore
           .collection('userFollows')
@@ -255,20 +267,23 @@ class AccountDeletionService {
           .get();
 
       final batch = _firestore.batch();
-      
+
       for (final doc in followingSnapshot.docs) {
         batch.delete(doc.reference);
       }
-      
+
       for (final doc in followersSnapshot.docs) {
         batch.delete(doc.reference);
       }
 
-      if (followingSnapshot.docs.isNotEmpty || followersSnapshot.docs.isNotEmpty) {
+      if (followingSnapshot.docs.isNotEmpty ||
+          followersSnapshot.docs.isNotEmpty) {
         await batch.commit();
       }
-      
-      debugPrint('Deleted ${followingSnapshot.docs.length + followersSnapshot.docs.length} follow relationships for user: $userId');
+
+      debugPrint(
+        'Deleted ${followingSnapshot.docs.length + followersSnapshot.docs.length} follow relationships for user: $userId',
+      );
     } catch (e) {
       throw Exception('Failed to delete follow relationships: $e');
     }
@@ -278,7 +293,7 @@ class AccountDeletionService {
   static Future<void> _deleteUserNotifications(String userId) async {
     try {
       debugPrint('Deleting notifications for user: $userId');
-      
+
       // Delete notifications FOR the user
       final userNotificationsSnapshot = await _firestore
           .collection('notifications')
@@ -287,7 +302,7 @@ class AccountDeletionService {
 
       // Delete notifications ABOUT the user (where they might be mentioned)
       // This is more complex and might require additional fields in notifications
-      
+
       final batch = _firestore.batch();
       for (final doc in userNotificationsSnapshot.docs) {
         batch.delete(doc.reference);
@@ -296,18 +311,25 @@ class AccountDeletionService {
       if (userNotificationsSnapshot.docs.isNotEmpty) {
         await batch.commit();
       }
-      
-      debugPrint('Deleted ${userNotificationsSnapshot.docs.length} notifications for user: $userId');
+
+      debugPrint(
+        'Deleted ${userNotificationsSnapshot.docs.length} notifications for user: $userId',
+      );
     } catch (e) {
       throw Exception('Failed to delete user notifications: $e');
     }
   }
 
   /// Deletes role-specific data based on user role
-  static Future<void> _deleteRoleSpecificData(String userId, app_models.UserRole role) async {
+  static Future<void> _deleteRoleSpecificData(
+    String userId,
+    app_models.UserRole role,
+  ) async {
     try {
-      debugPrint('Deleting role-specific data for user: $userId (role: ${role.name})');
-      
+      debugPrint(
+        'Deleting role-specific data for user: $userId (role: ${role.name})',
+      );
+
       switch (role) {
         case app_models.UserRole.artist:
           await _firestore.collection('artists').doc(userId).delete();
@@ -322,7 +344,7 @@ class AccountDeletionService {
           await _firestore.collection('organisations').doc(userId).delete();
           break;
       }
-      
+
       debugPrint('Deleted role-specific data for user: $userId');
     } catch (e) {
       throw Exception('Failed to delete role-specific data: $e');
@@ -350,7 +372,9 @@ class AccountDeletionService {
   }
 
   /// Gets account deletion summary (what will be deleted)
-  static Future<Map<String, int>> getAccountDeletionSummary(String userId) async {
+  static Future<Map<String, int>> getAccountDeletionSummary(
+    String userId,
+  ) async {
     try {
       final summary = <String, int>{};
 
@@ -413,21 +437,24 @@ class AccountDeletionService {
 
     try {
       AuthCredential credential;
-      
+
       // Check if user signed in with Google
       final providerData = currentUser.providerData;
-      final hasGoogleProvider = providerData.any((provider) => provider.providerId == 'google.com');
-      
+      final hasGoogleProvider = providerData.any(
+        (provider) => provider.providerId == 'google.com',
+      );
+
       if (hasGoogleProvider) {
         // Re-authenticate with Google
         final GoogleSignIn googleSignIn = GoogleSignIn();
         final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-        
+
         if (googleUser == null) {
           throw Exception('Google sign-in was cancelled');
         }
-        
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
         credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,
@@ -435,14 +462,18 @@ class AccountDeletionService {
       } else {
         // Re-authenticate with email/password
         if (email == null || password == null) {
-          throw Exception('Email and password are required for re-authentication');
+          throw Exception(
+            'Email and password are required for re-authentication',
+          );
         }
-        credential = EmailAuthProvider.credential(email: email, password: password);
+        credential = EmailAuthProvider.credential(
+          email: email,
+          password: password,
+        );
       }
-      
+
       await currentUser.reauthenticateWithCredential(credential);
       debugPrint('User re-authenticated successfully');
-      
     } catch (e) {
       debugPrint('Re-authentication failed: $e');
       throw Exception('Re-authentication failed: $e');

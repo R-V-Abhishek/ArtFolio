@@ -135,18 +135,38 @@ class _AuthScreenState extends State<AuthScreen> {
   }) async {
     try {
       final now = DateTime.now();
-      final username = isGoogleSignUp
-          ? (firebaseUser.displayName?.replaceAll(' ', '').toLowerCase() ??
-                'user${firebaseUser.uid.substring(0, 8)}')
-          : _usernameCtrl.text.trim();
+      final emailLocal = (firebaseUser.email ?? '').split('@').first;
+      final defaultUsername = 'user${firebaseUser.uid.substring(0, 8)}';
+      String googleDerived =
+          (firebaseUser.displayName ?? '').replaceAll(' ', '').toLowerCase();
+      if (googleDerived.isEmpty) googleDerived = emailLocal;
+      if (googleDerived.isEmpty) googleDerived = defaultUsername;
+
+      String username;
+      if (isGoogleSignUp) {
+        username = googleDerived;
+      } else {
+        final typed = _usernameCtrl.text.trim();
+        username = typed.isNotEmpty
+            ? typed
+            : (emailLocal.isNotEmpty ? emailLocal : defaultUsername);
+      }
 
       final user = app_models.User(
         id: firebaseUser.uid,
         username: username,
         email: firebaseUser.email ?? '',
         fullName: isGoogleSignUp
-            ? (firebaseUser.displayName ?? '')
-            : _fullNameCtrl.text.trim(),
+            ? (() {
+                final dn = (firebaseUser.displayName ?? '').trim();
+                if (dn.isNotEmpty) return dn;
+                if (emailLocal.isNotEmpty) return emailLocal;
+                return username;
+              })()
+            : (() {
+                final name = _fullNameCtrl.text.trim();
+                return name.isNotEmpty ? name : username;
+              })(),
         profilePictureUrl: firebaseUser.photoURL ?? '',
         bio: '',
         role: isGoogleSignUp ? app_models.UserRole.audience : _selectedRole,

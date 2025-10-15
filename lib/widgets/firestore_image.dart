@@ -37,6 +37,14 @@ class _FirestoreImageState extends State<FirestoreImage> {
     _loadImage();
   }
 
+  @override
+  void didUpdateWidget(covariant FirestoreImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageId != widget.imageId) {
+      _loadImage();
+    }
+  }
+
   Future<void> _loadImage() async {
     try {
       setState(() {

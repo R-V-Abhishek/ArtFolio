@@ -5,7 +5,7 @@ import '../widgets/post_card.dart';
 
 class PostDetailScreen extends StatelessWidget {
   final Post post;
-  
+
   const PostDetailScreen({super.key, required this.post});
 
   @override
@@ -17,14 +17,7 @@ class PostDetailScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.surface,
         surfaceTintColor: Colors.transparent,
       ),
-      body: SingleChildScrollView(
-        child: PostCard(
-          post: post,
-          onCommentTap: () {
-            // Comments are already handled within PostCard
-          },
-        ),
-      ),
+      body: SingleChildScrollView(child: PostCard(post: post)),
     );
   }
 }

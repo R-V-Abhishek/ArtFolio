@@ -211,10 +211,9 @@ class _ProfileScreenState extends State<ProfileScreen>
       await AuthService.instance.signOut();
       if (mounted) {
         // Navigate to auth screen
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          AppRoutes.auth,
-          (route) => false,
-        );
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false);
       }
     } catch (e) {
       if (mounted) {
@@ -295,140 +294,141 @@ class _ProfileScreenState extends State<ProfileScreen>
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: NestedScrollView(
-      headerSliverBuilder: (context, innerBoxIsScrolled) => [
-        SliverAppBar(
-          pinned: true,
-          title: Text(_user!.username),
-          actions: [
-            if (!_isOwnProfile) ...[
-              IconButton(
-                icon: const Icon(Icons.mail_outline),
-                tooltip: 'Message',
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Messaging coming soon')),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.favorite_outline),
-                tooltip: 'Sponsor',
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Sponsor flow coming soon')),
-                  );
-                },
-              ),
-            ] else ...[
-              // Settings menu for own profile
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert),
-                tooltip: 'Settings',
-                onSelected: _handleMenuSelection,
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'logout',
-                    child: ListTile(
-                      leading: Icon(Icons.logout),
-                      title: Text('Sign Out'),
-                      contentPadding: EdgeInsets.zero,
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            pinned: true,
+            title: Text(_user!.username),
+            actions: [
+              if (!_isOwnProfile) ...[
+                IconButton(
+                  icon: const Icon(Icons.mail_outline),
+                  tooltip: 'Message',
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Messaging coming soon')),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.favorite_outline),
+                  tooltip: 'Sponsor',
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Sponsor flow coming soon')),
+                    );
+                  },
+                ),
+              ] else ...[
+                // Settings menu for own profile
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert),
+                  tooltip: 'Settings',
+                  onSelected: _handleMenuSelection,
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: ListTile(
+                        leading: Icon(Icons.logout),
+                        title: Text('Sign Out'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete_account',
-                    child: ListTile(
-                      leading: Icon(Icons.delete_forever, color: Colors.red),
-                      title: Text('Delete Account', style: TextStyle(color: Colors.red)),
-                      contentPadding: EdgeInsets.zero,
+                    const PopupMenuItem(
+                      value: 'delete_account',
+                      child: ListTile(
+                        leading: Icon(Icons.delete_forever, color: Colors.red),
+                        title: Text(
+                          'Delete Account',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
-                  ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+          SliverToBoxAdapter(
+            child: _ProfileHeader(
+              user: _user!,
+              artist: _artist,
+              counts: _followCounts,
+              isOwnProfile: _isOwnProfile,
+              isFollowing: _isFollowing,
+              followBusy: _followBusy,
+              onFollowToggle: _onFollowToggle,
+              postsCount: _posts.length,
+              onEditProfile: () async {
+                final nav = Navigator.of(context);
+                await nav.pushNamed(
+                  AppRoutes.editProfile,
+                  arguments: EditProfileArguments(user: _user!),
+                );
+                if (!mounted) return;
+                _loadData();
+              },
+              onEditBio: _editBio,
+            ),
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _TabBarHeaderDelegate(
+              TabBar(
+                controller: _tabController,
+                indicatorColor: Theme.of(context).colorScheme.primary,
+                labelColor: Theme.of(context).colorScheme.primary,
+                unselectedLabelColor: Theme.of(context).colorScheme.outline,
+                tabs: const [
+                  Tab(icon: Icon(Icons.grid_on_rounded), text: 'Posts'),
+                  Tab(icon: Icon(Icons.assignment_outlined), text: 'Projects'),
+                  Tab(icon: Icon(Icons.group_outlined), text: 'Collabs'),
+                  Tab(icon: Icon(Icons.favorite_border), text: 'Sponsors'),
                 ],
               ),
-            ],
-          ],
-        ),
-        SliverToBoxAdapter(
-          child: _ProfileHeader(
-            user: _user!,
-            artist: _artist,
-            counts: _followCounts,
-            isOwnProfile: _isOwnProfile,
-            isFollowing: _isFollowing,
-            followBusy: _followBusy,
-            onFollowToggle: _onFollowToggle,
-            postsCount: _posts.length,
-            onEditProfile: () async {
-              final nav = Navigator.of(context);
-              await nav.pushNamed(
-                AppRoutes.editProfile,
-                arguments: EditProfileArguments(user: _user!),
-              );
-              if (!mounted) return;
-              _loadData();
-            },
-            onEditBio: _editBio,
+            ),
           ),
-        ),
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: _TabBarHeaderDelegate(
-            TabBar(
+        ],
+        body: SafeArea(
+          top: false,
+          bottom: false,
+          // Explicit background so tabs don't inherit a default black from an
+          // ancestor overlay route transition.
+          child: DecoratedBox(
+            decoration: BoxDecoration(color: theme.colorScheme.surface),
+            child: TabBarView(
               controller: _tabController,
-              indicatorColor: Theme.of(context).colorScheme.primary,
-              labelColor: Theme.of(context).colorScheme.primary,
-              unselectedLabelColor: Theme.of(context).colorScheme.outline,
-              tabs: const [
-                Tab(icon: Icon(Icons.grid_on_rounded), text: 'Posts'),
-                Tab(icon: Icon(Icons.assignment_outlined), text: 'Projects'),
-                Tab(icon: Icon(Icons.group_outlined), text: 'Collabs'),
-                Tab(icon: Icon(Icons.favorite_border), text: 'Sponsors'),
+              children: [
+                // Posts tab
+                _PostsTab(
+                  posts: _posts,
+                  gridView: _gridView,
+                  onToggleView: () => setState(() => _gridView = !_gridView),
+                  onRefreshRequested: _loadData,
+                ),
+                // Projects tab placeholder
+                const _PlaceholderTab(
+                  icon: Icons.assignment_outlined,
+                  title: 'Projects & Proposals',
+                  subtitle: 'Coming soon',
+                ),
+                // Collabs tab placeholder
+                const _PlaceholderTab(
+                  icon: Icons.group_outlined,
+                  title: 'Collaborations & Orgs',
+                  subtitle: 'Coming soon',
+                ),
+                // Sponsors tab placeholder
+                const _PlaceholderTab(
+                  icon: Icons.favorite_border,
+                  title: 'Sponsors',
+                  subtitle: 'Coming soon',
+                ),
               ],
-            ),
-          ),
-        ),
-      ],
-      body: SafeArea(
-        top: false,
-        bottom: false,
-        // Explicit background so tabs don't inherit a default black from an
-        // ancestor overlay route transition.
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-          ),
-          child: TabBarView(
-          controller: _tabController,
-          children: [
-            // Posts tab
-            _PostsTab(
-              posts: _posts,
-              gridView: _gridView,
-              onToggleView: () => setState(() => _gridView = !_gridView),
-              onRefreshRequested: _loadData,
-            ),
-            // Projects tab placeholder
-            const _PlaceholderTab(
-              icon: Icons.assignment_outlined,
-              title: 'Projects & Proposals',
-              subtitle: 'Coming soon',
-            ),
-            // Collabs tab placeholder
-            const _PlaceholderTab(
-              icon: Icons.group_outlined,
-              title: 'Collaborations & Orgs',
-              subtitle: 'Coming soon',
-            ),
-            // Sponsors tab placeholder
-            const _PlaceholderTab(
-              icon: Icons.favorite_border,
-              title: 'Sponsors',
-              subtitle: 'Coming soon',
-            ),
-          ],
-          ), // end TabBarView
-        ), // end DecoratedBox
-      ), // end SafeArea
-    ), // end NestedScrollView
+            ), // end TabBarView
+          ), // end DecoratedBox
+        ), // end SafeArea
+      ), // end NestedScrollView
     ); // end Scaffold
   }
 }
@@ -600,12 +600,17 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                                         name,
                                         maxLines: 1,
                                         overflow: TextOverflow.visible,
-                                        style: theme.textTheme.titleLarge?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: s.font(
-                                            theme.textTheme.titleLarge?.fontSize ?? 20,
-                                          ),
-                                        ),
+                                        style: theme.textTheme.titleLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: s.font(
+                                                theme
+                                                        .textTheme
+                                                        .titleLarge
+                                                        ?.fontSize ??
+                                                    20,
+                                              ),
+                                            ),
                                       ),
                                     );
                                   },
@@ -948,14 +953,21 @@ class _Grid extends StatelessWidget {
             final media = isUrl
                 ? Image.network(
                     ref,
+                    key: ValueKey(ref),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       alignment: Alignment.center,
                       child: const Icon(Icons.broken_image),
                     ),
                   )
-                : FirestoreImage(imageId: ref, fit: BoxFit.cover);
+                : FirestoreImage(
+                    key: ValueKey(ref),
+                    imageId: ref,
+                    fit: BoxFit.cover,
+                  );
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
@@ -1003,6 +1015,7 @@ class _List extends StatelessWidget {
                 : (ref.startsWith('http')
                       ? Image.network(
                           ref,
+                          key: ValueKey(ref),
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Container(
@@ -1013,7 +1026,11 @@ class _List extends StatelessWidget {
                                 child: const Icon(Icons.broken_image),
                               ),
                         )
-                      : FirestoreImage(imageId: ref, fit: BoxFit.cover)),
+                      : FirestoreImage(
+                          key: ValueKey(ref),
+                          imageId: ref,
+                          fit: BoxFit.cover,
+                        )),
           ),
           title: Text(p.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text(p.type.name.toUpperCase()),

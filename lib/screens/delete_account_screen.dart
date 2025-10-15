@@ -33,7 +33,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     try {
       final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId != null) {
-        final summary = await AccountDeletionService.getAccountDeletionSummary(userId);
+        final summary = await AccountDeletionService.getAccountDeletionSummary(
+          userId,
+        );
         setState(() {
           _deletionSummary = summary;
           _loadingSummary = false;
@@ -96,11 +98,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
 
       // Navigate to auth screen
       if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          AppRoutes.auth,
-          (route) => false,
-        );
-        
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false);
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Account deleted successfully'),
@@ -124,13 +125,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       } else if (e.code == 'too-many-requests') {
         message = 'Too many attempts. Please try again later.';
       }
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -153,32 +151,33 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
 
   Future<bool> _showFinalConfirmationDialog() async {
     return await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Final Confirmation'),
-          content: const Text(
-            'This action is IRREVERSIBLE. All your data will be permanently deleted. '
-            'Are you absolutely sure you want to delete your account?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Final Confirmation'),
+              content: const Text(
+                'This action is IRREVERSIBLE. All your data will be permanently deleted. '
+                'Are you absolutely sure you want to delete your account?',
               ),
-              child: const Text('Yes, Delete Forever'),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Yes, Delete Forever'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
   }
 
   Future<bool> _showReauthenticationDialog() async {
@@ -187,7 +186,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
 
     // Check if user signed in with Google
     final providerData = user.providerData;
-    final hasGoogleProvider = providerData.any((provider) => provider.providerId == 'google.com');
+    final hasGoogleProvider = providerData.any(
+      (provider) => provider.providerId == 'google.com',
+    );
 
     if (hasGoogleProvider) {
       // For Google users, show a dialog explaining they need to re-authenticate
@@ -300,7 +301,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Delete Account'),
@@ -345,25 +346,28 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Data Summary
             Text(
               'What will be deleted:',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
-            
+
             if (_loadingSummary)
               const Center(child: CircularProgressIndicator())
             else if (_deletionSummary != null) ...[
               _buildDataSummaryCard(),
               const SizedBox(height: 24),
             ],
-            
+
             // Password Re-authentication
-            if (user?.providerData.any((info) => info.providerId == 'password') == true) ...[
+            if (user?.providerData.any(
+                  (info) => info.providerId == 'password',
+                ) ==
+                true) ...[
               Text(
                 'Confirm your password:',
                 style: Theme.of(context).textTheme.titleMedium,
@@ -381,23 +385,25 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
               ),
               const SizedBox(height: 24),
             ],
-            
+
             // Confirmation Checkbox
             CheckboxListTile(
               value: _confirmDeletion,
-              onChanged: _isDeleting ? null : (value) {
-                setState(() {
-                  _confirmDeletion = value ?? false;
-                });
-              },
+              onChanged: _isDeleting
+                  ? null
+                  : (value) {
+                      setState(() {
+                        _confirmDeletion = value ?? false;
+                      });
+                    },
               title: const Text(
                 'I understand that this action is permanent and irreversible',
               ),
               controlAffinity: ListTileControlAffinity.leading,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Delete Button
             SizedBox(
               width: double.infinity,
@@ -414,7 +420,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : const Text(
@@ -426,9 +434,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                       ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Alternative options
             Card(
               child: Padding(
@@ -470,25 +478,23 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             ),
             const SizedBox(height: 12),
             ...(_deletionSummary?.entries.map((entry) {
-              final icon = _getIconForDataType(entry.key);
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Icon(icon, size: 20, color: Colors.grey[600]),
-                    const SizedBox(width: 12),
-                    Text('${entry.value} ${entry.key}'),
-                  ],
-                ),
-              );
-            }).toList() ?? []),
+                  final icon = _getIconForDataType(entry.key);
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Icon(icon, size: 20, color: Colors.grey[600]),
+                        const SizedBox(width: 12),
+                        Text('${entry.value} ${entry.key}'),
+                      ],
+                    ),
+                  );
+                }).toList() ??
+                []),
             const Divider(),
             const Text(
               'All of this data will be permanently deleted.',
-              style: TextStyle(
-                fontStyle: FontStyle.italic,
-                color: Colors.red,
-              ),
+              style: TextStyle(fontStyle: FontStyle.italic, color: Colors.red),
             ),
           ],
         ),

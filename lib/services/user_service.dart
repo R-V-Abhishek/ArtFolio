@@ -13,11 +13,21 @@ class UserService {
     required UserRole role,
     String? profilePictureUrl,
   }) async {
+    // Derive a robust username and fallback full name so profile doesn't look empty
+    String username = _generateUsername(fullName);
+    final emailLocal = email.contains('@') ? email.split('@').first : '';
+    if (username.trim().isEmpty) {
+      username = emailLocal.isNotEmpty ? emailLocal : 'user${uid.substring(0, 6)}';
+    }
+    final resolvedFullName = fullName.trim().isNotEmpty
+        ? fullName
+        : (emailLocal.isNotEmpty ? emailLocal : username);
+
     final user = User(
       id: uid,
-      username: _generateUsername(fullName),
+      username: username,
       email: email,
-      fullName: fullName,
+      fullName: resolvedFullName,
       profilePictureUrl: profilePictureUrl ?? '',
       bio: '',
       role: role,
@@ -32,7 +42,10 @@ class UserService {
     await _createRoleSpecificDocument(uid, role);
   }
 
-  static Future<void> _createRoleSpecificDocument(String uid, UserRole role) async {
+  static Future<void> _createRoleSpecificDocument(
+    String uid,
+    UserRole role,
+  ) async {
     switch (role) {
       case UserRole.artist:
         final artist = Artist(
@@ -72,7 +85,10 @@ class UserService {
           hostedPrograms: [],
           sponsorPartners: [],
         );
-        await _firestore.collection('organisations').doc(uid).set(organisation.toMap());
+        await _firestore
+            .collection('organisations')
+            .doc(uid)
+            .set(organisation.toMap());
         break;
     }
   }

@@ -54,7 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       IconButton(
                         tooltip: 'Notifications',
                         onPressed: () {
-                          Navigator.of(context).pushNamed(AppRoutes.notifications);
+                          Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.notifications);
                         },
                         icon: const Icon(Icons.notifications_outlined),
                       ),
@@ -171,7 +173,9 @@ class _HomeScreenState extends State<HomeScreen> {
               messenger.showSnackBar(
                 SnackBar(
                   content: const Text('Post published'),
-                  duration: const Duration(seconds: 3), // Auto-dismiss after 3 seconds
+                  duration: const Duration(
+                    seconds: 3,
+                  ), // Auto-dismiss after 3 seconds
                   action: SnackBarAction(
                     label: 'View Profile',
                     onPressed: () => setState(() => _currentIndex = 3),

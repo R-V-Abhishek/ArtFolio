@@ -81,9 +81,9 @@ service cloud.firestore {
     
     // Notifications collection
     match /notifications/{notificationId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null; // Allow system to create notifications
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read: if true; // For dev, allow listing/reading
+      allow create: if request.auth != null; // Created by server/client actions
+      allow update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
     // Images collection - for Firestore-based image storage
