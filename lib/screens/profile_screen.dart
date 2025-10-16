@@ -6,12 +6,14 @@ import '../theme/scale.dart';
 import '../models/role_models.dart' as roles;
 import '../models/post.dart';
 import '../services/firestore_service.dart';
+import '../services/firestore_image_service.dart';
 import '../widgets/firestore_image.dart';
 import 'follow_list_screen.dart';
 import '../services/session_state.dart';
 import '../services/auth_service.dart';
 import '../routes/app_routes.dart';
 import '../routes/route_arguments.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId; // Optional: view other user's profile later
@@ -369,6 +371,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 _loadData();
               },
               onEditBio: _editBio,
+              onProfileUpdated: _loadData,
             ),
           ),
           SliverPersistentHeader(
@@ -444,6 +447,7 @@ class _ProfileHeader extends StatefulWidget {
   final int postsCount;
   final VoidCallback onEditProfile;
   final VoidCallback onEditBio;
+  final VoidCallback onProfileUpdated;
 
   const _ProfileHeader({
     required this.user,
@@ -456,6 +460,7 @@ class _ProfileHeader extends StatefulWidget {
     required this.postsCount,
     required this.onEditProfile,
     required this.onEditBio,
+    required this.onProfileUpdated,
   });
 
   @override
@@ -464,6 +469,149 @@ class _ProfileHeader extends StatefulWidget {
 
 class _ProfileHeaderState extends State<_ProfileHeader> {
   bool _bioExpanded = false;
+  bool _updatingPhoto = false;
+
+  Future<void> _showPhotoActions() async {
+    if (!widget.isOwnProfile || _updatingPhoto) return;
+    final theme = Theme.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: theme.colorScheme.surface,
+      builder: (ctx) {
+        final hasPhoto = widget.user.profilePictureUrl.isNotEmpty;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Choose from gallery'),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  await _pickAndUpload(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('Take a photo'),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  await _pickAndUpload(ImageSource.camera);
+                },
+              ),
+              if (hasPhoto)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: Colors.red),
+                  title: const Text('Remove photo'),
+                  textColor: theme.colorScheme.error,
+                  iconColor: theme.colorScheme.error,
+                  onTap: () async {
+                    Navigator.of(ctx).pop();
+                    await _removePhoto();
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAndUpload(ImageSource source) async {
+    if (_updatingPhoto) return;
+    try {
+      setState(() => _updatingPhoto = true);
+      final picker = ImagePicker();
+      final xfile = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+      if (xfile == null) {
+        setState(() => _updatingPhoto = false);
+        return;
+      }
+
+      final bytes = await xfile.readAsBytes();
+      final oldRef = widget.user.profilePictureUrl;
+      final img = FirestoreImageService();
+      final imageId = await img.uploadImage(
+        fileName: xfile.name,
+        folder: 'profiles/${widget.user.id}',
+        userId: widget.user.id,
+        data: bytes,
+      );
+
+      // Update user document with imageId reference
+      final fs = FirestoreService();
+      await fs.updateUser(
+        widget.user
+            .copyWith(profilePictureUrl: imageId, updatedAt: DateTime.now()),
+      );
+
+      // Delete old Firestore image if applicable (avoid deleting assets or URLs)
+      if (oldRef.isNotEmpty &&
+          !oldRef.startsWith('http') &&
+          !oldRef.startsWith('assets/')) {
+        try {
+          await img.deleteImage(oldRef);
+        } catch (_) {}
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile photo updated')),
+        );
+        widget.onProfileUpdated();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update photo: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _updatingPhoto = false);
+    }
+  }
+
+  Future<void> _removePhoto() async {
+    if (_updatingPhoto) return;
+    try {
+      setState(() => _updatingPhoto = true);
+      final oldRef = widget.user.profilePictureUrl;
+      // Delete old Firestore image if reference is an imageId
+      if (oldRef.isNotEmpty &&
+          !oldRef.startsWith('http') &&
+          !oldRef.startsWith('assets/')) {
+        try {
+          await FirestoreImageService().deleteImage(oldRef);
+        } catch (_) {}
+      }
+
+      final fs = FirestoreService();
+      await fs.updateUser(
+        widget.user.copyWith(profilePictureUrl: '', updatedAt: DateTime.now()),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile photo removed')),
+        );
+        widget.onProfileUpdated();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to remove photo: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _updatingPhoto = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -505,76 +653,87 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                     SizedBox(
                       width: (s.size(112)).clamp(96.0, 112.0),
                       height: (s.size(112)).clamp(96.0, 112.0),
-                      child: ClipOval(
-                        child: widget.user.profilePictureUrl.isNotEmpty
-                            ? (widget.user.profilePictureUrl.startsWith('http')
-                                  ? Image.network(
-                                      widget.user.profilePictureUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (
-                                            context,
-                                            error,
-                                            stackTrace,
-                                          ) => Container(
-                                            color: theme
-                                                .colorScheme
-                                                .surfaceContainerHighest,
-                                            alignment: Alignment.center,
-                                            child: Text(
-                                              (widget.user.username.isNotEmpty
-                                                      ? widget.user.username[0]
-                                                      : 'A')
-                                                  .toUpperCase(),
-                                              style:
-                                                  theme.textTheme.headlineSmall,
-                                            ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(999),
+                        onTap: widget.isOwnProfile ? _showPhotoActions : null,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ClipOval(
+                              child: Builder(
+                                builder: (context) {
+                                  final ref =
+                                      widget.user.profilePictureUrl.trim();
+                                  if (ref.isEmpty) {
+                                    return Container(
+                                      color: theme.colorScheme
+                                          .surfaceContainerHighest,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        (widget.user.username.isNotEmpty
+                                                ? widget.user.username[0]
+                                                : 'A')
+                                            .toUpperCase(),
+                                        style: theme.textTheme.headlineSmall
+                                            ?.copyWith(
+                                          fontSize: s.font(
+                                            theme.textTheme.headlineSmall
+                                                    ?.fontSize ??
+                                                24,
                                           ),
-                                    )
-                                  : Image.asset(
-                                      widget.user.profilePictureUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (
-                                            context,
-                                            error,
-                                            stackTrace,
-                                          ) => Container(
-                                            color: theme
-                                                .colorScheme
-                                                .surfaceContainerHighest,
-                                            alignment: Alignment.center,
-                                            child: Text(
-                                              (widget.user.username.isNotEmpty
-                                                      ? widget.user.username[0]
-                                                      : 'A')
-                                                  .toUpperCase(),
-                                              style:
-                                                  theme.textTheme.headlineSmall,
-                                            ),
-                                          ),
-                                    ))
-                            : Container(
-                                color:
-                                    theme.colorScheme.surfaceContainerHighest,
-                                alignment: Alignment.center,
-                                child: Text(
-                                  (widget.user.username.isNotEmpty
-                                          ? widget.user.username[0]
-                                          : 'A')
-                                      .toUpperCase(),
-                                  style: theme.textTheme.headlineSmall
-                                      ?.copyWith(
-                                        fontSize: s.font(
-                                          theme
-                                                  .textTheme
-                                                  .headlineSmall
-                                                  ?.fontSize ??
-                                              24,
                                         ),
                                       ),
+                                    );
+                                  }
+                                  if (ref.startsWith('http')) {
+                                    return Image.network(
+                                      ref,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stack) =>
+                      _avatarFallback(theme, s,
+                                              widget.user.username),
+                                    );
+                                  }
+                                  if (ref.startsWith('assets/')) {
+                                    return Image.asset(
+                                      ref,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stack) =>
+                      _avatarFallback(theme, s,
+                                              widget.user.username),
+                                    );
+                                  }
+                                  // Assume Firestore image ID
+                                  return FirestoreImage(
+                                    imageId: ref,
+                                    fit: BoxFit.cover,
+                                  );
+                                },
+                              ),
+                            ),
+                            if (widget.isOwnProfile)
+                              Positioned(
+                                right: 6,
+                                bottom: 6,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: Icon(
+                                      _updatingPhoto
+                                          ? Icons.hourglass_top
+                                          : Icons.camera_alt,
+                                      size: 16,
+                                      color: theme.colorScheme.onPrimary,
+                                    ),
+                                  ),
                                 ),
                               ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -822,6 +981,19 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
         return 'Organisation';
     }
   }
+}
+
+Widget _avatarFallback(ThemeData theme, Scale s, String username) {
+  return Container(
+    color: theme.colorScheme.surfaceContainerHighest,
+    alignment: Alignment.center,
+    child: Text(
+      (username.isNotEmpty ? username[0] : 'A').toUpperCase(),
+      style: theme.textTheme.headlineSmall?.copyWith(
+        fontSize: s.font(theme.textTheme.headlineSmall?.fontSize ?? 24),
+      ),
+    ),
+  );
 }
 
 class _TabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
