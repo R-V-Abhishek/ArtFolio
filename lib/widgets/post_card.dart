@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +22,7 @@ class PostCard extends StatefulWidget {
   State<PostCard> createState() => _PostCardState();
 }
 
-class _PostCardState extends State<PostCard> {
+class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
   final _auth = fb.FirebaseAuth.instance;
   final _firestore = FirestoreService();
 
@@ -37,6 +38,11 @@ class _PostCardState extends State<PostCard> {
   bool _showFollow = false;
   bool _showMeta = false; // toggles tags + location visibility
 
+  // Like animations
+  late final AnimationController _likeOverlayCtrl;
+  late final AnimationController _iconBurstCtrl;
+  bool _showOverlay = false;
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +52,32 @@ class _PostCardState extends State<PostCard> {
     final uid = _auth.currentUser?.uid;
     _isLiked = uid != null && widget.post.likedBy.contains(uid);
     _loadAuthor();
+
+    _likeOverlayCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          if (mounted) setState(() => _showOverlay = false);
+        }
+      });
+    _iconBurstCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    );
+  }
+
+  @override
+  void dispose() {
+    _likeOverlayCtrl.dispose();
+    _iconBurstCtrl.dispose();
+    super.dispose();
+  }
+
+  void _startLikeAnimations() {
+    setState(() => _showOverlay = true);
+    _likeOverlayCtrl.forward(from: 0);
+    _iconBurstCtrl.forward(from: 0);
   }
 
   Future<void> _loadAuthor() async {
@@ -117,6 +149,9 @@ class _PostCardState extends State<PostCard> {
     setState(() {
       _isLiked = !_isLiked;
       _likesCount += _isLiked ? 1 : -1;
+      if (_isLiked) {
+        _startLikeAnimations();
+      }
     });
 
     try {
@@ -213,73 +248,54 @@ class _PostCardState extends State<PostCard> {
                       width: s.size(36),
                       height: s.size(36),
                       child: ClipOval(
-                        child:
-                            ((_author != null) &&
-                                _author!.profilePictureUrl.isNotEmpty)
-                            ? (_author!.profilePictureUrl.startsWith('http')
-                                  ? Image.network(
-                                      _author!.profilePictureUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (
-                                            context,
-                                            error,
-                                            stackTrace,
-                                          ) => Container(
-                                            color: theme
-                                                .colorScheme
-                                                .surfaceContainerHighest,
-                                            alignment: Alignment.center,
-                                            child: Text(
-                                              ((_author != null &&
-                                                          _author!
-                                                              .username
-                                                              .isNotEmpty)
-                                                      ? _author!.username[0]
-                                                      : 'A')
-                                                  .toUpperCase(),
-                                              style: theme.textTheme.labelLarge,
-                                            ),
-                                          ),
-                                    )
-                                  : Image.asset(
-                                      _author!.profilePictureUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (
-                                            context,
-                                            error,
-                                            stackTrace,
-                                          ) => Container(
-                                            color: theme
-                                                .colorScheme
-                                                .surfaceContainerHighest,
-                                            alignment: Alignment.center,
-                                            child: Text(
-                                              ((_author != null &&
-                                                          _author!
-                                                              .username
-                                                              .isNotEmpty)
-                                                      ? _author!.username[0]
-                                                      : 'A')
-                                                  .toUpperCase(),
-                                              style: theme.textTheme.labelLarge,
-                                            ),
-                                          ),
-                                    ))
-                            : Container(
-                                color:
-                                    theme.colorScheme.surfaceContainerHighest,
+                        child: Builder(
+                          builder: (context) {
+                            final name = (_author != null &&
+                                    _author!.username.isNotEmpty)
+                                ? _author!.username[0].toUpperCase()
+                                : 'A';
+                            if (_author == null ||
+                                _author!.profilePictureUrl.isEmpty) {
+                              return Container(
+                                color: theme
+                                    .colorScheme.surfaceContainerHighest,
                                 alignment: Alignment.center,
-                                child: Text(
-                                  ((_author != null &&
-                                              _author!.username.isNotEmpty)
-                                          ? _author!.username[0]
-                                          : 'A')
-                                      .toUpperCase(),
-                                  style: theme.textTheme.labelLarge,
+                                child: Text(name, style: theme.textTheme.labelLarge),
+                              );
+                            }
+                            final ref = _author!.profilePictureUrl;
+                            if (ref.startsWith('http')) {
+                              return Image.network(
+                                ref,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                  color: theme.colorScheme
+                                      .surfaceContainerHighest,
+                                  alignment: Alignment.center,
+                                  child: Text(name,
+                                      style: theme.textTheme.labelLarge),
                                 ),
-                              ),
+                              );
+                            }
+                            if (ref.startsWith('assets/')) {
+                              return Image.asset(
+                                ref,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                  color: theme.colorScheme
+                                      .surfaceContainerHighest,
+                                  alignment: Alignment.center,
+                                  child: Text(name,
+                                      style: theme.textTheme.labelLarge),
+                                ),
+                              );
+                            }
+                            // Firestore image id
+                            return FirestoreImage(imageId: ref, fit: BoxFit.cover);
+                          },
+                        ),
                       ),
                     ),
                     SizedBox(width: s.size(10)),
@@ -344,14 +360,29 @@ class _PostCardState extends State<PostCard> {
           padding: EdgeInsets.symmetric(horizontal: s.size(8)),
           child: Row(
             children: [
-              IconButton(
-                iconSize: s.size(28),
-                onPressed: _toggleLike,
-                icon: Icon(
-                  _isLiked ? Icons.favorite : Icons.favorite_border,
-                  color: _isLiked
-                      ? theme.colorScheme.error
-                      : theme.colorScheme.onSurface,
+              SizedBox(
+                width: s.size(48),
+                height: s.size(48),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      iconSize: s.size(28),
+                      onPressed: _toggleLike,
+                      icon: Icon(
+                        _isLiked ? Icons.favorite : Icons.favorite_border,
+                        color: _isLiked
+                            ? theme.colorScheme.error
+                            : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    IgnorePointer(
+                      child: _MiniBurst(
+                        animation: _iconBurstCtrl,
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               IconButton(
@@ -553,11 +584,34 @@ class _PostCardState extends State<PostCard> {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onDoubleTap: _toggleLike,
+      onDoubleTap: () {
+        if (!_isLiked) {
+          _toggleLike();
+        } else {
+          _startLikeAnimations();
+        }
+      },
       onTap: _ensureViewIncremented,
       child: AspectRatio(
         aspectRatio: aspect,
-        child: ClipRRect(borderRadius: radius, child: child),
+        child: ClipRRect(
+          borderRadius: radius,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              child,
+              if (_showOverlay)
+                IgnorePointer(
+                  child: Center(
+                    child: _LikeOverlay(
+                      animation: _likeOverlayCtrl,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -672,5 +726,192 @@ class _GalleryDots extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _LikeOverlay extends StatelessWidget {
+  final Animation<double> animation;
+  final Color color;
+  const _LikeOverlay({required this.animation, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, _) {
+        final t = Curves.easeOutCubic.transform(animation.value);
+        final ringScale1 = 0.6 + 0.5 * t;
+        final ringScale2 = 0.8 + 0.9 * t;
+  final ringOpacity = (1.0 - t).clamp(0.0, 1.0);
+  final heartScale = 1.0 + 0.25 * Curves.elasticOut.transform(t);
+  const fadeStart = 0.6; // keep fully visible for 60% of the timeline
+  final heartOpacity = t < fadeStart
+      ? 1.0
+      : (1.0 -
+        Curves.easeOut.transform(
+      (((t - fadeStart) / (1 - fadeStart)).clamp(0.0, 1.0))))
+    .clamp(0.0, 1.0);
+        return SizedBox(
+          width: 220,
+          height: 220,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Opacity(
+                opacity: ringOpacity * 0.5,
+                child: Transform.scale(
+                  scale: ringScale2,
+                  child: Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: color.withValues(alpha: 0.35),
+                        width: 6 * (1.0 - t) + 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Opacity(
+                opacity: ringOpacity * 0.8,
+                child: Transform.scale(
+                  scale: ringScale1,
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: color.withValues(alpha: 0.45),
+                        width: 8 * (1.0 - t) + 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Opacity(
+                opacity: heartOpacity,
+                child: Transform.scale(
+                  scale: heartScale,
+                  child: Icon(
+                    Icons.favorite,
+                    size: 96,
+                    color: const Color(0xFFFF8DA1), // subtle pink
+                  ),
+                ),
+              ),
+              // Sparkles (gold) - 5 rays moving from heart to ring, fading with the heart
+              ...List.generate(5, (i) {
+                final step = 360 / 5;
+                final angle = -18 + step * i;
+                const startR = 14.0;
+                const endR = 105.0; // approx outer ring radius
+                return _Sparkle(
+                  angleDeg: angle,
+                  startRadius: startR,
+                  endRadius: endR,
+                  t: t,
+                  color: const Color(0xFFFFD700), // gold
+                  opacity: heartOpacity,
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _Sparkle extends StatelessWidget {
+  final double angleDeg;
+  final double startRadius;
+  final double endRadius;
+  final double t;
+  final Color color;
+  final double opacity; // typically synced with heartOpacity
+  const _Sparkle({
+    required this.angleDeg,
+    required this.startRadius,
+    required this.endRadius,
+    required this.t,
+    required this.color,
+    required this.opacity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final rad = angleDeg * math.pi / 180;
+    final p = Curves.easeOut.transform(t);
+    final r = startRadius + (endRadius - startRadius) * p;
+    final dx = math.cos(rad) * r;
+    final dy = math.sin(rad) * r;
+    final scale = 0.8 + 0.3 * Curves.easeOut.transform(1 - (t - 0.1).clamp(0, 1));
+    return Transform.translate(
+      offset: Offset(dx, dy),
+      child: Transform.scale(
+        scale: scale,
+        child: Opacity(
+          opacity: opacity,
+          child: Icon(
+            Icons.star_rounded,
+            color: color.withValues(alpha: 0.95),
+            size: 16,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniBurst extends StatelessWidget {
+  final Animation<double> animation;
+  final Color color;
+  const _MiniBurst({required this.animation, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, _) {
+        if (animation.value <= 0.001) return const SizedBox.shrink();
+        return CustomPaint(
+          painter: _MiniBurstPainter(animation.value, const Color(0xFFFFD700)),
+          size: const Size(40, 40),
+        );
+      },
+    );
+  }
+}
+
+class _MiniBurstPainter extends CustomPainter {
+  final double v;
+  final Color color;
+  _MiniBurstPainter(this.v, this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = color.withValues(alpha: (1.0 - v).clamp(0.0, 1.0));
+    final center = Offset(size.width / 2, size.height / 2);
+    final count = 8;
+    final baseR = size.shortestSide * 0.2;
+    final maxRadius = size.shortestSide * 0.9 * Curves.easeOut.transform(v);
+    for (int i = 0; i < count; i++) {
+      final angle = (2 * math.pi * i / count) + (v * 2 * math.pi * 0.2);
+      final r = maxRadius;
+      final pos = Offset(center.dx + math.cos(angle) * r,
+          center.dy + math.sin(angle) * r);
+      final dotR = baseR * (1.0 - v * 0.8);
+      canvas.drawCircle(pos, dotR, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _MiniBurstPainter oldDelegate) {
+    return oldDelegate.v != v || oldDelegate.color != color;
   }
 }

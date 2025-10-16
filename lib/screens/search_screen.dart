@@ -1,10 +1,12 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-
 import '../models/post.dart';
+import '../models/user.dart' as model;
+import '../routes/app_routes.dart';
+import '../routes/route_arguments.dart';
 import '../services/firestore_service.dart';
 import '../widgets/post_card.dart';
+import '../widgets/firestore_image.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -19,7 +21,9 @@ class _SearchScreenState extends State<SearchScreen> {
   final _scroll = ScrollController();
 
   Timer? _debounce;
-  List<Post> _results = [];
+  List<Post> _postResults = [];
+  List<model.User> _userResults = [];
+  bool _showUsers = true;
   bool _loading = false;
   String _lastQuery = '';
   final List<String> _recent = [];
@@ -43,7 +47,8 @@ class _SearchScreenState extends State<SearchScreen> {
     if (!mounted) return;
     if (q.isEmpty) {
       setState(() {
-        _results = [];
+        _postResults = [];
+        _userResults = [];
         _loading = false;
         _lastQuery = '';
       });
@@ -54,9 +59,15 @@ class _SearchScreenState extends State<SearchScreen> {
       _lastQuery = q;
     });
     try {
-      final items = await _service.searchPosts(q);
+      // Run post and user searches in parallel
+      final postsF = _service.searchPosts(q);
+      final usersF = _service.searchUsers(q);
+      final results = await Future.wait([postsF, usersF]);
       if (!mounted) return;
-      setState(() => _results = items);
+      setState(() {
+        _postResults = results[0] as List<Post>;
+        _userResults = results[1] as List<model.User>;
+      });
       _remember(q);
     } catch (e) {
       if (!mounted) return;
@@ -133,7 +144,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_results.isEmpty) {
+    if ((_showUsers ? _userResults : _postResults).isEmpty) {
       return _emptyState(context);
     }
     return ListView.separated(
@@ -144,9 +155,12 @@ class _SearchScreenState extends State<SearchScreen> {
         top: 8,
         bottom: MediaQuery.of(context).viewPadding.bottom + 16,
       ),
-      itemCount: _results.length,
+      itemCount:
+          _showUsers ? _userResults.length : _postResults.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) => PostCard(post: _results[index]),
+      itemBuilder: (context, index) => _showUsers
+          ? _UserRow(user: _userResults[index])
+          : PostCard(post: _postResults[index]),
     );
   }
 
@@ -162,6 +176,18 @@ class _SearchScreenState extends State<SearchScreen> {
         MediaQuery.of(context).viewPadding.bottom + 16,
       ),
       children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+          child: SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: true, label: Text('Users')),
+              ButtonSegment(value: false, label: Text('Posts')),
+            ],
+            selected: {_showUsers},
+            onSelectionChanged: (s) => setState(() => _showUsers = s.first),
+          ),
+        ),
+        const SizedBox(height: 8),
         Text('Recent searches', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         Wrap(
@@ -200,20 +226,80 @@ class _SearchScreenState extends State<SearchScreen> {
             const SizedBox(height: 12),
             Text(
               _controller.text.isEmpty
-                  ? 'Search posts by caption, tags, or skills'
+                  ? 'Search users or posts'
                   : 'No results for "$_lastQuery"',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Try different keywords or check your spelling',
+              _showUsers
+                  ? 'Try searching by username or name'
+                  : 'Try searching by caption, tags, or skills',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _UserRow extends StatelessWidget {
+  final model.User user;
+  const _UserRow({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final ref = user.profilePictureUrl.trim();
+    Widget avatar;
+    if (ref.isEmpty) {
+      avatar = Container(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        alignment: Alignment.center,
+        child: Text(
+          (user.username.isNotEmpty ? user.username[0] : 'A').toUpperCase(),
+        ),
+      );
+    } else if (ref.startsWith('http')) {
+      avatar = Image.network(
+        ref,
+        fit: BoxFit.cover,
+        errorBuilder: (c, e, s) => Center(
+          child: Text(
+            (user.username.isNotEmpty ? user.username[0] : 'A').toUpperCase(),
+          ),
+        ),
+      );
+    } else if (ref.startsWith('assets/')) {
+      avatar = Image.asset(
+        ref,
+        fit: BoxFit.cover,
+        errorBuilder: (c, e, s) => Center(
+          child: Text(
+            (user.username.isNotEmpty ? user.username[0] : 'A').toUpperCase(),
+          ),
+        ),
+      );
+    } else {
+      avatar = FirestoreImage(imageId: ref, fit: BoxFit.cover);
+    }
+
+    return ListTile(
+      leading: SizedBox(
+        width: 40,
+        height: 40,
+        child: ClipOval(child: avatar),
+      ),
+      title: Text(user.fullName.isNotEmpty ? user.fullName : user.username),
+      subtitle: Text('@${user.username}'),
+      onTap: () {
+        Navigator.of(context).pushNamed(
+          AppRoutes.profile,
+          arguments: ProfileArguments(userId: user.id),
+        );
+      },
     );
   }
 }

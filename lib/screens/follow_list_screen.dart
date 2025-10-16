@@ -5,6 +5,7 @@ import '../models/user.dart' as model;
 import '../services/firestore_service.dart';
 import '../routes/app_routes.dart';
 import '../routes/route_arguments.dart';
+import '../widgets/firestore_image.dart';
 
 enum FollowListType { followers, following }
 
@@ -126,13 +127,46 @@ class _FollowListScreenState extends State<FollowListScreen> {
                   final following = _isFollowing[u.id] ?? false;
                   final busy = _busy[u.id] == true;
                   return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                      child: Text(
-                        (u.username.isNotEmpty ? u.username[0] : 'A')
-                            .toUpperCase(),
+                    leading: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: ClipOval(
+                        child: Builder(
+                          builder: (context) {
+                            final ref = u.profilePictureUrl.trim();
+                            final fallback = Container(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                              alignment: Alignment.center,
+                              child: Text(
+                                (u.username.isNotEmpty
+                                        ? u.username[0]
+                                        : 'A')
+                                    .toUpperCase(),
+                              ),
+                            );
+                            if (ref.isEmpty) return fallback;
+                            if (ref.startsWith('http')) {
+                              return Image.network(
+                                ref,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => fallback,
+                              );
+                            }
+                            if (ref.startsWith('assets/')) {
+                              return Image.asset(
+                                ref,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => fallback,
+                              );
+                            }
+                            return FirestoreImage(
+                              imageId: ref,
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
                       ),
                     ),
                     title: Text(u.username),

@@ -743,6 +743,60 @@ class FirestoreService {
     }
   }
 
+  // Search users by username or fullName (case-insensitive contains, with prefix query optimization)
+  Future<List<User>> searchUsers(String searchTerm, {int limit = 50}) async {
+    try {
+      final term = searchTerm.trim();
+      if (term.isEmpty) return [];
+
+      // Try prefix searches where possible
+      final List<User> results = [];
+
+      // Username is typically lowercase in this app; use prefix query
+      try {
+    final snapU = await _usersCollection
+      .orderBy('username')
+      .startAt([term])
+            .endAt(['$term\uf8ff'])
+      .limit(limit)
+      .get();
+        results.addAll(snapU.docs.map((d) => User.fromSnapshot(d)));
+      } catch (_) {}
+
+      // Full name may have capitalization; try prefix on various casings
+      try {
+        String cap = term.isEmpty
+            ? term
+            : term[0].toUpperCase() + term.substring(1).toLowerCase();
+    final snapF = await _usersCollection
+      .orderBy('fullName')
+      .startAt([cap])
+            .endAt(['$cap\uf8ff'])
+      .limit(limit)
+      .get();
+        results.addAll(snapF.docs.map((d) => User.fromSnapshot(d)));
+      } catch (_) {}
+
+      // Deduplicate by id
+      final byId = <String, User>{};
+      for (final u in results) {
+        byId[u.id] = u;
+      }
+      final list = byId.values.toList();
+
+      // Final client-side filter for case-insensitive contains on username/fullName
+      final q = term.toLowerCase();
+      return list
+          .where((u) =>
+              u.username.toLowerCase().contains(q) ||
+              u.fullName.toLowerCase().contains(q))
+          .take(limit)
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to search users: $e');
+    }
+  }
+
   // ===== END ENHANCED POST OPERATIONS =====
 
   // ===== NOTIFICATIONS =====

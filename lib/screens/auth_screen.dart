@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
-import '../services/firestore_service.dart';
 import '../services/session_state.dart';
-import '../models/user.dart' as app_models;
 import '../theme/theme.dart';
 import '../theme/scale.dart';
 
@@ -24,7 +22,7 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLogin = true;
   bool _loading = false;
   String? _error;
-  app_models.UserRole _selectedRole = app_models.UserRole.audience;
+  // Role selection happens on a dedicated screen after signup
   bool _obscurePassword = true;
 
   @override
@@ -130,54 +128,11 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _createUserProfile(
-    User firebaseUser, {
-    bool isGoogleSignUp = false,
-  }) async {
-    try {
-      final now = DateTime.now();
-      final emailLocal = (firebaseUser.email ?? '').split('@').first;
-      final defaultUsername = 'user${firebaseUser.uid.substring(0, 8)}';
-      String googleDerived =
-          (firebaseUser.displayName ?? '').replaceAll(' ', '').toLowerCase();
-      if (googleDerived.isEmpty) googleDerived = emailLocal;
-      if (googleDerived.isEmpty) googleDerived = defaultUsername;
-
-      String username;
-      if (isGoogleSignUp) {
-        username = googleDerived;
-      } else {
-        final typed = _usernameCtrl.text.trim();
-        username = typed.isNotEmpty
-            ? typed
-            : (emailLocal.isNotEmpty ? emailLocal : defaultUsername);
-      }
-
-      final user = app_models.User(
-        id: firebaseUser.uid,
-        username: username,
-        email: firebaseUser.email ?? '',
-        fullName: isGoogleSignUp
-            ? (() {
-                final dn = (firebaseUser.displayName ?? '').trim();
-                if (dn.isNotEmpty) return dn;
-                if (emailLocal.isNotEmpty) return emailLocal;
-                return username;
-              })()
-            : (() {
-                final name = _fullNameCtrl.text.trim();
-                return name.isNotEmpty ? name : username;
-              })(),
-        profilePictureUrl: firebaseUser.photoURL ?? '',
-        bio: '',
-        role: isGoogleSignUp ? app_models.UserRole.audience : _selectedRole,
-        createdAt: now,
-        updatedAt: now,
-      );
-
-      await FirestoreService().createUser(user);
-    } catch (e) {
-      // Silently handle profile creation error but don't fail the auth
-    }
+    User firebaseUser,
+  ) async {
+    // No-op: do not create the user document here.
+    // AuthStateHandler will detect missing profile and route to
+    // UserTypeSelectionScreen for both Google and email sign-ups.
   }
 
   @override
@@ -323,29 +278,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   },
                                 ),
                                 SizedBox(height: s.size(16)),
-                                DropdownButtonFormField<app_models.UserRole>(
-                                  initialValue: _selectedRole,
-                                  decoration: const InputDecoration(
-                                    labelText: 'I am a...',
-                                    prefixIcon: Icon(Icons.interests_outlined),
-                                  ),
-                                  items: app_models.UserRole.values.map((role) {
-                                    return DropdownMenuItem(
-                                      value: role,
-                                      child: Text(
-                                        role.name
-                                                .substring(0, 1)
-                                                .toUpperCase() +
-                                            role.name.substring(1),
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (value) {
-                                    if (value != null) {
-                                      setState(() => _selectedRole = value);
-                                    }
-                                  },
-                                ),
+                                // Role selection removed (handled after signup)
                                 SizedBox(height: s.size(16)),
                               ],
                               TextFormField(
