@@ -66,17 +66,6 @@ class _CommentsSheetState extends State<CommentsSheet> {
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(vertical: s.size(8)),
-              child: Container(
-                width: s.size(40),
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
-            Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: s.size(16),
                 vertical: s.size(8),

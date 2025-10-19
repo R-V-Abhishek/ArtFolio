@@ -460,12 +460,10 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
               s.size(16),
               s.size(8),
             ),
-            child: InkWell(
-              onTap: () => setState(() => _showMeta = !_showMeta),
-              borderRadius: BorderRadius.circular(6),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: RichText(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
                   text: TextSpan(
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontSize: s.font(
@@ -485,10 +483,27 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                       TextSpan(text: widget.post.caption),
                     ],
                   ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: _showMeta ? null : 3,
+                  overflow: _showMeta ? TextOverflow.visible : TextOverflow.ellipsis,
                 ),
-              ),
+                // Show "more" button if caption is long or if there are tags/location to show
+                if (!_showMeta && (_isLongCaption() || _hasMetaToShow()))
+                  InkWell(
+                    onTap: () => setState(() => _showMeta = true),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'more',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.outline,
+                          fontSize: s.font(
+                            theme.textTheme.bodyMedium?.fontSize ?? 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
 
@@ -522,6 +537,24 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                   ),
                 ),
               ],
+            ),
+          ),
+
+        // Less button when meta is shown
+        if (_showMeta && (_isLongCaption() || _hasMetaToShow()))
+          Padding(
+            padding: EdgeInsets.fromLTRB(s.size(16), 0, s.size(16), s.size(8)),
+            child: InkWell(
+              onTap: () => setState(() => _showMeta = false),
+              child: Text(
+                'less',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.outline,
+                  fontSize: s.font(
+                    theme.textTheme.bodyMedium?.fontSize ?? 14,
+                  ),
+                ),
+              ),
             ),
           ),
       ],
@@ -651,6 +684,10 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
     ].where((e) => (e ?? '').trim().isNotEmpty).map((e) => e!.trim()).toList();
     return parts.isEmpty ? 'Unknown location' : parts.join(', ');
   }
+
+  bool _isLongCaption() => widget.post.caption.length > 100;
+
+  bool _hasMetaToShow() => widget.post.tags.isNotEmpty || widget.post.location != null;
 }
 
 class _TagsWrap extends StatelessWidget {

@@ -234,59 +234,68 @@ class _ProfileScreenState extends State<ProfileScreen>
     final theme = Theme.of(context);
 
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return Scaffold(
+        backgroundColor: theme.colorScheme.surface,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (_user == null) {
       final signedIn = _auth.currentUser != null;
       if (!signedIn) {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.lock_outline, size: 56),
-                const SizedBox(height: 12),
-                Text(
-                  'Please sign in to set up your profile',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+        return Scaffold(
+          backgroundColor: theme.colorScheme.surface,
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.lock_outline, size: 56),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Please sign in to set up your profile',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Create your profile to share your art, get followers, and collaborate with others.',
-                  style: theme.textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                FilledButton.icon(
-                  icon: const Icon(Icons.login),
-                  label: const Text('Sign in'),
-                  onPressed: () {
-                    // Exit guest mode if enabled, then navigate to auth
-                    SessionState.instance.exitGuest();
-                    Navigator.of(context).pushNamed(AppRoutes.auth);
-                  },
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'Create your profile to share your art, get followers, and collaborate with others.',
+                    style: theme.textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.login),
+                    label: const Text('Sign in'),
+                    onPressed: () {
+                      // Exit guest mode if enabled, then navigate to auth
+                      SessionState.instance.exitGuest();
+                      Navigator.of(context).pushNamed(AppRoutes.auth);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         );
       }
       // Signed in but user document missing
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.person_off_outlined, size: 48),
-            const SizedBox(height: 8),
-            Text('Profile not found', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            FilledButton(onPressed: _loadData, child: const Text('Retry')),
-          ],
+      return Scaffold(
+        backgroundColor: theme.colorScheme.surface,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.person_off_outlined, size: 48),
+              const SizedBox(height: 8),
+              Text('Profile not found', style: theme.textTheme.titleMedium),
+              const SizedBox(height: 8),
+              FilledButton(onPressed: _loadData, child: const Text('Retry')),
+            ],
+          ),
         ),
       );
     }
