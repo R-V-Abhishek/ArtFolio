@@ -378,14 +378,36 @@ class FirestoreService {
 
   // ===== COMMENTS =====
 
-  Stream<List<Comment>> streamComments(String postId, {int limit = 100}) => _commentsCollection(postId)
-        .orderBy('createdAt', descending: true)
+  Stream<List<Comment>> streamComments(String postId, {int limit = 100}) {
+    final currentUserId = _auth.currentUser?.uid;
+    
+    return _commentsCollection(postId)
+        .orderBy('createdAt', descending: false)
         .limit(limit)
         .snapshots()
-        .map(
-          (snap) =>
-              snap.docs.map((d) => Comment.fromSnapshot(d, postId)).toList(),
-        );
+        .map((snap) {
+          final comments = snap.docs.map((d) => Comment.fromSnapshot(d, postId)).toList();
+          
+          // Sort comments: user's comments first, then others by newest first
+          if (currentUserId != null) {
+            comments.sort((a, b) {
+              final aIsUser = a.userId == currentUserId;
+              final bIsUser = b.userId == currentUserId;
+              
+              if (aIsUser && !bIsUser) return -1; // User's comment comes first
+              if (!aIsUser && bIsUser) return 1;  // Other user's comment comes after
+              
+              // If both are user's comments or both are others', sort by newest first
+              return b.createdAt.compareTo(a.createdAt);
+            });
+          } else {
+            // If no current user, just sort by newest first
+            comments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          }
+          
+          return comments;
+        });
+  }
 
   Future<void> addComment({
     required String postId,

@@ -475,7 +475,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     children: [
                       Expanded(
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.only(bottom: 100), // Space for bottom nav
                           child: _buildMediaPane(),
                         ),
                       ),
@@ -483,8 +483,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       Expanded(
                         child: SingleChildScrollView(
                           padding: EdgeInsets.only(
-                            bottom:
-                                MediaQuery.of(context).viewInsets.bottom + 16,
+                            bottom: MediaQuery.of(context).viewInsets.bottom + 100, // Space for bottom nav + keyboard
                           ),
                           child: _buildFormPane(),
                         ),
@@ -498,7 +497,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     16,
                     16,
                     16,
-                    16 + MediaQuery.of(context).viewInsets.bottom,
+                    16 + MediaQuery.of(context).viewInsets.bottom + 100, // Extra padding for bottom nav
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -574,46 +573,54 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.photo_library_outlined),
-                const SizedBox(width: 8),
-                Text('Media', style: Theme.of(context).textTheme.titleLarge),
-                const Spacer(),
-                FilledButton.tonalIcon(
-                  onPressed: isIdea ? null : _pickFromGallery,
-                  icon: const Icon(Icons.image_outlined),
-                  label: const Text('Gallery'),
+                Row(
+                  children: [
+                    const Icon(Icons.photo_library_outlined),
+                    const SizedBox(width: 8),
+                    Text('Media', style: Theme.of(context).textTheme.titleLarge),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                FilledButton.tonalIcon(
-                  onPressed: isIdea ? null : _pickFromCamera,
-                  icon: const Icon(Icons.photo_camera_outlined),
-                  label: const Text('Camera'),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.tonalIcon(
+                      onPressed: isIdea ? null : _pickFromGallery,
+                      icon: const Icon(Icons.image_outlined),
+                      label: const Text('Gallery'),
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: isIdea ? null : _pickFromCamera,
+                      icon: const Icon(Icons.photo_camera_outlined),
+                      label: const Text('Camera'),
+                    ),
+                    if (_type == PostType.gallery)
+                      FilledButton.tonalIcon(
+                        onPressed: () async {
+                          final picked = await Navigator.of(context)
+                              .push<List<File>>(
+                                MaterialPageRoute(
+                                  builder: (_) => const ImageGalleryScreen(),
+                                  fullscreenDialog: true,
+                                ),
+                              );
+                          if (picked != null && picked.isNotEmpty) {
+                            setState(() {
+                              _images
+                                ..clear()
+                                ..addAll(picked);
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.collections),
+                        label: const Text('Builder'),
+                      ),
+                  ],
                 ),
-                if (_type == PostType.gallery) ...[
-                  const SizedBox(width: 8),
-                  FilledButton.tonalIcon(
-                    onPressed: () async {
-                      final picked = await Navigator.of(context)
-                          .push<List<File>>(
-                            MaterialPageRoute(
-                              builder: (_) => const ImageGalleryScreen(),
-                              fullscreenDialog: true,
-                            ),
-                          );
-                      if (picked != null && picked.isNotEmpty) {
-                        setState(() {
-                          _images
-                            ..clear()
-                            ..addAll(picked);
-                        });
-                      }
-                    },
-                    icon: const Icon(Icons.collections),
-                    label: const Text('Builder'),
-                  ),
-                ],
               ],
             ),
             const SizedBox(height: 12),
@@ -715,35 +722,88 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             // Type selection
             Text('Post type', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            SegmentedButton<PostType>(
-              segments: const [
-                ButtonSegment(
-                  value: PostType.image,
-                  label: Text('Image'),
-                  icon: Icon(Icons.image_outlined),
-                ),
-                ButtonSegment(
-                  value: PostType.gallery,
-                  label: Text('Gallery'),
-                  icon: Icon(Icons.grid_on_outlined),
-                ),
-                ButtonSegment(
-                  value: PostType.idea,
-                  label: Text('Idea'),
-                  icon: Icon(Icons.lightbulb_outline),
-                ),
-              ],
-              selected: {_type},
-              onSelectionChanged: (s) {
-                setState(() {
-                  _type = s.first;
-                  if (_type == PostType.idea) _images.clear();
-                  if (_type == PostType.image && _images.length > 1) {
-                    _images
-                      ..retainWhere((element) => element == _images.first)
-                      ..removeRange(1, _images.length);
-                  }
-                });
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth > 500) {
+                  // Use SegmentedButton for wider screens
+                  return SegmentedButton<PostType>(
+                    segments: const [
+                      ButtonSegment(
+                        value: PostType.image,
+                        label: Text('Image'),
+                        icon: Icon(Icons.image_outlined),
+                      ),
+                      ButtonSegment(
+                        value: PostType.gallery,
+                        label: Text('Gallery'),
+                        icon: Icon(Icons.grid_on_outlined),
+                      ),
+                      ButtonSegment(
+                        value: PostType.idea,
+                        label: Text('Idea'),
+                        icon: Icon(Icons.lightbulb_outline),
+                      ),
+                    ],
+                    selected: {_type},
+                    onSelectionChanged: (s) {
+                      setState(() {
+                        _type = s.first;
+                        if (_type == PostType.idea) _images.clear();
+                        if (_type == PostType.image && _images.length > 1) {
+                          _images
+                            ..retainWhere((element) => element == _images.first)
+                            ..removeRange(1, _images.length);
+                        }
+                      });
+                    },
+                  );
+                } else {
+                  // Use Wrap with ChoiceChips for narrower screens
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [PostType.image, PostType.gallery, PostType.idea].map((type) {
+                      final isSelected = _type == type;
+                      IconData icon;
+                      String label;
+                      
+                      switch (type) {
+                        case PostType.image:
+                          icon = Icons.image_outlined;
+                          label = 'Image';
+                        case PostType.gallery:
+                          icon = Icons.grid_on_outlined;
+                          label = 'Gallery';
+                        case PostType.idea:
+                          icon = Icons.lightbulb_outline;
+                          label = 'Idea';
+                        case PostType.video:
+                        case PostType.reel:
+                        case PostType.live:
+                          // These cases shouldn't occur since we only include 3 types
+                          icon = Icons.help_outline;
+                          label = 'Unknown';
+                      }
+                      
+                      return ChoiceChip(
+                        avatar: Icon(icon, size: 18),
+                        label: Text(label),
+                        selected: isSelected,
+                        onSelected: (_) {
+                          setState(() {
+                            _type = type;
+                            if (_type == PostType.idea) _images.clear();
+                            if (_type == PostType.image && _images.length > 1) {
+                              _images
+                                ..retainWhere((element) => element == _images.first)
+                                ..removeRange(1, _images.length);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  );
+                }
               },
             ),
 
@@ -785,49 +845,98 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
             const SizedBox(height: 16),
             // Visibility + location
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<PostVisibility>(
-                    initialValue: _visibility,
-                    items: PostVisibility.values
-                        .map(
-                          (v) => DropdownMenuItem(
-                            value: v,
-                            child: Text(_visibilityLabel(v)),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (v) => setState(() => _visibility = v!),
-                    decoration: const InputDecoration(labelText: 'Visibility'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    readOnly: true,
-                    onTap: _editLocation,
-                    decoration: InputDecoration(
-                      labelText: 'Location (optional)',
-                      hintText: 'Add location',
-                      suffixIcon: IconButton(
-                        tooltip: 'Edit',
-                        onPressed: _editLocation,
-                        icon: const Icon(Icons.place_outlined),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth > 600) {
+                  // Use Row for wider screens
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<PostVisibility>(
+                          initialValue: _visibility,
+                          items: PostVisibility.values
+                              .map(
+                                (v) => DropdownMenuItem(
+                                  value: v,
+                                  child: Text(_visibilityLabel(v)),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (v) => setState(() => _visibility = v!),
+                          decoration: const InputDecoration(labelText: 'Visibility'),
+                        ),
                       ),
-                    ),
-                    controller: TextEditingController(
-                      text: _location == null
-                          ? ''
-                          : [
-                              _location!.city,
-                              _location!.state,
-                              _location!.country,
-                            ].where((e) => (e ?? '').isNotEmpty).join(', '),
-                    ),
-                  ),
-                ),
-              ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          readOnly: true,
+                          onTap: _editLocation,
+                          decoration: InputDecoration(
+                            labelText: 'Location (optional)',
+                            hintText: 'Add location',
+                            suffixIcon: IconButton(
+                              tooltip: 'Edit',
+                              onPressed: _editLocation,
+                              icon: const Icon(Icons.place_outlined),
+                            ),
+                          ),
+                          controller: TextEditingController(
+                            text: _location == null
+                                ? ''
+                                : [
+                                    _location!.city,
+                                    _location!.state,
+                                    _location!.country,
+                                  ].where((e) => (e ?? '').isNotEmpty).join(', '),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  // Use Column for narrower screens
+                  return Column(
+                    children: [
+                      DropdownButtonFormField<PostVisibility>(
+                        initialValue: _visibility,
+                        items: PostVisibility.values
+                            .map(
+                              (v) => DropdownMenuItem(
+                                value: v,
+                                child: Text(_visibilityLabel(v)),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) => setState(() => _visibility = v!),
+                        decoration: const InputDecoration(labelText: 'Visibility'),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        readOnly: true,
+                        onTap: _editLocation,
+                        decoration: InputDecoration(
+                          labelText: 'Location (optional)',
+                          hintText: 'Add location',
+                          suffixIcon: IconButton(
+                            tooltip: 'Edit',
+                            onPressed: _editLocation,
+                            icon: const Icon(Icons.place_outlined),
+                          ),
+                        ),
+                        controller: TextEditingController(
+                          text: _location == null
+                              ? ''
+                              : [
+                                  _location!.city,
+                                  _location!.state,
+                                  _location!.country,
+                                ].where((e) => (e ?? '').isNotEmpty).join(', '),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
           ],
         ),
@@ -867,24 +976,26 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 label: Text('$prefix$v'),
                 onDeleted: () => setState(() => values.remove(v)),
               ),
-            SizedBox(
-              width: 200,
-              child: TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  hintText: 'Add ${label.toLowerCase()}…',
-                ),
-                onSubmitted: (val) {
-                  final t = val.trim();
-                  if (t.isEmpty) return;
-                  setState(
-                    () => values.add(prefix == '#' ? t.replaceAll('#', '') : t),
-                  );
-                  controller.clear();
-                },
-              ),
-            ),
           ],
+        ),
+        const SizedBox(height: 8),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 300),
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: 'Add ${label.toLowerCase()}…',
+              isDense: true,
+            ),
+            onSubmitted: (val) {
+              final t = val.trim();
+              if (t.isEmpty) return;
+              setState(
+                () => values.add(prefix == '#' ? t.replaceAll('#', '') : t),
+              );
+              controller.clear();
+            },
+          ),
         ),
         if (suggestions.isNotEmpty) ...[
           const SizedBox(height: 8),

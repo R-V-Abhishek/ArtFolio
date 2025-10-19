@@ -110,36 +110,83 @@ class _CommentsSheetState extends State<CommentsSheet> {
                     );
                   }
                   return ListView.separated(
-                    reverse: true, // since we load descending
                     padding: EdgeInsets.only(bottom: s.size(8)),
                     itemCount: items.length,
                     separatorBuilder: (_, index) => const Divider(height: 0),
                     itemBuilder: (context, i) {
                       final c = items[i];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          radius: s.size(18),
-                          backgroundColor:
-                              theme.colorScheme.surfaceContainerHighest,
-                          backgroundImage: c.avatarUrl.startsWith('http')
-                              ? NetworkImage(c.avatarUrl)
-                              : null,
-                          child: c.avatarUrl.isEmpty
-                              ? Text(
-                                  (c.username.isNotEmpty ? c.username[0] : 'U')
-                                      .toUpperCase(),
-                                  style: theme.textTheme.labelLarge,
-                                )
-                              : null,
-                        ),
-                        title: Text(
-                          c.username,
-                          style: theme.textTheme.labelLarge,
-                        ),
-                        subtitle: Text(c.text),
-                        trailing: Text(
-                          _timeAgo(c.createdAt),
-                          style: theme.textTheme.bodySmall,
+                      final isCurrentUser = _auth.currentUser?.uid == c.userId;
+                      
+                      return DecoratedBox(
+                        decoration: isCurrentUser
+                            ? BoxDecoration(
+                                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
+                                border: Border(
+                                  left: BorderSide(
+                                    color: theme.colorScheme.primary,
+                                    width: 3,
+                                  ),
+                                ),
+                              )
+                            : const BoxDecoration(),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            radius: s.size(18),
+                            backgroundColor: isCurrentUser
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.surfaceContainerHighest,
+                            backgroundImage: c.avatarUrl.startsWith('http')
+                                ? NetworkImage(c.avatarUrl)
+                                : null,
+                            child: c.avatarUrl.isEmpty
+                                ? Text(
+                                    (c.username.isNotEmpty ? c.username[0] : 'U')
+                                        .toUpperCase(),
+                                    style: theme.textTheme.labelLarge?.copyWith(
+                                      color: isCurrentUser
+                                          ? theme.colorScheme.onPrimary
+                                          : null,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          title: Row(
+                            children: [
+                              Text(
+                                c.username,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  fontWeight: isCurrentUser
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                              if (isCurrentUser) ...[
+                                SizedBox(width: s.size(6)),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: s.size(6),
+                                    vertical: s.size(2),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(s.size(8)),
+                                  ),
+                                  child: Text(
+                                    'You',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.onPrimary,
+                                      fontSize: s.font(10),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          subtitle: Text(c.text),
+                          trailing: Text(
+                            _timeAgo(c.createdAt),
+                            style: theme.textTheme.bodySmall,
+                          ),
                         ),
                       );
                     },
