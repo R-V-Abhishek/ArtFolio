@@ -2,20 +2,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import '../models/user.dart' as app_models;
+
 import '../models/post.dart';
+import '../models/user.dart' as app_models;
 import 'firestore_service.dart';
 import 'storage_service.dart';
 
 /// Exception thrown when account deletion requires recent authentication
 class RecentLoginRequiredException implements Exception {
-  final String message;
-  final FirebaseAuthException originalException;
 
   const RecentLoginRequiredException(
     this.message, {
     required this.originalException,
   });
+  final String message;
+  final FirebaseAuthException originalException;
 
   @override
   String toString() => message;
@@ -182,7 +183,7 @@ class AccountDeletionService {
 
       // Get all posts to check their comments
       final postsSnapshot = await _firestore.collection('posts').get();
-      int deletedComments = 0;
+      var deletedComments = 0;
 
       for (final postDoc in postsSnapshot.docs) {
         final commentsSnapshot = await _firestore
@@ -386,7 +387,7 @@ class AccountDeletionService {
       summary['posts'] = postsSnapshot.docs.length;
 
       // Count comments (approximate - would need to check all posts)
-      int commentCount = 0;
+      var commentCount = 0;
       final postsForComments = await _firestore.collection('posts').get();
       for (final postDoc in postsForComments.docs) {
         final commentsSnapshot = await _firestore
@@ -446,14 +447,14 @@ class AccountDeletionService {
 
       if (hasGoogleProvider) {
         // Re-authenticate with Google
-        final GoogleSignIn googleSignIn = GoogleSignIn();
-        final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+        final googleSignIn = GoogleSignIn();
+        final googleUser = await googleSignIn.signIn();
 
         if (googleUser == null) {
           throw Exception('Google sign-in was cancelled');
         }
 
-        final GoogleSignInAuthentication googleAuth =
+        final googleAuth =
             await googleUser.authentication;
         credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,

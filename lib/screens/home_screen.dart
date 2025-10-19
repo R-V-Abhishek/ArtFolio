@@ -1,14 +1,17 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
-import 'feed_screen.dart';
-import 'search_screen.dart';
-import 'profile_screen.dart';
-import '../services/auth_service.dart';
-import '../services/session_state.dart';
-import '../services/firestore_service.dart';
-import '../theme/theme.dart';
-import '../theme/scale.dart';
+import 'package:flutter/material.dart';
+
 import '../routes/app_routes.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
+import '../services/session_state.dart';
+import '../theme/scale.dart';
+import '../theme/theme.dart';
+import 'feed_screen.dart';
+import 'profile_screen.dart';
+import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -84,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             tooltip: 'Toggle theme',
-            onPressed: () => themeController.toggle(),
+            onPressed: themeController.toggle,
             icon: Icon(
               themeController.value == ThemeMode.dark
                   ? Icons.nightlight_round
@@ -122,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   break;
                 case 'test_storage':
-                  Navigator.of(context).pushNamed(AppRoutes.imageUploadTest);
+                  unawaited(Navigator.of(context).pushNamed(AppRoutes.imageUploadTest));
                   break;
               }
             },
@@ -167,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
               AppRoutes.createPost,
             );
             if (!mounted) return;
-            if (posted == true) {
+            if (posted ?? false) {
               // switch to Profile tab and show toast
               setState(() => _currentIndex = 3);
               messenger.showSnackBar(

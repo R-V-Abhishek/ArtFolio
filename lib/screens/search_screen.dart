@@ -1,12 +1,14 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../models/post.dart';
 import '../models/user.dart' as model;
 import '../routes/app_routes.dart';
 import '../routes/route_arguments.dart';
 import '../services/firestore_service.dart';
-import '../widgets/post_card.dart';
 import '../widgets/firestore_image.dart';
+import '../widgets/post_card.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -91,8 +93,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
         title: Padding(
@@ -135,7 +136,6 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
     );
-  }
 
   Widget _buildBody(BuildContext context) {
     if (_controller.text.isEmpty) {
@@ -155,8 +155,7 @@ class _SearchScreenState extends State<SearchScreen> {
         top: 8,
         bottom: MediaQuery.of(context).viewPadding.bottom + 16,
       ),
-      itemCount:
-          _showUsers ? _userResults.length : _postResults.length,
+      itemCount: _showUsers ? _userResults.length : _postResults.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) => _showUsers
           ? _UserRow(user: _userResults[index])
@@ -211,8 +210,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _emptyState(BuildContext context) {
-    return Center(
+  Widget _emptyState(BuildContext context) => Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -243,12 +241,11 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
     );
-  }
 }
 
 class _UserRow extends StatelessWidget {
-  final model.User user;
   const _UserRow({required this.user});
+  final model.User user;
 
   @override
   Widget build(BuildContext context) {
@@ -283,15 +280,11 @@ class _UserRow extends StatelessWidget {
         ),
       );
     } else {
-      avatar = FirestoreImage(imageId: ref, fit: BoxFit.cover);
+      avatar = FirestoreImage(imageId: ref);
     }
 
     return ListTile(
-      leading: SizedBox(
-        width: 40,
-        height: 40,
-        child: ClipOval(child: avatar),
-      ),
+      leading: SizedBox(width: 40, height: 40, child: ClipOval(child: avatar)),
       title: Text(user.fullName.isNotEmpty ? user.fullName : user.username),
       subtitle: Text('@${user.username}'),
       onTap: () {

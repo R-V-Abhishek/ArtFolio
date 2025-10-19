@@ -1,19 +1,20 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/foundation.dart';
-import 'dart:io';
-import '../models/post.dart';
-import '../models/user.dart';
-import '../models/comment.dart';
-import '../models/role_models.dart';
 import '../models/app_notification.dart';
+import '../models/comment.dart';
+import '../models/post.dart';
+import '../models/role_models.dart';
+import '../models/user.dart';
+import 'error_handler_service.dart';
 import 'storage_service.dart';
 
 // Pagination result for notifications
 class NotificationsPage {
+  const NotificationsPage(this.items, this.lastDoc);
   final List<AppNotification> items;
   final DocumentSnapshot? lastDoc;
-  const NotificationsPage(this.items, this.lastDoc);
 }
 
 class FirestoreService {
@@ -43,7 +44,7 @@ class FirestoreService {
     try {
       await _usersCollection.doc(user.id).set(user.toMap());
     } catch (e) {
-      throw Exception('Failed to create user: $e');
+      throw ErrorHandlerService.handleFirebaseException(e);
     }
   }
 
@@ -53,7 +54,7 @@ class FirestoreService {
       final doc = await _usersCollection.doc(userId).get();
       return doc.exists ? User.fromSnapshot(doc) : null;
     } catch (e) {
-      throw Exception('Failed to get user: $e');
+      throw ErrorHandlerService.handleFirebaseException(e);
     }
   }
 
@@ -64,7 +65,7 @@ class FirestoreService {
           .doc(user.id)
           .update(user.copyWith(updatedAt: DateTime.now()).toMap());
     } catch (e) {
-      throw Exception('Failed to update user: $e');
+      throw ErrorHandlerService.handleFirebaseException(e);
     }
   }
 
@@ -156,7 +157,7 @@ class FirestoreService {
       final user = await getUser(userId);
       if (user == null) return null;
 
-      Map<String, dynamic> userData = {'user': user.toMap()};
+      final userData = <String, dynamic>{'user': user.toMap()};
 
       // Get role-specific data based on user role
       switch (user.role) {
@@ -239,7 +240,7 @@ class FirestoreService {
       final imageUrls = <String>[];
 
       // Upload all images
-      for (int i = 0; i < imageFiles.length; i++) {
+      for (var i = 0; i < imageFiles.length; i++) {
         final fileName = imageFileNames != null && i < imageFileNames.length
             ? imageFileNames[i]
             : 'post_image_${i + 1}_${DateTime.now().millisecondsSinceEpoch}.jpg';
@@ -295,7 +296,7 @@ class FirestoreService {
       // Upload new images if provided
       final newImageUrls = <String>[];
       if (newImageFiles != null && newImageFiles.isNotEmpty) {
-        for (int i = 0; i < newImageFiles.length; i++) {
+        for (var i = 0; i < newImageFiles.length; i++) {
           final fileName =
               newImageFileNames != null && i < newImageFileNames.length
               ? newImageFileNames[i]
@@ -366,9 +367,9 @@ class FirestoreService {
           .get();
 
       final items = querySnapshot.docs
-          .map((doc) => Post.fromSnapshot(doc))
-          .toList();
-      items.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+          .map(Post.fromSnapshot)
+          .toList()
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
       return items;
     } catch (e) {
       throw Exception('Failed to get user posts: $e');
@@ -377,8 +378,7 @@ class FirestoreService {
 
   // ===== COMMENTS =====
 
-  Stream<List<Comment>> streamComments(String postId, {int limit = 100}) {
-    return _commentsCollection(postId)
+  Stream<List<Comment>> streamComments(String postId, {int limit = 100}) => _commentsCollection(postId)
         .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()
@@ -386,7 +386,6 @@ class FirestoreService {
           (snap) =>
               snap.docs.map((d) => Comment.fromSnapshot(d, postId)).toList(),
         );
-  }
 
   Future<void> addComment({
     required String postId,
@@ -398,28 +397,29 @@ class FirestoreService {
     final avatarUrl = user?.profilePictureUrl ?? '';
 
     // Fetch post owner for notification
-    String ownerId = '';
+    var ownerId = '';
     try {
       final postDoc = await _postsCollection.doc(postId).get();
       if (postDoc.exists) {
-        final data = postDoc.data() as Map<String, dynamic>;
+        final data = postDoc.data()! as Map<String, dynamic>;
         ownerId = (data['userId'] as String?) ?? '';
       }
     } catch (_) {}
 
     final batch = _db.batch();
     final commentsRef = _commentsCollection(postId).doc();
-    batch.set(commentsRef, {
-      'userId': userId,
-      'username': username,
-      'avatarUrl': avatarUrl,
-      'text': text.trim(),
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-    batch.update(_postsCollection.doc(postId), {
-      'commentsCount': FieldValue.increment(1),
-      'lastEngagement': FieldValue.serverTimestamp(),
-    });
+    batch
+      ..set(commentsRef, {
+        'userId': userId,
+        'username': username,
+        'avatarUrl': avatarUrl,
+        'text': text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+      })
+      ..update(_postsCollection.doc(postId), {
+        'commentsCount': FieldValue.increment(1),
+        'lastEngagement': FieldValue.serverTimestamp(),
+      });
     await batch.commit();
 
     // Best-effort notification (skip self-comment)
@@ -445,12 +445,12 @@ class FirestoreService {
     required String postId,
     required String commentId,
   }) async {
-    final batch = _db.batch();
-    batch.delete(_commentsCollection(postId).doc(commentId));
-    batch.update(_postsCollection.doc(postId), {
-      'commentsCount': FieldValue.increment(-1),
-      'lastEngagement': FieldValue.serverTimestamp(),
-    });
+    final batch = _db.batch()
+      ..delete(_commentsCollection(postId).doc(commentId))
+      ..update(_postsCollection.doc(postId), {
+        'commentsCount': FieldValue.increment(-1),
+        'lastEngagement': FieldValue.serverTimestamp(),
+      });
     await batch.commit();
   }
 
@@ -537,7 +537,7 @@ class FirestoreService {
           .where('targetId', isEqualTo: userId)
           .get();
       final viewerIds = snap.docs
-          .map((d) => (d.data() as Map)['viewerId'] as String)
+          .map((d) => (d.data()! as Map)['viewerId'] as String)
           .toList();
       final users = <User>[];
       for (final id in viewerIds) {
@@ -557,7 +557,7 @@ class FirestoreService {
           .where('viewerId', isEqualTo: userId)
           .get();
       final targetIds = snap.docs
-          .map((d) => (d.data() as Map)['targetId'] as String)
+          .map((d) => (d.data()! as Map)['targetId'] as String)
           .toList();
       final users = <User>[];
       for (final id in targetIds) {
@@ -577,9 +577,9 @@ class FirestoreService {
           .orderBy('timestamp', descending: true)
           .get();
 
-      return querySnapshot.docs.map((doc) => Post.fromSnapshot(doc)).toList();
+      return querySnapshot.docs.map(Post.fromSnapshot).toList();
     } catch (e) {
-      throw Exception('Failed to get posts: $e');
+      throw ErrorHandlerService.handleFirebaseException(e);
     }
   }
 
@@ -593,9 +593,9 @@ class FirestoreService {
           .orderBy('timestamp', descending: true)
           .get();
 
-      return querySnapshot.docs.map((doc) => Post.fromSnapshot(doc)).toList();
+      return querySnapshot.docs.map(Post.fromSnapshot).toList();
     } catch (e) {
-      throw Exception('Failed to get posts by type: $e');
+      throw ErrorHandlerService.handleFirebaseException(e);
     }
   }
 
@@ -608,7 +608,7 @@ class FirestoreService {
           .limit(limit)
           .get();
 
-      return querySnapshot.docs.map((doc) => Post.fromSnapshot(doc)).toList();
+      return querySnapshot.docs.map(Post.fromSnapshot).toList();
     } catch (e) {
       throw Exception('Failed to get trending posts: $e');
     }
@@ -622,7 +622,7 @@ class FirestoreService {
           .orderBy('timestamp', descending: true)
           .get();
 
-      return querySnapshot.docs.map((doc) => Post.fromSnapshot(doc)).toList();
+      return querySnapshot.docs.map(Post.fromSnapshot).toList();
     } catch (e) {
       throw Exception('Failed to get posts by skill: $e');
     }
@@ -638,7 +638,7 @@ class FirestoreService {
         throw Exception('Post not found');
       }
 
-      final postData = postSnapshot.data() as Map<String, dynamic>;
+      final postData = postSnapshot.data()! as Map<String, dynamic>;
       final likedBy = List<String>.from(postData['likedBy'] ?? []);
       final currentLikes = postData['likesCount'] ?? 0;
       final ownerId = (postData['userId'] as String?) ?? '';
@@ -695,7 +695,7 @@ class FirestoreService {
   // Get posts for feed (mixed content, optimized for engagement)
   Future<List<Post>> getFeedPosts({int limit = 20, String? lastPostId}) async {
     try {
-      Query query = _postsCollection
+      var query = _postsCollection
           .where('visibility', isEqualTo: 'public')
           .orderBy('timestamp', descending: true);
 
@@ -706,7 +706,7 @@ class FirestoreService {
 
       final querySnapshot = await query.limit(limit).get();
 
-      return querySnapshot.docs.map((doc) => Post.fromSnapshot(doc)).toList();
+      return querySnapshot.docs.map(Post.fromSnapshot).toList();
     } catch (e) {
       throw Exception('Failed to get feed posts: $e');
     }
@@ -721,7 +721,7 @@ class FirestoreService {
           .get();
 
       return querySnapshot.docs
-          .map((doc) => Post.fromSnapshot(doc))
+          .map(Post.fromSnapshot)
           .where(
             (post) =>
                 post.caption.toLowerCase().contains(searchTerm.toLowerCase()) ||
@@ -750,31 +750,31 @@ class FirestoreService {
       if (term.isEmpty) return [];
 
       // Try prefix searches where possible
-      final List<User> results = [];
+      final results = <User>[];
 
       // Username is typically lowercase in this app; use prefix query
       try {
-    final snapU = await _usersCollection
-      .orderBy('username')
-      .startAt([term])
+        final snapU = await _usersCollection
+            .orderBy('username')
+            .startAt([term])
             .endAt(['$term\uf8ff'])
-      .limit(limit)
-      .get();
-        results.addAll(snapU.docs.map((d) => User.fromSnapshot(d)));
+            .limit(limit)
+            .get();
+        results.addAll(snapU.docs.map(User.fromSnapshot));
       } catch (_) {}
 
       // Full name may have capitalization; try prefix on various casings
       try {
-        String cap = term.isEmpty
+        final cap = term.isEmpty
             ? term
             : term[0].toUpperCase() + term.substring(1).toLowerCase();
-    final snapF = await _usersCollection
-      .orderBy('fullName')
-      .startAt([cap])
+        final snapF = await _usersCollection
+            .orderBy('fullName')
+            .startAt([cap])
             .endAt(['$cap\uf8ff'])
-      .limit(limit)
-      .get();
-        results.addAll(snapF.docs.map((d) => User.fromSnapshot(d)));
+            .limit(limit)
+            .get();
+        results.addAll(snapF.docs.map(User.fromSnapshot));
       } catch (_) {}
 
       // Deduplicate by id
@@ -787,9 +787,11 @@ class FirestoreService {
       // Final client-side filter for case-insensitive contains on username/fullName
       final q = term.toLowerCase();
       return list
-          .where((u) =>
-              u.username.toLowerCase().contains(q) ||
-              u.fullName.toLowerCase().contains(q))
+          .where(
+            (u) =>
+                u.username.toLowerCase().contains(q) ||
+                u.fullName.toLowerCase().contains(q),
+          )
           .take(limit)
           .toList();
     } catch (e) {
@@ -802,13 +804,11 @@ class FirestoreService {
   // ===== NOTIFICATIONS =====
 
   /// Stream unread count badge for current user
-  Stream<int> unreadNotificationsCountStream(String userId) {
-    return _notificationsCollection
+  Stream<int> unreadNotificationsCountStream(String userId) => _notificationsCollection
         .where('userId', isEqualTo: userId)
         .where('read', isEqualTo: false)
         .snapshots()
         .map((snap) => snap.size);
-  }
 
   /// Fetch notifications page for a user ordered by createdAt desc
   Future<NotificationsPage> getNotificationsPage({
@@ -817,7 +817,7 @@ class FirestoreService {
     DocumentSnapshot? startAfter,
   }) async {
     try {
-      Query q = _notificationsCollection
+      var q = _notificationsCollection
           .where('userId', isEqualTo: userId)
           .orderBy('createdAt', descending: true)
           .limit(limit);
@@ -1034,7 +1034,6 @@ class FirestoreService {
           '#Mountains',
         ],
         timestamp: now.subtract(const Duration(hours: 2)),
-        visibility: PostVisibility.public,
         likesCount: 47,
         commentsCount: 12,
         sharesCount: 8,
@@ -1048,8 +1047,6 @@ class FirestoreService {
           longitude: 72.8777,
         ),
         aspectRatio: 0.67, // 400/600
-        allowComments: true,
-        allowSharing: true,
         lastEngagement: now.subtract(const Duration(minutes: 15)),
       ),
 
@@ -1074,7 +1071,6 @@ class FirestoreService {
           '#Collaboration',
         ],
         timestamp: now.subtract(const Duration(days: 1)),
-        visibility: PostVisibility.public,
         likesCount: 32,
         commentsCount: 8,
         sharesCount: 5,
@@ -1084,10 +1080,7 @@ class FirestoreService {
         aspectRatio: 1.5, // 600/400
         collaboration: CollaborationInfo(
           collaboratorIds: ['studio123'],
-          isSponsored: false,
         ),
-        allowComments: true,
-        allowSharing: true,
         lastEngagement: now.subtract(const Duration(hours: 3)),
       ),
 
@@ -1114,7 +1107,6 @@ class FirestoreService {
           '#ArtSeries',
         ],
         timestamp: now.subtract(const Duration(days: 3)),
-        visibility: PostVisibility.public,
         likesCount: 78,
         commentsCount: 24,
         sharesCount: 15,
@@ -1126,9 +1118,7 @@ class FirestoreService {
           isSponsored: true,
           sponsorshipDetails: 'Art supplies sponsored by CreativeFunds Inc.',
         ),
-        aspectRatio: 1.0, // Square images
-        allowComments: true,
-        allowSharing: true,
+        aspectRatio: 1, // Square images
         isPinned: true, // Artist pinned this post
         demographics: {'artists': 45, 'audience': 35, 'sponsors': 20},
         lastEngagement: now.subtract(const Duration(minutes: 45)),
@@ -1152,14 +1142,11 @@ class FirestoreService {
           '#SocialImpact',
         ],
         timestamp: now.subtract(const Duration(hours: 18)),
-        visibility: PostVisibility.public,
         likesCount: 62,
         commentsCount: 35,
         sharesCount: 18,
         viewsCount: 189,
         likedBy: ['audience1', 'sponsor1', 'artist4', 'artist5'],
-        allowComments: true,
-        allowSharing: true,
         lastEngagement: now.subtract(const Duration(hours: 2)),
       ),
 
@@ -1184,7 +1171,6 @@ class FirestoreService {
           '#LearnArt',
         ],
         timestamp: now.subtract(const Duration(days: 5)),
-        visibility: PostVisibility.public,
         likesCount: 156,
         commentsCount: 43,
         sharesCount: 67,
@@ -1192,8 +1178,6 @@ class FirestoreService {
         likedBy: ['audience1', 'sponsor1', 'artist6', 'artist7', 'student1'],
         duration: 600, // 10 minutes
         aspectRatio: 1.78, // 16:9
-        allowComments: true,
-        allowSharing: true,
         demographics: {'beginners': 60, 'intermediate': 30, 'advanced': 10},
         lastEngagement: now.subtract(const Duration(minutes: 30)),
       ),
@@ -1205,9 +1189,7 @@ class FirestoreService {
   }
 
   // Helper method to get current user ID
-  String? getCurrentUserId() {
-    return _auth.currentUser?.uid;
-  }
+  String? getCurrentUserId() => _auth.currentUser?.uid;
 
   // Check if current user has a profile
   Future<bool> hasUserProfile() async {

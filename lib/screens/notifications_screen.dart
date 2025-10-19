@@ -1,5 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 
 import '../models/app_notification.dart';
@@ -57,7 +59,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     try {
       final page = await _firestore.getNotificationsPage(
         userId: uid,
-        limit: 20,
         startAfter: _lastDoc,
       );
       if (page.items.isEmpty) {
@@ -116,7 +117,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               if (uid == null) return;
               await _firestore.markAllNotificationsRead(uid);
               if (!mounted) return;
-              _loadInitial();
+              unawaited(_loadInitial());
             },
             child: const Text('Mark all read'),
           ),

@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/auth_service.dart';
-import '../services/firestore_service.dart';
+import 'package:flutter/material.dart';
+
 import '../screens/auth_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/user_type_selection_screen.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 
 class AuthStateHandler extends StatefulWidget {
   const AuthStateHandler({super.key});
@@ -15,8 +16,7 @@ class AuthStateHandler extends StatefulWidget {
 
 class _AuthStateHandlerState extends State<AuthStateHandler> {
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
+  Widget build(BuildContext context) => StreamBuilder<User?>(
       stream: AuthService.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -36,7 +36,7 @@ class _AuthStateHandlerState extends State<AuthStateHandler> {
                 );
               }
 
-              if (profileSnapshot.data == true) {
+              if (profileSnapshot.data ?? false) {
                 // User has complete profile, go to home
                 return const HomeScreen();
               } else {
@@ -57,7 +57,6 @@ class _AuthStateHandlerState extends State<AuthStateHandler> {
         return const AuthScreen();
       },
     );
-  }
 
   Future<bool> _hasCompleteProfile(String uid) async {
     try {

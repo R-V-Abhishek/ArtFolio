@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user.dart';
+
 import '../models/role_models.dart';
+import '../models/user.dart';
 
 class UserService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -14,10 +15,12 @@ class UserService {
     String? profilePictureUrl,
   }) async {
     // Derive a robust username and fallback full name so profile doesn't look empty
-    String username = _generateUsername(fullName);
+    var username = _generateUsername(fullName);
     final emailLocal = email.contains('@') ? email.split('@').first : '';
     if (username.trim().isEmpty) {
-      username = emailLocal.isNotEmpty ? emailLocal : 'user${uid.substring(0, 6)}';
+      username = emailLocal.isNotEmpty
+          ? emailLocal
+          : 'user${uid.substring(0, 6)}';
     }
     final resolvedFullName = fullName.trim().isNotEmpty
         ? fullName
@@ -93,9 +96,8 @@ class UserService {
     }
   }
 
-  static String _generateUsername(String fullName) {
-    return fullName.toLowerCase().replaceAll(' ', '_');
-  }
+  static String _generateUsername(String fullName) =>
+      fullName.toLowerCase().replaceAll(' ', '_');
 
   static Future<User?> getUser(String uid) async {
     try {

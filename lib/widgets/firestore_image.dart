@@ -1,15 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
 import '../services/firestore_image_service.dart';
 
 class FirestoreImage extends StatefulWidget {
-  final String imageId;
-  final double? width;
-  final double? height;
-  final BoxFit fit;
-  final Widget? placeholder;
-  final Widget? errorWidget;
 
   const FirestoreImage({
     super.key,
@@ -20,6 +16,12 @@ class FirestoreImage extends StatefulWidget {
     this.placeholder,
     this.errorWidget,
   });
+  final String imageId;
+  final double? width;
+  final double? height;
+  final BoxFit fit;
+  final Widget? placeholder;
+  final Widget? errorWidget;
 
   @override
   State<FirestoreImage> createState() => _FirestoreImageState();
@@ -106,25 +108,19 @@ class _FirestoreImageState extends State<FirestoreImage> {
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
-      errorBuilder: (context, error, stackTrace) {
-        return widget.errorWidget ??
+      errorBuilder: (context, error, stackTrace) => widget.errorWidget ??
             Container(
               width: widget.width,
               height: widget.height,
               color: Colors.red.shade100,
               child: const Center(child: Icon(Icons.error, color: Colors.red)),
-            );
-      },
+            ),
     );
   }
 }
 
 // Helper widget for displaying base64 images directly
 class Base64Image extends StatelessWidget {
-  final String base64Data;
-  final double? width;
-  final double? height;
-  final BoxFit fit;
 
   const Base64Image({
     super.key,
@@ -133,6 +129,10 @@ class Base64Image extends StatelessWidget {
     this.height,
     this.fit = BoxFit.cover,
   });
+  final String base64Data;
+  final double? width;
+  final double? height;
+  final BoxFit fit;
 
   @override
   Widget build(BuildContext context) {

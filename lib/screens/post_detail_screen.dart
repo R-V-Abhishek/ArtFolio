@@ -4,13 +4,12 @@ import '../models/post.dart';
 import '../widgets/post_card.dart';
 
 class PostDetailScreen extends StatelessWidget {
-  final Post post;
 
   const PostDetailScreen({super.key, required this.post});
+  final Post post;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text('Post'),
@@ -19,5 +18,4 @@ class PostDetailScreen extends StatelessWidget {
       ),
       body: SingleChildScrollView(child: PostCard(post: post)),
     );
-  }
 }

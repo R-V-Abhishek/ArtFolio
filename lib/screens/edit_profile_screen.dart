@@ -4,8 +4,8 @@ import '../models/user.dart' as model;
 import '../services/firestore_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  final model.User user;
   const EditProfileScreen({super.key, required this.user});
+  final model.User user;
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();

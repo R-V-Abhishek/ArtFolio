@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/account_deletion_service.dart';
+import 'package:flutter/material.dart';
+
 import '../routes/app_routes.dart';
+import '../services/account_deletion_service.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({super.key});
@@ -98,9 +101,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
 
       // Navigate to auth screen
       if (mounted) {
-        Navigator.of(
+        unawaited(Navigator.of(
           context,
-        ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false);
+        ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false));
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -115,11 +118,11 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         final shouldRetry = await _showReauthenticationDialog();
         if (shouldRetry) {
           // Retry deletion after successful re-authentication
-          _deleteAccount();
+          unawaited(_deleteAccount());
         }
       }
     } on FirebaseAuthException catch (e) {
-      String message = 'Authentication failed';
+      var message = 'Authentication failed';
       if (e.code == 'wrong-password') {
         message = 'Incorrect password';
       } else if (e.code == 'too-many-requests') {
@@ -149,12 +152,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     }
   }
 
-  Future<bool> _showFinalConfirmationDialog() async {
-    return await showDialog<bool>(
+  Future<bool> _showFinalConfirmationDialog() async => await showDialog<bool>(
           context: context,
           barrierDismissible: false,
-          builder: (context) {
-            return AlertDialog(
+          builder: (context) => AlertDialog(
               title: const Text('Final Confirmation'),
               content: const Text(
                 'This action is IRREVERSIBLE. All your data will be permanently deleted. '
@@ -174,11 +175,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                   child: const Text('Yes, Delete Forever'),
                 ),
               ],
-            );
-          },
+            ),
         ) ??
         false;
-  }
 
   Future<bool> _showReauthenticationDialog() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -195,8 +194,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       final result = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
-        builder: (context) {
-          return AlertDialog(
+        builder: (context) => AlertDialog(
             title: const Text('Re-authentication Required'),
             content: const Text(
               'For security, you need to sign in again with Google before deleting your account.',
@@ -228,8 +226,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 child: const Text('Sign in with Google'),
               ),
             ],
-          );
-        },
+          ),
       );
       return result ?? false;
     } else {
@@ -238,8 +235,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       final result = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
-        builder: (context) {
-          return AlertDialog(
+        builder: (context) => AlertDialog(
             title: const Text('Re-authentication Required'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -291,8 +287,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                 child: const Text('Confirm'),
               ),
             ],
-          );
-        },
+          ),
       );
       return result ?? false;
     }
@@ -308,7 +303,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         backgroundColor: Colors.red.shade100,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -366,8 +361,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             // Password Re-authentication
             if (user?.providerData.any(
                   (info) => info.providerId == 'password',
-                ) ==
-                true) ...[
+                ) ?? false) ...[
               Text(
                 'Confirm your password:',
                 style: Theme.of(context).textTheme.titleMedium,
@@ -465,8 +459,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     );
   }
 
-  Widget _buildDataSummaryCard() {
-    return Card(
+  Widget _buildDataSummaryCard() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -500,7 +493,6 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         ),
       ),
     );
-  }
 
   IconData _getIconForDataType(String dataType) {
     switch (dataType) {

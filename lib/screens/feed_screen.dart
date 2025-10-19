@@ -1,10 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/post.dart';
+import '../services/asset_loader.dart';
 import '../services/firestore_service.dart';
 import '../widgets/post_card.dart';
-import '../services/asset_loader.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -136,7 +137,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
   void _onScroll() {
     if (!_scrollController.hasClients || _loading || !_hasMore) return;
-    final threshold = 300; // px before end
+    const threshold = 300; // px before end
     if (_scrollController.position.extentAfter < threshold) {
       _loadMore();
     }
@@ -153,7 +154,7 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.of(context).viewPadding.bottom;
     if (_loading && _posts.isEmpty) {
-      return SafeArea(child: const Center(child: CircularProgressIndicator()));
+      return const SafeArea(child: Center(child: CircularProgressIndicator()));
     }
 
     if (_posts.isEmpty) {
@@ -224,7 +225,7 @@ Future<List<Post>> _loadFromAssets() async {
     final list = await AssetLoader.loadJsonList('assets/mock_posts.json');
     return list
         .whereType<Map<String, dynamic>>()
-        .map((m) => Post.fromJson(m))
+        .map(Post.fromJson)
         .toList();
   } catch (_) {
     return [];
@@ -260,7 +261,7 @@ List<Post> _localDemoPosts() {
       timestamp: now.subtract(const Duration(hours: 2)),
       likesCount: 58,
       commentsCount: 7,
-      aspectRatio: 1.0,
+      aspectRatio: 1,
     ),
     Post(
       id: 'local_3',

@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import '../screens/splash_screen.dart';
+
 import '../screens/auth_screen.dart';
-import '../screens/user_type_selection_screen.dart';
-import '../screens/home_screen.dart';
-import '../screens/profile_screen.dart';
-import '../screens/edit_profile_screen.dart';
-import '../screens/delete_account_screen.dart';
-import '../screens/follow_list_screen.dart';
-import '../screens/post_detail_screen.dart';
 import '../screens/create_post_screen.dart';
-import '../screens/notifications_screen.dart';
+import '../screens/delete_account_screen.dart';
+import '../screens/edit_profile_screen.dart';
+import '../screens/follow_list_screen.dart';
+import '../screens/home_screen.dart';
 import '../screens/image_upload_test_screen.dart';
+import '../screens/notifications_screen.dart';
+import '../screens/post_detail_screen.dart';
+import '../screens/profile_screen.dart';
+import '../screens/splash_screen.dart';
+import '../screens/user_type_selection_screen.dart';
 import '../widgets/auth_state_handler.dart';
 import 'app_routes.dart';
 import 'route_arguments.dart';
@@ -124,8 +125,7 @@ class RouteGenerator {
     }
   }
 
-  static Route<dynamic> _errorRoute(String message) {
-    return MaterialPageRoute(
+  static Route<dynamic> _errorRoute(String message) => MaterialPageRoute(
       builder: (context) => Scaffold(
         appBar: AppBar(title: const Text('Error')),
         body: Center(
@@ -151,5 +151,4 @@ class RouteGenerator {
         ),
       ),
     );
-  }
 }

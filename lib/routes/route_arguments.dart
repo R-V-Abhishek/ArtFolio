@@ -1,12 +1,8 @@
-import '../models/user.dart';
 import '../models/post.dart';
+import '../models/user.dart';
 import '../screens/follow_list_screen.dart';
 
 class UserTypeSelectionArguments {
-  final String uid;
-  final String email;
-  final String fullName;
-  final String? profilePictureUrl;
 
   UserTypeSelectionArguments({
     required this.uid,
@@ -14,36 +10,40 @@ class UserTypeSelectionArguments {
     required this.fullName,
     this.profilePictureUrl,
   });
+  final String uid;
+  final String email;
+  final String fullName;
+  final String? profilePictureUrl;
 }
 
 class ProfileArguments {
-  final String? userId;
 
   ProfileArguments({this.userId});
+  final String? userId;
 }
 
 class EditProfileArguments {
-  final User user;
 
   EditProfileArguments({required this.user});
+  final User user;
 }
 
 class PostDetailArguments {
-  final Post post;
 
   PostDetailArguments({required this.post});
+  final Post post;
 }
 
 class FollowListArguments {
-  final String userId;
-  final FollowListType type;
 
   FollowListArguments({required this.userId, required this.type});
+  final String userId;
+  final FollowListType type;
 }
 
 class CommentsArguments {
-  final String postId;
-  final bool allowComments;
 
   CommentsArguments({required this.postId, required this.allowComments});
+  final String postId;
+  final bool allowComments;
 }

@@ -2,17 +2,17 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 
 import '../models/user.dart' as model;
-import '../services/firestore_service.dart';
 import '../routes/app_routes.dart';
 import '../routes/route_arguments.dart';
+import '../services/firestore_service.dart';
 import '../widgets/firestore_image.dart';
 
 enum FollowListType { followers, following }
 
 class FollowListScreen extends StatefulWidget {
+  const FollowListScreen({super.key, required this.userId, required this.type});
   final String userId; // whose followers/following to show
   final FollowListType type;
-  const FollowListScreen({super.key, required this.userId, required this.type});
 
   @override
   State<FollowListScreen> createState() => _FollowListScreenState();
@@ -80,7 +80,7 @@ class _FollowListScreenState extends State<FollowListScreen> {
       ).showSnackBar(const SnackBar(content: Text('Sign in to follow users')));
       return;
     }
-    if (_busy[targetId] == true) return;
+    if (_busy[targetId] ?? false) return;
     setState(() => _busy[targetId] = true);
     final current = _isFollowing[targetId] ?? false;
     setState(() => _isFollowing[targetId] = !current);
@@ -123,9 +123,9 @@ class _FollowListScreenState extends State<FollowListScreen> {
                 itemBuilder: (context, index) {
                   final u = _users[index];
                   final viewerId = _auth.currentUser?.uid;
-                  final canFollow = (viewerId != null && viewerId != u.id);
+                  final canFollow = viewerId != null && viewerId != u.id;
                   final following = _isFollowing[u.id] ?? false;
-                  final busy = _busy[u.id] == true;
+                  final busy = _busy[u.id] ?? false;
                   return ListTile(
                     leading: SizedBox(
                       width: 40,
@@ -135,14 +135,12 @@ class _FollowListScreenState extends State<FollowListScreen> {
                           builder: (context) {
                             final ref = u.profilePictureUrl.trim();
                             final fallback = Container(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
                               alignment: Alignment.center,
                               child: Text(
-                                (u.username.isNotEmpty
-                                        ? u.username[0]
-                                        : 'A')
+                                (u.username.isNotEmpty ? u.username[0] : 'A')
                                     .toUpperCase(),
                               ),
                             );
@@ -163,7 +161,6 @@ class _FollowListScreenState extends State<FollowListScreen> {
                             }
                             return FirestoreImage(
                               imageId: ref,
-                              fit: BoxFit.cover,
                             );
                           },
                         ),

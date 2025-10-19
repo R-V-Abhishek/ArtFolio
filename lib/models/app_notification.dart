@@ -11,15 +11,6 @@ enum NotificationType {
 }
 
 class AppNotification {
-  final String id;
-  final String userId; // recipient
-  final NotificationType type;
-  final String title; // short description for row
-  final String? actorId; // who triggered
-  final String? postId; // related post/project id
-  final Map<String, dynamic>? data; // extra payload
-  final DateTime createdAt;
-  final bool read;
 
   AppNotification({
     required this.id,
@@ -33,19 +24,8 @@ class AppNotification {
     this.read = false,
   });
 
-  Map<String, dynamic> toMap() => {
-    'userId': userId,
-    'type': type.name,
-    'title': title,
-    'actorId': actorId,
-    'postId': postId,
-    'data': data,
-    'createdAt': Timestamp.fromDate(createdAt),
-    'read': read,
-  };
-
   factory AppNotification.fromSnapshot(DocumentSnapshot snap) {
-    final m = snap.data() as Map<String, dynamic>;
+    final m = snap.data()! as Map<String, dynamic>;
     return AppNotification(
       id: snap.id,
       userId: m['userId'] ?? '',
@@ -61,4 +41,24 @@ class AppNotification {
       read: m['read'] ?? false,
     );
   }
+  final String id;
+  final String userId; // recipient
+  final NotificationType type;
+  final String title; // short description for row
+  final String? actorId; // who triggered
+  final String? postId; // related post/project id
+  final Map<String, dynamic>? data; // extra payload
+  final DateTime createdAt;
+  final bool read;
+
+  Map<String, dynamic> toMap() => {
+    'userId': userId,
+    'type': type.name,
+    'title': title,
+    'actorId': actorId,
+    'postId': postId,
+    'data': data,
+    'createdAt': Timestamp.fromDate(createdAt),
+    'read': read,
+  };
 }

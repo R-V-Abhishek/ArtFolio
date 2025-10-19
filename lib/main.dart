@@ -1,13 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-import 'theme/theme.dart';
-import 'theme/responsive.dart';
-import 'services/session_state.dart';
-import 'routes/route_generator.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import 'firebase_options.dart';
+import 'routes/route_generator.dart';
+import 'services/session_state.dart';
+import 'theme/responsive.dart';
+import 'theme/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,8 +54,7 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
+  Widget build(BuildContext context) => ValueListenableBuilder<ThemeMode>(
       valueListenable: themeController,
       builder: (context, mode, _) => ValueListenableBuilder<bool>(
         valueListenable: SessionState.instance.guestMode,
@@ -79,5 +79,4 @@ class MyApp extends StatelessWidget {
         ),
       ),
     );
-  }
 }

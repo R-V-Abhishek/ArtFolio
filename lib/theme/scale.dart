@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 ///
 /// Baseline width is 375 (typical mobile). Scale is clamped for sanity.
 class Scale {
-  final BuildContext context;
-  late final double _scale;
 
   Scale(this.context) {
     final width = MediaQuery.of(context).size.width;
     _scale = width / 375.0;
   }
+  final BuildContext context;
+  late final double _scale;
 
   /// Scales font sizes; clamp to avoid extremes.
   double font(double size) => size * _scale.clamp(0.8, 1.4);

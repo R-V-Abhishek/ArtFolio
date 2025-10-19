@@ -3,15 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 enum UserRole { artist, audience, sponsor, organisation }
 
 class User {
-  final String id;
-  final String username;
-  final String email;
-  final String fullName;
-  final String profilePictureUrl;
-  final String bio;
-  final UserRole role;
-  final DateTime createdAt;
-  final DateTime updatedAt;
 
   User({
     required this.id,
@@ -25,24 +16,8 @@ class User {
     required this.updatedAt,
   });
 
-  // Convert User object to Map for Firestore
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'username': username,
-      'email': email,
-      'fullName': fullName,
-      'profilePictureUrl': profilePictureUrl,
-      'bio': bio,
-      'role': role.name,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
-    };
-  }
-
   // Create User object from Map
-  factory User.fromMap(Map<String, dynamic> map) {
-    return User(
+  factory User.fromMap(Map<String, dynamic> map) => User(
       id: map['id'] ?? '',
       username: map['username'] ?? '',
       email: map['email'] ?? '',
@@ -56,13 +31,34 @@ class User {
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       updatedAt: (map['updatedAt'] as Timestamp).toDate(),
     );
-  }
 
   // Create User object from Firestore DocumentSnapshot
   factory User.fromSnapshot(DocumentSnapshot snapshot) {
-    final data = snapshot.data() as Map<String, dynamic>;
+    final data = snapshot.data()! as Map<String, dynamic>;
     return User.fromMap(data);
   }
+  final String id;
+  final String username;
+  final String email;
+  final String fullName;
+  final String profilePictureUrl;
+  final String bio;
+  final UserRole role;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  // Convert User object to Map for Firestore
+  Map<String, dynamic> toMap() => {
+      'id': id,
+      'username': username,
+      'email': email,
+      'fullName': fullName,
+      'profilePictureUrl': profilePictureUrl,
+      'bio': bio,
+      'role': role.name,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+    };
 
   // Copy with method for updating fields
   User copyWith({
@@ -75,8 +71,7 @@ class User {
     UserRole? role,
     DateTime? createdAt,
     DateTime? updatedAt,
-  }) {
-    return User(
+  }) => User(
       id: id ?? this.id,
       username: username ?? this.username,
       email: email ?? this.email,
@@ -87,12 +82,9 @@ class User {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
-  }
 
   @override
-  String toString() {
-    return 'User(id: $id, username: $username, email: $email, fullName: $fullName, role: $role)';
-  }
+  String toString() => 'User(id: $id, username: $username, email: $email, fullName: $fullName, role: $role)';
 
   @override
   bool operator ==(Object other) {

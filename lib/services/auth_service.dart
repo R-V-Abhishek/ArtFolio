@@ -1,6 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Unified authentication service combining extended capabilities with
 /// a singleton pattern for easy access across the app.
@@ -32,9 +32,8 @@ class AuthService {
   Future<UserCredential> signInWithEmail({
     required String email,
     required String password,
-  }) async {
-    return _auth.signInWithEmailAndPassword(email: email, password: password);
-  }
+  }) async =>
+      _auth.signInWithEmailAndPassword(email: email, password: password);
 
   Future<void> sendPasswordResetEmail(String email) =>
       _auth.sendPasswordResetEmail(email: email);

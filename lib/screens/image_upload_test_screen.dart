@@ -1,7 +1,9 @@
 import 'dart:io';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import '../services/firestore_image_service.dart';
 import '../widgets/firestore_image.dart';
 
@@ -19,12 +21,12 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
   File? _selectedImage;
   String? _uploadedImageId;
   bool _isUploading = false;
-  double _uploadProgress = 0.0;
+  double _uploadProgress = 0;
   String? _errorMessage;
 
   Future<void> _selectImage(ImageSource source) async {
     try {
-      final XFile? image = await _picker.pickImage(
+      final image = await _picker.pickImage(
         source: source,
         maxWidth: 1024,
         maxHeight: 1024,
@@ -133,21 +135,20 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: const Text('Firebase Storage Test'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Instructions
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -191,7 +192,7 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
             if (_selectedImage != null) ...[
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
                       Text(
@@ -238,7 +239,7 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
             if (_isUploading) ...[
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
                       Text(
@@ -260,7 +261,7 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
             if (_uploadedImageId != null) ...[
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
                       Row(
@@ -289,8 +290,7 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
                           borderRadius: BorderRadius.circular(8),
                           child: FirestoreImage(
                             imageId: _uploadedImageId!,
-                            fit: BoxFit.cover,
-                            errorWidget: Container(
+                            errorWidget: ColoredBox(
                               color: Colors.red.shade100,
                               child: const Center(
                                 child: Column(
@@ -322,7 +322,7 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
               Card(
                 color: Colors.red.shade50,
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -353,5 +353,4 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
         ),
       ),
     );
-  }
 }

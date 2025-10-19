@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ImageGalleryScreen extends StatefulWidget {
   const ImageGalleryScreen({super.key});
@@ -17,8 +17,7 @@ class _ImageGalleryScreenState extends State<ImageGalleryScreen> {
   AspectRatioOption _ratio = AspectRatioOption.original;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: const Text('Gallery Builder'),
         actions: [
@@ -132,10 +131,8 @@ class _ImageGalleryScreenState extends State<ImageGalleryScreen> {
             )
           : null,
     );
-  }
 
-  Widget _empty() {
-    return Center(
+  Widget _empty() => Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -155,7 +152,6 @@ class _ImageGalleryScreenState extends State<ImageGalleryScreen> {
         ],
       ),
     );
-  }
 
   Future<void> _pickImages() async {
     final xs = await _picker.pickMultiImage(imageQuality: 90, maxWidth: 2000);
@@ -197,7 +193,7 @@ class _ImageGalleryScreenState extends State<ImageGalleryScreen> {
     });
   }
 
-  String _fileName(String path) => path.split('/').last.split('\\').last;
+  String _fileName(String path) => path.split('/').last.split(r'\').last;
 }
 
 enum AspectRatioOption { original, square, r4_5, r16_9 }
@@ -206,9 +202,9 @@ extension on AspectRatioOption {
   double get value {
     switch (this) {
       case AspectRatioOption.original:
-        return 1.0; // Display only; real original varies per image
+        return 1; // Display only; real original varies per image
       case AspectRatioOption.square:
-        return 1.0;
+        return 1;
       case AspectRatioOption.r4_5:
         return 4 / 5;
       case AspectRatioOption.r16_9:

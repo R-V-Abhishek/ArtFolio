@@ -1,4 +1,7 @@
 class AppRoutes {
+
+  // Prevent instantiation
+  AppRoutes._();
   // Auth routes
   static const String auth = '/auth';
   static const String userTypeSelection = '/user-type-selection';
@@ -24,7 +27,4 @@ class AppRoutes {
   // Utility routes
   static const String comments = '/comments';
   static const String notifications = '/notifications';
-
-  // Prevent instantiation
-  AppRoutes._();
 }

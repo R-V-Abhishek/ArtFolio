@@ -1,10 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import '../services/auth_service.dart';
 import '../services/session_state.dart';
-import '../theme/theme.dart';
 import '../theme/scale.dart';
+import '../theme/theme.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -51,7 +52,7 @@ class _AuthScreenState extends State<AuthScreen> {
     } on FirebaseAuthException catch (e) {
       setState(() => _error = AuthService.instance.humanizeAuthError(e));
     } catch (e) {
-      setState(() => _error = 'Failed to send reset email: ${e.toString()}');
+      setState(() => _error = 'Failed to send reset email: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -86,7 +87,7 @@ class _AuthScreenState extends State<AuthScreen> {
       });
     } catch (e) {
       setState(() {
-        _error = 'Unexpected error: ${e.toString()}';
+        _error = 'Unexpected error: $e';
       });
     } finally {
       if (mounted) {
@@ -127,9 +128,7 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  Future<void> _createUserProfile(
-    User firebaseUser,
-  ) async {
+  Future<void> _createUserProfile(User firebaseUser) async {
     // No-op: do not create the user document here.
     // AuthStateHandler will detect missing profile and route to
     // UserTypeSelectionScreen for both Google and email sign-ups.
@@ -164,7 +163,7 @@ class _AuthScreenState extends State<AuthScreen> {
         actions: [
           IconButton(
             tooltip: 'Toggle theme',
-            onPressed: () => themeController.toggle(),
+            onPressed: themeController.toggle,
             icon: Icon(
               themeController.value == ThemeMode.dark
                   ? Icons.nightlight_round
@@ -287,8 +286,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   labelText: 'Password',
                                   prefixIcon: const Icon(Icons.lock_outline),
                                   suffixIcon: StatefulBuilder(
-                                    builder: (context, setIconState) {
-                                      return IconButton(
+                                    builder: (context, setIconState) => IconButton(
                                         tooltip: 'Show/Hide password',
                                         icon: Icon(
                                           _obscurePassword
@@ -302,8 +300,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                           );
                                           setIconState(() {});
                                         },
-                                      );
-                                    },
+                                      ),
                                   ),
                                 ),
                                 obscureText: _obscurePassword,
@@ -398,9 +395,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         TextButton.icon(
                           onPressed: _loading
                               ? null
-                              : () {
-                                  SessionState.instance.enterGuest();
-                                },
+                              : SessionState.instance.enterGuest,
                           icon: const Icon(Icons.visibility),
                           label: const Text('Skip for now (Guest)'),
                         ),

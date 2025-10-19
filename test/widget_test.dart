@@ -10,9 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 // Note: We avoid importing app main to keep tests independent from Firebase.
 
 void main() {
-  testWidgets('Smoke: builds a MaterialApp scaffold', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('Smoke: builds a MaterialApp scaffold', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(body: Center(child: Text('Hello'))),

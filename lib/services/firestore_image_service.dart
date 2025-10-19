@@ -1,5 +1,6 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
@@ -99,7 +100,7 @@ class FirestoreImageService {
     File? file,
     Uint8List? data,
   }) async* {
-    for (int i = 0; i <= 100; i += 20) {
+    for (var i = 0; i <= 100; i += 20) {
       yield i / 100.0;
       await Future.delayed(const Duration(milliseconds: 100));
     }
@@ -116,7 +117,5 @@ class FirestoreImageService {
   }
 
   // Convert base64 to Uint8List for display
-  Uint8List base64ToUint8List(String base64String) {
-    return base64Decode(base64String);
-  }
+  Uint8List base64ToUint8List(String base64String) => base64Decode(base64String);
 }

@@ -1,23 +1,25 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
-
-import '../models/user.dart' as model;
-import '../theme/scale.dart';
-import '../models/role_models.dart' as roles;
-import '../models/post.dart';
-import '../services/firestore_service.dart';
-import '../services/firestore_image_service.dart';
-import '../widgets/firestore_image.dart';
-import 'follow_list_screen.dart';
-import '../services/session_state.dart';
-import '../services/auth_service.dart';
-import '../routes/app_routes.dart';
-import '../routes/route_arguments.dart';
 import 'package:image_picker/image_picker.dart';
 
-class ProfileScreen extends StatefulWidget {
-  final String? userId; // Optional: view other user's profile later
+import '../models/post.dart';
+import '../models/role_models.dart' as roles;
+import '../models/user.dart' as model;
+import '../routes/app_routes.dart';
+import '../routes/route_arguments.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_image_service.dart';
+import '../services/firestore_service.dart';
+import '../services/session_state.dart';
+import '../theme/scale.dart';
+import '../widgets/firestore_image.dart';
+import 'follow_list_screen.dart';
+
+class ProfileScreen extends StatefulWidget { // Optional: view other user's profile later
   const ProfileScreen({super.key, this.userId});
+  final String? userId;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -55,8 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final controller = TextEditingController(text: _user!.bio);
     final result = await showDialog<String>(
       context: context,
-      builder: (ctx) {
-        return AlertDialog(
+      builder: (ctx) => AlertDialog(
           title: const Text('Edit bio'),
           content: TextField(
             controller: controller,
@@ -76,8 +77,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               child: const Text('Save'),
             ),
           ],
-        );
-      },
+        ),
     );
     if (result == null) return;
     try {
@@ -115,7 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       final posts = await _firestore.getUserPosts(targetUserId);
       final counts = await _firestore.getFollowCounts(targetUserId);
 
-      bool following = false;
+      var following = false;
       final viewerId = _auth.currentUser?.uid;
       if (viewerId != null && viewerId != targetUserId) {
         following = await _firestore.isFollowing(viewerId, targetUserId);
@@ -203,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         await _signOut();
         break;
       case 'delete_account':
-        Navigator.of(context).pushNamed(AppRoutes.deleteAccount);
+        unawaited(Navigator.of(context).pushNamed(AppRoutes.deleteAccount));
         break;
     }
   }
@@ -213,9 +213,9 @@ class _ProfileScreenState extends State<ProfileScreen>
       await AuthService.instance.signOut();
       if (mounted) {
         // Navigate to auth screen
-        Navigator.of(
+        unawaited(Navigator.of(
           context,
-        ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false);
+        ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false));
       }
     } catch (e) {
       if (mounted) {
@@ -368,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   arguments: EditProfileArguments(user: _user!),
                 );
                 if (!mounted) return;
-                _loadData();
+                unawaited(_loadData());
               },
               onEditBio: _editBio,
               onProfileUpdated: _loadData,
@@ -437,17 +437,6 @@ class _ProfileScreenState extends State<ProfileScreen>
 }
 
 class _ProfileHeader extends StatefulWidget {
-  final model.User user;
-  final roles.Artist? artist;
-  final Map<String, int> counts;
-  final bool isOwnProfile;
-  final bool isFollowing;
-  final bool followBusy;
-  final VoidCallback onFollowToggle;
-  final int postsCount;
-  final VoidCallback onEditProfile;
-  final VoidCallback onEditBio;
-  final VoidCallback onProfileUpdated;
 
   const _ProfileHeader({
     required this.user,
@@ -462,6 +451,17 @@ class _ProfileHeader extends StatefulWidget {
     required this.onEditBio,
     required this.onProfileUpdated,
   });
+  final model.User user;
+  final roles.Artist? artist;
+  final Map<String, int> counts;
+  final bool isOwnProfile;
+  final bool isFollowing;
+  final bool followBusy;
+  final VoidCallback onFollowToggle;
+  final int postsCount;
+  final VoidCallback onEditProfile;
+  final VoidCallback onEditBio;
+  final VoidCallback onProfileUpdated;
 
   @override
   State<_ProfileHeader> createState() => _ProfileHeaderState();
@@ -547,8 +547,10 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
       // Update user document with imageId reference
       final fs = FirestoreService();
       await fs.updateUser(
-        widget.user
-            .copyWith(profilePictureUrl: imageId, updatedAt: DateTime.now()),
+        widget.user.copyWith(
+          profilePictureUrl: imageId,
+          updatedAt: DateTime.now(),
+        ),
       );
 
       // Delete old Firestore image if applicable (avoid deleting assets or URLs)
@@ -561,16 +563,16 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile photo updated')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Profile photo updated')));
         widget.onProfileUpdated();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update photo: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update photo: $e')));
       }
     } finally {
       if (mounted) setState(() => _updatingPhoto = false);
@@ -597,16 +599,16 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile photo removed')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Profile photo removed')));
         widget.onProfileUpdated();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to remove photo: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to remove photo: $e')));
       }
     } finally {
       if (mounted) setState(() => _updatingPhoto = false);
@@ -622,7 +624,7 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
     final isNarrow = width < 380;
     final s = Scale(context);
 
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -647,12 +649,10 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
-                  // Center vertically so the username sits higher (was bottom-aligned).
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(
-                      width: (s.size(112)).clamp(96.0, 112.0),
-                      height: (s.size(112)).clamp(96.0, 112.0),
+                      width: s.size(112).clamp(96.0, 112.0),
+                      height: s.size(112).clamp(96.0, 112.0),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(999),
                         onTap: widget.isOwnProfile ? _showPhotoActions : null,
@@ -662,11 +662,12 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                             ClipOval(
                               child: Builder(
                                 builder: (context) {
-                                  final ref =
-                                      widget.user.profilePictureUrl.trim();
+                                  final ref = widget.user.profilePictureUrl
+                                      .trim();
                                   if (ref.isEmpty) {
                                     return Container(
-                                      color: theme.colorScheme
+                                      color: theme
+                                          .colorScheme
                                           .surfaceContainerHighest,
                                       alignment: Alignment.center,
                                       child: Text(
@@ -676,12 +677,14 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                                             .toUpperCase(),
                                         style: theme.textTheme.headlineSmall
                                             ?.copyWith(
-                                          fontSize: s.font(
-                                            theme.textTheme.headlineSmall
-                                                    ?.fontSize ??
-                                                24,
-                                          ),
-                                        ),
+                                              fontSize: s.font(
+                                                theme
+                                                        .textTheme
+                                                        .headlineSmall
+                                                        ?.fontSize ??
+                                                    24,
+                                              ),
+                                            ),
                                       ),
                                     );
                                   }
@@ -690,8 +693,11 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                                       ref,
                                       fit: BoxFit.cover,
                                       errorBuilder: (context, error, stack) =>
-                      _avatarFallback(theme, s,
-                                              widget.user.username),
+                                          _avatarFallback(
+                                            theme,
+                                            s,
+                                            widget.user.username,
+                                          ),
                                     );
                                   }
                                   if (ref.startsWith('assets/')) {
@@ -699,14 +705,16 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                                       ref,
                                       fit: BoxFit.cover,
                                       errorBuilder: (context, error, stack) =>
-                      _avatarFallback(theme, s,
-                                              widget.user.username),
+                                          _avatarFallback(
+                                            theme,
+                                            s,
+                                            widget.user.username,
+                                          ),
                                     );
                                   }
                                   // Assume Firestore image ID
                                   return FirestoreImage(
                                     imageId: ref,
-                                    fit: BoxFit.cover,
                                   );
                                 },
                               ),
@@ -983,8 +991,7 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
   }
 }
 
-Widget _avatarFallback(ThemeData theme, Scale s, String username) {
-  return Container(
+Widget _avatarFallback(ThemeData theme, Scale s, String username) => Container(
     color: theme.colorScheme.surfaceContainerHighest,
     alignment: Alignment.center,
     child: Text(
@@ -994,11 +1001,10 @@ Widget _avatarFallback(ThemeData theme, Scale s, String username) {
       ),
     ),
   );
-}
 
 class _TabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
   _TabBarHeaderDelegate(this.tabBar);
+  final TabBar tabBar;
 
   @override
   double get minExtent => tabBar.preferredSize.height;
@@ -1013,23 +1019,17 @@ class _TabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     final color = Theme.of(context).colorScheme.surface;
-    return Container(
+    return ColoredBox(
       color: color,
       child: Material(color: Colors.transparent, child: tabBar),
     );
   }
 
   @override
-  bool shouldRebuild(covariant _TabBarHeaderDelegate oldDelegate) {
-    return oldDelegate.tabBar != tabBar;
-  }
+  bool shouldRebuild(covariant _TabBarHeaderDelegate oldDelegate) => oldDelegate.tabBar != tabBar;
 }
 
 class _PostsTab extends StatelessWidget {
-  final List<Post> posts;
-  final bool gridView;
-  final VoidCallback onToggleView;
-  final Future<void> Function() onRefreshRequested;
 
   const _PostsTab({
     required this.posts,
@@ -1037,6 +1037,10 @@ class _PostsTab extends StatelessWidget {
     required this.onToggleView,
     required this.onRefreshRequested,
   });
+  final List<Post> posts;
+  final bool gridView;
+  final VoidCallback onToggleView;
+  final Future<void> Function() onRefreshRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -1086,7 +1090,7 @@ class _PostsTab extends StatelessWidget {
       child: posts.isEmpty
           ? ListView(
               padding: const EdgeInsets.only(top: 40),
-              children: [SizedBox(height: 200), content],
+              children: [const SizedBox(height: 200), content],
             )
           : content,
     );
@@ -1094,16 +1098,15 @@ class _PostsTab extends StatelessWidget {
 }
 
 class _Grid extends StatelessWidget {
-  final List<Post> posts;
   const _Grid({required this.posts});
+  final List<Post> posts;
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
+  Widget build(BuildContext context) => LayoutBuilder(
       builder: (context, constraints) {
         // Compute columns based on available width (min tile ~120px)
         final crossAxisCount = (constraints.maxWidth / 140).floor().clamp(2, 6);
-        final spacing = 2.0;
+        const spacing = 2.0;
         return GridView.builder(
           padding: EdgeInsets.zero,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -1138,7 +1141,6 @@ class _Grid extends StatelessWidget {
                 : FirestoreImage(
                     key: ValueKey(ref),
                     imageId: ref,
-                    fit: BoxFit.cover,
                   );
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -1154,16 +1156,14 @@ class _Grid extends StatelessWidget {
         );
       },
     );
-  }
 }
 
 class _List extends StatelessWidget {
-  final List<Post> posts;
   const _List({required this.posts});
+  final List<Post> posts;
 
   @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
+  Widget build(BuildContext context) => ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: posts.length,
       separatorBuilder: (_, i) => const Divider(height: 1),
@@ -1201,7 +1201,6 @@ class _List extends StatelessWidget {
                       : FirestoreImage(
                           key: ValueKey(ref),
                           imageId: ref,
-                          fit: BoxFit.cover,
                         )),
           ),
           title: Text(p.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -1215,19 +1214,18 @@ class _List extends StatelessWidget {
         );
       },
     );
-  }
 }
 
 class _PlaceholderTab extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
 
   const _PlaceholderTab({
     required this.icon,
     required this.title,
     required this.subtitle,
   });
+  final IconData icon;
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -1248,16 +1246,15 @@ class _PlaceholderTab extends StatelessWidget {
 }
 
 class _Stat extends StatelessWidget {
+  const _Stat({required this.number, required this.label});
   final int? number;
   final String label;
-  const _Stat({required this.number, required this.label});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           number?.toString() ?? '-',

@@ -1,6 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Base64 Image Utilities', () {

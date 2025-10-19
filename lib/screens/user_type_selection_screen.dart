@@ -1,14 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../models/user.dart';
+import '../routes/app_routes.dart';
 import '../services/user_service.dart';
 import '../theme/theme.dart';
-import '../routes/app_routes.dart';
 
 class UserTypeSelectionScreen extends StatefulWidget {
-  final String uid;
-  final String email;
-  final String fullName;
-  final String? profilePictureUrl;
 
   const UserTypeSelectionScreen({
     super.key,
@@ -17,6 +16,10 @@ class UserTypeSelectionScreen extends StatefulWidget {
     required this.fullName,
     this.profilePictureUrl,
   });
+  final String uid;
+  final String email;
+  final String fullName;
+  final String? profilePictureUrl;
 
   @override
   State<UserTypeSelectionScreen> createState() =>
@@ -55,14 +58,13 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: const Text('Choose Your Role'),
         automaticallyImplyLeading: false,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -177,7 +179,6 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
         ),
       ),
     );
-  }
 
   Future<void> _createUserAccount() async {
     if (_selectedRole == null) return;
@@ -197,7 +198,7 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
 
       if (mounted) {
         // Navigate to main app or show success
-        Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+        unawaited(Navigator.of(context).pushReplacementNamed(AppRoutes.home));
       }
     } catch (e) {
       if (mounted) {
@@ -219,10 +220,6 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
 }
 
 class UserRoleOption {
-  final UserRole role;
-  final String title;
-  final String subtitle;
-  final IconData icon;
 
   UserRoleOption({
     required this.role,
@@ -230,4 +227,8 @@ class UserRoleOption {
     required this.subtitle,
     required this.icon,
   });
+  final UserRole role;
+  final String title;
+  final String subtitle;
+  final IconData icon;
 }

@@ -5,14 +5,14 @@ import '../services/firestore_service.dart';
 import '../theme/scale.dart';
 
 class CommentsSheet extends StatefulWidget {
-  final String postId;
-  final bool allowComments;
 
   const CommentsSheet({
     super.key,
     required this.postId,
     this.allowComments = true,
   });
+  final String postId;
+  final bool allowComments;
 
   @override
   State<CommentsSheet> createState() => _CommentsSheetState();

@@ -1,22 +1,24 @@
+import 'dart:async';
 import 'dart:math' as math;
-import 'package:firebase_auth/firebase_auth.dart' as fb;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 
 import '../models/post.dart';
 import '../models/user.dart' as model;
-import '../services/firestore_service.dart';
-import 'firestore_image.dart';
-import '../theme/scale.dart';
-import 'comments_sheet.dart';
 import '../routes/app_routes.dart';
 import '../routes/route_arguments.dart';
+import '../services/firestore_service.dart';
+import '../theme/scale.dart';
+import 'comments_sheet.dart';
+import 'firestore_image.dart';
 
 class PostCard extends StatefulWidget {
-  final Post post;
-  final VoidCallback? onCommentTap;
 
   const PostCard({super.key, required this.post, this.onCommentTap});
+  final Post post;
+  final VoidCallback? onCommentTap;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -53,14 +55,15 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
     _isLiked = uid != null && widget.post.likedBy.contains(uid);
     _loadAuthor();
 
-    _likeOverlayCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          if (mounted) setState(() => _showOverlay = false);
-        }
-      });
+    _likeOverlayCtrl =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 1600),
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            if (mounted) setState(() => _showOverlay = false);
+          }
+        });
     _iconBurstCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 450),
@@ -250,17 +253,21 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                       child: ClipOval(
                         child: Builder(
                           builder: (context) {
-                            final name = (_author != null &&
+                            final name =
+                                (_author != null &&
                                     _author!.username.isNotEmpty)
                                 ? _author!.username[0].toUpperCase()
                                 : 'A';
                             if (_author == null ||
                                 _author!.profilePictureUrl.isEmpty) {
                               return Container(
-                                color: theme
-                                    .colorScheme.surfaceContainerHighest,
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
                                 alignment: Alignment.center,
-                                child: Text(name, style: theme.textTheme.labelLarge),
+                                child: Text(
+                                  name,
+                                  style: theme.textTheme.labelLarge,
+                                ),
                               );
                             }
                             final ref = _author!.profilePictureUrl;
@@ -270,12 +277,15 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) =>
                                     Container(
-                                  color: theme.colorScheme
-                                      .surfaceContainerHighest,
-                                  alignment: Alignment.center,
-                                  child: Text(name,
-                                      style: theme.textTheme.labelLarge),
-                                ),
+                                      color: theme
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        name,
+                                        style: theme.textTheme.labelLarge,
+                                      ),
+                                    ),
                               );
                             }
                             if (ref.startsWith('assets/')) {
@@ -284,16 +294,21 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) =>
                                     Container(
-                                  color: theme.colorScheme
-                                      .surfaceContainerHighest,
-                                  alignment: Alignment.center,
-                                  child: Text(name,
-                                      style: theme.textTheme.labelLarge),
-                                ),
+                                      color: theme
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        name,
+                                        style: theme.textTheme.labelLarge,
+                                      ),
+                                    ),
                               );
                             }
                             // Firestore image id
-                            return FirestoreImage(imageId: ref, fit: BoxFit.cover);
+                            return FirestoreImage(
+                              imageId: ref,
+                            );
                           },
                         ),
                       ),
@@ -401,7 +416,7 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                         ),
                       );
                       // Refresh comment count after the sheet closes
-                      _refreshCommentCount();
+                      unawaited(_refreshCommentCount());
                     },
                 icon: const Icon(Icons.mode_comment_outlined),
               ),
@@ -481,7 +496,7 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
         if (_showMeta && widget.post.tags.isNotEmpty)
           Padding(
             padding: EdgeInsets.fromLTRB(s.size(12), 0, s.size(12), s.size(8)),
-            child: _TagsWrap(tags: widget.post.tags, maxToShow: 5),
+            child: _TagsWrap(tags: widget.post.tags),
           ),
 
         // Location (if any)
@@ -520,7 +535,7 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
       return _NetworkImage(url: ref);
     }
     // Treat as Firestore image document ID
-    return FirestoreImage(imageId: ref, fit: BoxFit.cover);
+    return FirestoreImage(imageId: ref);
   }
 
   Widget _buildMedia(BuildContext context, BorderRadius radius) {
@@ -566,9 +581,7 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
       child = Stack(
         fit: StackFit.expand,
         children: [
-          thumb.isNotEmpty
-              ? _buildImage(thumb)
-              : Container(
+          if (thumb.isNotEmpty) _buildImage(thumb) else Container(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 ),
           const Center(
@@ -641,13 +654,13 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
 }
 
 class _TagsWrap extends StatelessWidget {
+  const _TagsWrap({required this.tags});
   final List<String> tags;
-  final int maxToShow;
-  const _TagsWrap({required this.tags, this.maxToShow = 5});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    const maxToShow = 3;
     final shown = tags.take(maxToShow).toList();
     final hidden = tags.length - shown.length;
     final text = [
@@ -664,12 +677,11 @@ class _TagsWrap extends StatelessWidget {
 }
 
 class _NetworkImage extends StatelessWidget {
-  final String url;
   const _NetworkImage({required this.url});
+  final String url;
 
   @override
-  Widget build(BuildContext context) {
-    return Image.network(
+  Widget build(BuildContext context) => Image.network(
       url,
       fit: BoxFit.cover,
       loadingBuilder: (context, child, progress) {
@@ -691,17 +703,15 @@ class _NetworkImage extends StatelessWidget {
         child: const Icon(Icons.broken_image),
       ),
     );
-  }
 }
 
 class _GalleryDots extends StatelessWidget {
+  const _GalleryDots({required this.length, required this.current});
   final int length;
   final int current;
-  const _GalleryDots({required this.length, required this.current});
 
   @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
+  Widget build(BuildContext context) => DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.black54,
         borderRadius: BorderRadius.circular(12),
@@ -726,31 +736,30 @@ class _GalleryDots extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _LikeOverlay extends StatelessWidget {
+  const _LikeOverlay({required this.animation, required this.color});
   final Animation<double> animation;
   final Color color;
-  const _LikeOverlay({required this.animation, required this.color});
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: animation,
       builder: (context, _) {
         final t = Curves.easeOutCubic.transform(animation.value);
         final ringScale1 = 0.6 + 0.5 * t;
         final ringScale2 = 0.8 + 0.9 * t;
-  final ringOpacity = (1.0 - t).clamp(0.0, 1.0);
-  final heartScale = 1.0 + 0.25 * Curves.elasticOut.transform(t);
-  const fadeStart = 0.6; // keep fully visible for 60% of the timeline
-  final heartOpacity = t < fadeStart
-      ? 1.0
-      : (1.0 -
-        Curves.easeOut.transform(
-      (((t - fadeStart) / (1 - fadeStart)).clamp(0.0, 1.0))))
-    .clamp(0.0, 1.0);
+        final ringOpacity = (1.0 - t).clamp(0.0, 1.0);
+        final heartScale = 1.0 + 0.25 * Curves.elasticOut.transform(t);
+        const fadeStart = 0.6; // keep fully visible for 60% of the timeline
+        final heartOpacity = t < fadeStart
+            ? 1.0
+            : (1.0 -
+                      Curves.easeOut.transform(
+                        ((t - fadeStart) / (1 - fadeStart)).clamp(0.0, 1.0),
+                      ))
+                  .clamp(0.0, 1.0);
         return SizedBox(
           width: 220,
           height: 220,
@@ -795,16 +804,16 @@ class _LikeOverlay extends StatelessWidget {
                 opacity: heartOpacity,
                 child: Transform.scale(
                   scale: heartScale,
-                  child: Icon(
+                  child: const Icon(
                     Icons.favorite,
                     size: 96,
-                    color: const Color(0xFFFF8DA1), // subtle pink
+                    color: Color(0xFFFF8DA1), // subtle pink
                   ),
                 ),
               ),
               // Sparkles (gold) - 5 rays moving from heart to ring, fading with the heart
               ...List.generate(5, (i) {
-                final step = 360 / 5;
+                const step = 360 / 5;
                 final angle = -18 + step * i;
                 const startR = 14.0;
                 const endR = 105.0; // approx outer ring radius
@@ -822,16 +831,9 @@ class _LikeOverlay extends StatelessWidget {
         );
       },
     );
-  }
 }
 
-class _Sparkle extends StatelessWidget {
-  final double angleDeg;
-  final double startRadius;
-  final double endRadius;
-  final double t;
-  final Color color;
-  final double opacity; // typically synced with heartOpacity
+class _Sparkle extends StatelessWidget { // typically synced with heartOpacity
   const _Sparkle({
     required this.angleDeg,
     required this.startRadius,
@@ -840,6 +842,12 @@ class _Sparkle extends StatelessWidget {
     required this.color,
     required this.opacity,
   });
+  final double angleDeg;
+  final double startRadius;
+  final double endRadius;
+  final double t;
+  final Color color;
+  final double opacity;
 
   @override
   Widget build(BuildContext context) {
@@ -848,7 +856,8 @@ class _Sparkle extends StatelessWidget {
     final r = startRadius + (endRadius - startRadius) * p;
     final dx = math.cos(rad) * r;
     final dy = math.sin(rad) * r;
-    final scale = 0.8 + 0.3 * Curves.easeOut.transform(1 - (t - 0.1).clamp(0, 1));
+    final scale =
+        0.8 + 0.3 * Curves.easeOut.transform(1 - (t - 0.1).clamp(0, 1));
     return Transform.translate(
       offset: Offset(dx, dy),
       child: Transform.scale(
@@ -867,13 +876,12 @@ class _Sparkle extends StatelessWidget {
 }
 
 class _MiniBurst extends StatelessWidget {
+  const _MiniBurst({required this.animation, required this.color});
   final Animation<double> animation;
   final Color color;
-  const _MiniBurst({required this.animation, required this.color});
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: animation,
       builder: (context, _) {
         if (animation.value <= 0.001) return const SizedBox.shrink();
@@ -883,13 +891,12 @@ class _MiniBurst extends StatelessWidget {
         );
       },
     );
-  }
 }
 
 class _MiniBurstPainter extends CustomPainter {
+  _MiniBurstPainter(this.v, this.color);
   final double v;
   final Color color;
-  _MiniBurstPainter(this.v, this.color);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -897,21 +904,21 @@ class _MiniBurstPainter extends CustomPainter {
       ..style = PaintingStyle.fill
       ..color = color.withValues(alpha: (1.0 - v).clamp(0.0, 1.0));
     final center = Offset(size.width / 2, size.height / 2);
-    final count = 8;
+    const count = 8;
     final baseR = size.shortestSide * 0.2;
     final maxRadius = size.shortestSide * 0.9 * Curves.easeOut.transform(v);
-    for (int i = 0; i < count; i++) {
+    for (var i = 0; i < count; i++) {
       final angle = (2 * math.pi * i / count) + (v * 2 * math.pi * 0.2);
       final r = maxRadius;
-      final pos = Offset(center.dx + math.cos(angle) * r,
-          center.dy + math.sin(angle) * r);
+      final pos = Offset(
+        center.dx + math.cos(angle) * r,
+        center.dy + math.sin(angle) * r,
+      );
       final dotR = baseR * (1.0 - v * 0.8);
       canvas.drawCircle(pos, dotR, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _MiniBurstPainter oldDelegate) {
-    return oldDelegate.v != v || oldDelegate.color != color;
-  }
+  bool shouldRepaint(covariant _MiniBurstPainter oldDelegate) => oldDelegate.v != v || oldDelegate.color != color;
 }

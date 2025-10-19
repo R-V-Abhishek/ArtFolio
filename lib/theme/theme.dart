@@ -75,7 +75,6 @@ ThemeData _baseLight(ColorScheme scheme) {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: AppColors.primary.withValues(alpha: 0.15),
-          width: 1,
         ),
       ),
     ),
@@ -147,7 +146,7 @@ ThemeData _baseDark(ColorScheme scheme) {
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.06), width: 1),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -176,7 +175,6 @@ ThemeData _baseDark(ColorScheme scheme) {
 /// Light color scheme.
 final ColorScheme _lightScheme = ColorScheme.fromSeed(
   seedColor: AppColors.primary,
-  brightness: Brightness.light,
 ).copyWith(secondary: AppColors.secondary, surface: AppColors.surface);
 
 /// Dark color scheme.

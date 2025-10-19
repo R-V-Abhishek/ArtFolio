@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen>
     const electricBlue = Color(0xFF00C6FF);
     const coral = Color(0xFFFF6B6B);
 
-    return Container(
+    return DecoratedBox(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,

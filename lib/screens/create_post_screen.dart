@@ -11,9 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/post.dart';
 import '../services/firestore_image_service.dart';
+import '../services/session_state.dart';
 import '../theme/theme.dart';
 import 'image_gallery_screen.dart';
-import '../services/session_state.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -40,7 +40,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   // Upload state
   bool _isUploading = false;
-  double _progress = 0.0; // 0..1
+  double _progress = 0; // 0..1
   String? _uploadStatus;
 
   // Services
@@ -87,9 +87,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       });
 
       // Restore image files if they're still present
-      final paths = List<String>.from((map['imagePaths'] ?? const []));
+      final paths = List<String>.from(map['imagePaths'] ?? const []);
       for (final path in paths) {
         final f = File(path);
+        // ignore: avoid_slow_async_io
         if (await f.exists()) {
           _images.add(f);
         }
@@ -129,19 +130,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     await prefs.remove(_draftKey);
   }
 
-  PostType _parseType(String? name) {
-    return PostType.values.firstWhere(
+  PostType _parseType(String? name) => PostType.values.firstWhere(
       (e) => e.name == name,
       orElse: () => PostType.image,
     );
-  }
 
-  PostVisibility _parseVisibility(String? name) {
-    return PostVisibility.values.firstWhere(
+  PostVisibility _parseVisibility(String? name) => PostVisibility.values.firstWhere(
       (e) => e.name == name,
       orElse: () => PostVisibility.public,
     );
-  }
 
   // Image picking
   Future<void> _pickFromCamera() async {
@@ -336,7 +333,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         userId: userId,
         type: _type,
         caption: _captionCtrl.text.trim(),
-        description: null,
         skills: List.of(_skills),
         tags: List.of(_tags),
         timestamp: DateTime.now(),
@@ -344,11 +340,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         location: _location,
       );
 
-      List<String> uploadedIds = [];
+      final uploadedIds = <String>[];
 
       if (_type != PostType.idea) {
         // Upload images sequentially with progress
-        for (int i = 0; i < _images.length; i++) {
+        for (var i = 0; i < _images.length; i++) {
           final file = _images[i];
           final fileName = p.basename(file.path);
 
@@ -441,18 +437,17 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return PopScope(
+  Widget build(BuildContext context) => PopScope(
       canPop: !_hasUnsavedChanges,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         final navigator = Navigator.of(context);
         final shouldSave = await _confirmDiscardOrSave();
-        if (shouldSave == true) {
+        if (shouldSave ?? false) {
           await _saveDraft();
         }
         // Use navigator captured before await to avoid using context after async gap
-        navigator.maybePop();
+        unawaited(navigator.maybePop());
       },
       child: Scaffold(
         // Ensure content shifts for the keyboard on small screens
@@ -545,18 +540,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
       ),
     );
-  }
 
-  bool get _hasUnsavedChanges {
-    return _captionCtrl.text.trim().isNotEmpty ||
+  bool get _hasUnsavedChanges => _captionCtrl.text.trim().isNotEmpty ||
         _images.isNotEmpty ||
         _tags.isNotEmpty ||
         _skills.isNotEmpty ||
         _location != null;
-  }
 
-  Future<bool?> _confirmDiscardOrSave() async {
-    return showDialog<bool>(
+  Future<bool?> _confirmDiscardOrSave() async => showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Leave without posting?'),
@@ -573,7 +564,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ],
       ),
     );
-  }
 
   Widget _buildMediaPane() {
     final isIdea = _type == PostType.idea;
@@ -663,8 +653,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     mainAxisSpacing: 8,
                     crossAxisSpacing: 8,
                   ),
-                  itemBuilder: (context, index) {
-                    return Stack(
+                  itemBuilder: (context, index) => Stack(
                       fit: StackFit.expand,
                       children: [
                         ClipRRect(
@@ -691,8 +680,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           ),
                         ),
                       ],
-                    );
-                  },
+                    ),
                 ),
             ],
           ],
@@ -701,8 +689,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 
-  Widget _emptyHint(String text) {
-    return Container(
+  Widget _emptyHint(String text) => Container(
       height: 180,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -717,10 +704,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
       ),
     );
-  }
 
-  Widget _buildFormPane() {
-    return Card(
+  Widget _buildFormPane() => Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -848,7 +833,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
       ),
     );
-  }
 
   String _visibilityLabel(PostVisibility v) {
     switch (v) {
@@ -869,8 +853,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     required List<String> values,
     List<String> suggestions = const [],
     String prefix = '',
-  }) {
-    return Column(
+  }) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: Theme.of(context).textTheme.titleMedium),
@@ -927,10 +910,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ],
       ],
     );
-  }
 
-  Widget _buildUploadingOverlay() {
-    return Container(
+  Widget _buildUploadingOverlay() => ColoredBox(
       color: Colors.black45,
       child: Center(
         child: Card(
@@ -956,5 +937,4 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
       ),
     );
-  }
 }
