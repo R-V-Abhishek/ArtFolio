@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Temporary files for sharing -->
+    <cache-path name="share_images" path="." />
+    <!-- External cache for temporary files -->
+    <external-cache-path name="external_share_images" path="." />
+    <!-- Files directory -->
+    <files-path name="files" path="." />
+    <!-- External files directory -->
+    <external-files-path name="external_files" path="." />
+</paths>

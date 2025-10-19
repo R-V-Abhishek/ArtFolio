@@ -49,6 +49,7 @@ dependencies:
   path: ^1.9.0 # For file path operations
   path_provider: ^2.1.4 # For getting app directories
   shared_preferences: ^2.5.3
+  share_plus: ^10.0.2 # For sharing content
 
 dev_dependencies:
   flutter_test:

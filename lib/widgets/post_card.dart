@@ -10,9 +10,12 @@ import '../models/user.dart' as model;
 import '../routes/app_routes.dart';
 import '../routes/route_arguments.dart';
 import '../services/firestore_service.dart';
+import '../services/saved_posts_service.dart';
+import '../services/share_service.dart';
 import '../theme/scale.dart';
 import 'comments_sheet.dart';
 import 'firestore_image.dart';
+import 'share_options_sheet.dart';
 
 class PostCard extends StatefulWidget {
 
@@ -27,11 +30,13 @@ class PostCard extends StatefulWidget {
 class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
   final _auth = fb.FirebaseAuth.instance;
   final _firestore = FirestoreService();
+  final _savedPostsService = SavedPostsService.instance;
 
   // Local optimistic state
   late int _likesCount;
   late int _commentsCount; // Add local comment count
   late bool _isLiked;
+  late bool _isSaved; // Add saved state
   int _currentPage = 0; // for gallery
   model.User? _author;
   bool _incrementedView = false;
@@ -53,7 +58,9 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
         widget.post.commentsCount; // Initialize local comment count
     final uid = _auth.currentUser?.uid;
     _isLiked = uid != null && widget.post.likedBy.contains(uid);
+    _isSaved = false; // Initialize as false, will be loaded async
     _loadAuthor();
+    _loadSavedState();
 
     _likeOverlayCtrl =
         AnimationController(
@@ -135,6 +142,55 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
       }
     } catch (e) {
       // Ignore errors silently for now
+    }
+  }
+
+  Future<void> _loadSavedState() async {
+    try {
+      final isSaved = await _savedPostsService.isPostSaved(widget.post.id);
+      if (mounted) {
+        setState(() {
+          _isSaved = isSaved;
+        });
+      }
+    } catch (e) {
+      // Ignore errors silently for saved state loading
+    }
+  }
+
+  Future<void> _toggleSave() async {
+    try {
+      setState(() {
+        _isSaved = !_isSaved; // Optimistic update
+      });
+
+      final newSavedState = await _savedPostsService.togglePostSave(widget.post.id);
+      
+      if (mounted) {
+        setState(() {
+          _isSaved = newSavedState;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(newSavedState ? 'Post saved' : 'Post unsaved'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      // Revert optimistic update on error
+      if (mounted) {
+        setState(() {
+          _isSaved = !_isSaved;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to ${_isSaved ? 'unsave' : 'save'} post: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -422,9 +478,36 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
               ),
               IconButton(
                 iconSize: s.size(28),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Share coming soon')),
+                onPressed: () async {
+                  try {
+                    await ShareService.instance.sharePost(
+                      widget.post,
+                      author: _author,
+                    );
+                    // Increment share count optimistically
+                    await _firestore.incrementPostShares(widget.post.id);
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to share: $e')),
+                      );
+                    }
+                  }
+                },
+                onLongPress: () {
+                  showModalBottomSheet<void>(
+                    context: context,
+                    showDragHandle: true,
+                    builder: (context) => ShareOptionsSheet(
+                      post: widget.post,
+                      onShareComplete: () async {
+                        try {
+                          await _firestore.incrementPostShares(widget.post.id);
+                        } catch (e) {
+                          // Ignore error for now
+                        }
+                      },
+                    ),
                   );
                 },
                 icon: const Icon(Icons.send_outlined),
@@ -432,8 +515,11 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
               const Spacer(),
               IconButton(
                 iconSize: s.size(24),
-                icon: const Icon(Icons.bookmark_border),
-                onPressed: () {},
+                icon: Icon(
+                  _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                  color: _isSaved ? Theme.of(context).primaryColor : null,
+                ),
+                onPressed: _toggleSave,
               ),
             ],
           ),

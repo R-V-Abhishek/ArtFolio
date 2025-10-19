@@ -10,6 +10,7 @@ import '../screens/image_upload_test_screen.dart';
 import '../screens/notifications_screen.dart';
 import '../screens/post_detail_screen.dart';
 import '../screens/profile_screen.dart';
+import '../screens/saved_posts_screen.dart';
 import '../screens/splash_screen.dart';
 import '../screens/user_type_selection_screen.dart';
 import '../widgets/auth_state_handler.dart';
@@ -118,6 +119,12 @@ class RouteGenerator {
           builder: (_) => const CreatePostScreen(),
           settings: settings,
           fullscreenDialog: true,
+        );
+
+      case AppRoutes.savedPosts:
+        return MaterialPageRoute(
+          builder: (_) => const SavedPostsScreen(),
+          settings: settings,
         );
 
       default:

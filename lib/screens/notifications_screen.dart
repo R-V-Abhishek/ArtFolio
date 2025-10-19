@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../models/app_notification.dart';
 import '../services/firestore_service.dart';
+import '../services/share_service.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -111,6 +112,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(
         title: const Text('Notifications'),
         actions: [
+          IconButton(
+            onPressed: () async {
+              try {
+                await ShareService.instance.shareApp();
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to share app: $e')),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.share_outlined),
+            tooltip: 'Share ArtFolio',
+          ),
           TextButton(
             onPressed: () async {
               final uid = _auth.currentUser?.uid;

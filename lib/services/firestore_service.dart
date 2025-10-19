@@ -714,6 +714,19 @@ class FirestoreService {
     }
   }
 
+  // Increment post shares
+  Future<void> incrementPostShares(String postId) async {
+    try {
+      final postRef = _postsCollection.doc(postId);
+      await postRef.update({
+        'sharesCount': FieldValue.increment(1),
+        'lastEngagement': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to increment post shares: $e');
+    }
+  }
+
   // Get posts for feed (mixed content, optimized for engagement)
   Future<List<Post>> getFeedPosts({int limit = 20, String? lastPostId}) async {
     try {

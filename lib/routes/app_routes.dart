@@ -19,6 +19,7 @@ class AppRoutes {
   // Post routes
   static const String postDetail = '/post-detail';
   static const String createPost = '/create-post';
+  static const String savedPosts = '/saved-posts';
 
   // Image/Media routes
   static const String imageGallery = '/image-gallery';

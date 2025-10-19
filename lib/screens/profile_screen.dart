@@ -13,6 +13,7 @@ import '../services/auth_service.dart';
 import '../services/firestore_image_service.dart';
 import '../services/firestore_service.dart';
 import '../services/session_state.dart';
+import '../services/share_service.dart';
 import '../theme/scale.dart';
 import '../widgets/firestore_image.dart';
 import 'follow_list_screen.dart';
@@ -199,6 +200,22 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _handleMenuSelection(String value) async {
     switch (value) {
+      case 'saved_posts':
+        unawaited(Navigator.of(context).pushNamed(AppRoutes.savedPosts));
+        break;
+      case 'share_profile':
+        if (_user != null) {
+          try {
+            await ShareService.instance.shareProfile(_user!);
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to share profile: $e')),
+              );
+            }
+          }
+        }
+        break;
       case 'logout':
         await _signOut();
         break;
@@ -321,6 +338,23 @@ class _ProfileScreenState extends State<ProfileScreen>
                   },
                 ),
                 IconButton(
+                  icon: const Icon(Icons.share_outlined),
+                  tooltip: 'Share Profile',
+                  onPressed: () async {
+                    if (_user != null) {
+                      try {
+                        await ShareService.instance.shareProfile(_user!);
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to share profile: $e')),
+                          );
+                        }
+                      }
+                    }
+                  },
+                ),
+                IconButton(
                   icon: const Icon(Icons.favorite_outline),
                   tooltip: 'Sponsor',
                   onPressed: () {
@@ -336,6 +370,22 @@ class _ProfileScreenState extends State<ProfileScreen>
                   tooltip: 'Settings',
                   onSelected: _handleMenuSelection,
                   itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'saved_posts',
+                      child: ListTile(
+                        leading: Icon(Icons.bookmark_outlined),
+                        title: Text('Saved Posts'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'share_profile',
+                      child: ListTile(
+                        leading: Icon(Icons.share_outlined),
+                        title: Text('Share Profile'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
                     const PopupMenuItem(
                       value: 'logout',
                       child: ListTile(

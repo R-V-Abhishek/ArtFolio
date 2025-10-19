@@ -6,6 +6,7 @@ import '../models/post.dart';
 import '../services/error_handler_service.dart';
 import '../services/firestore_service.dart';
 import '../services/image_cache_service.dart';
+import '../services/share_service.dart';
 import '../widgets/loading_widgets.dart';
 
 /// Example screen demonstrating improved patterns and practices
@@ -421,8 +422,23 @@ class _ImprovedFeedScreenState extends State<ImprovedFeedScreen> {
     // Navigate to comments screen
   }
 
-  void _sharePost(Post post) {
-    // Implement share functionality
+  Future<void> _sharePost(Post post) async {
+    try {
+      await ShareService.instance.sharePost(post);
+      await _firestoreService.incrementPostShares(post.id);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Post shared successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to share post: $e')),
+        );
+      }
+    }
   }
 
   void _reportPost(Post post) {
