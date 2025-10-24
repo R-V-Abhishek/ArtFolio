@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../models/post.dart';
 
 class SavedPostsService {
@@ -101,17 +102,20 @@ class SavedPostsService {
       }
 
       // Extract post IDs
-      final postIds = savedQuery.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
-          .map((data) => data['postId'] as String)
-          .toList();
+      final postIds = <String>[];
+      for (final doc in savedQuery.docs) {
+        final data = doc.data();
+        if (data != null && data is Map<String, dynamic> && data['postId'] != null) {
+          postIds.add(data['postId'] as String);
+        }
+      }
 
       // Batch fetch posts
       final posts = <Post>[];
       final postsCollection = _firestore.collection('posts');
       
       // Firebase 'in' queries are limited to 10 items
-      for (int i = 0; i < postIds.length; i += 10) {
+      for (var i = 0; i < postIds.length; i += 10) {
         final batch = postIds.skip(i).take(10).toList();
         final postsQuery = await postsCollection
             .where(FieldPath.documentId, whereIn: batch)
@@ -127,10 +131,13 @@ class SavedPostsService {
       // Sort posts by saved time (most recent first)
       final savedMap = <String, DateTime>{};
       for (final doc in savedQuery.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        final postId = data['postId'] as String;
-        final savedAt = (data['savedAt'] as Timestamp?)?.toDate() ?? DateTime.now();
-        savedMap[postId] = savedAt;
+        final data = doc.data();
+        if (data != null) {
+          final dataMap = data as Map<String, dynamic>;
+          final postId = dataMap['postId'] as String;
+          final savedAt = (dataMap['savedAt'] as Timestamp?)?.toDate() ?? DateTime.now();
+          savedMap[postId] = savedAt;
+        }
       }
 
       posts.sort((a, b) {
@@ -164,17 +171,20 @@ class SavedPostsService {
         }
 
         // Extract post IDs
-        final postIds = snapshot.docs
-            .map((doc) => doc.data() as Map<String, dynamic>)
-            .map((data) => data['postId'] as String)
-            .toList();
+        final postIds = <String>[];
+        for (final doc in snapshot.docs) {
+          final data = doc.data();
+          if (data != null && data is Map<String, dynamic> && data['postId'] != null) {
+            postIds.add(data['postId'] as String);
+          }
+        }
 
         // Batch fetch posts
         final posts = <Post>[];
         final postsCollection = _firestore.collection('posts');
         
         // Firebase 'in' queries are limited to 10 items
-        for (int i = 0; i < postIds.length; i += 10) {
+        for (var i = 0; i < postIds.length; i += 10) {
           final batch = postIds.skip(i).take(10).toList();
           if (batch.isEmpty) continue;
           
@@ -189,14 +199,14 @@ class SavedPostsService {
                   posts.add(Post.fromSnapshot(doc));
                 } catch (e) {
                   // Skip posts that fail to parse
-                  print('Failed to parse post ${doc.id}: $e');
+                  debugPrint('Failed to parse post ${doc.id}: $e');
                   continue;
                 }
               }
             }
           } catch (e) {
             // Log the error but continue with other batches
-            print('Failed to fetch post batch $batch: $e');
+            debugPrint('Failed to fetch post batch $batch: $e');
             continue;
           }
         }
@@ -204,10 +214,13 @@ class SavedPostsService {
       // Sort posts by saved time
       final savedMap = <String, DateTime>{};
       for (final doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        final postId = data['postId'] as String;
-        final savedAt = (data['savedAt'] as Timestamp?)?.toDate() ?? DateTime.now();
-        savedMap[postId] = savedAt;
+        final data = doc.data();
+        if (data != null) {
+          final dataMap = data as Map<String, dynamic>;
+          final postId = dataMap['postId'] as String;
+          final savedAt = (dataMap['savedAt'] as Timestamp?)?.toDate() ?? DateTime.now();
+          savedMap[postId] = savedAt;
+        }
       }
 
         posts.sort((a, b) {
@@ -254,14 +267,17 @@ class SavedPostsService {
       final batch = _firestore.batch();
 
       for (final doc in savedQuery.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        final postId = data['postId'] as String;
-        
-        // Check if post still exists
-        final postDoc = await postsCollection.doc(postId).get();
-        if (!postDoc.exists) {
-          // Remove the saved post entry
-          batch.delete(doc.reference);
+        final data = doc.data();
+        if (data != null) {
+          final dataMap = data as Map<String, dynamic>;
+          final postId = dataMap['postId'] as String;
+          
+          // Check if post still exists
+          final postDoc = await postsCollection.doc(postId).get();
+          if (!postDoc.exists) {
+            // Remove the saved post entry
+            batch.delete(doc.reference);
+          }
         }
       }
 

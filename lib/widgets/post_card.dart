@@ -487,7 +487,7 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                     // Increment share count optimistically
                     await _firestore.incrementPostShares(widget.post.id);
                   } catch (e) {
-                    if (mounted) {
+                    if (mounted && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Failed to share: $e')),
                       );

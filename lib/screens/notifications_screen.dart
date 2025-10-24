@@ -118,9 +118,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 await ShareService.instance.shareApp();
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to share app: $e')),
-                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to share app: $e')),
+                    );
+                  }
                 }
               }
             },

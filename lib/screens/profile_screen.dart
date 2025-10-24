@@ -345,7 +345,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       try {
                         await ShareService.instance.shareProfile(_user!);
                       } catch (e) {
-                        if (mounted) {
+                        if (mounted && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Failed to share profile: $e')),
                           );

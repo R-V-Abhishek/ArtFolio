@@ -1,9 +1,11 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:http/http.dart' as http;
+
 import '../models/post.dart';
 import '../models/user.dart';
 import 'firestore_image_service.dart';
@@ -22,8 +24,8 @@ class ShareService {
   /// Share a post with its content and image
   Future<void> sharePost(Post post, {User? author}) async {
     try {
-      final String username = author?.username ?? 'Unknown Artist';
-      final String content = _buildPostShareContent(post, username);
+      final username = author?.username ?? 'Unknown Artist';
+      final content = _buildPostShareContent(post, username);
       
       // Try to download and share with image if available
       if (post.mediaUrl != null && post.mediaUrl!.isNotEmpty) {
@@ -46,11 +48,11 @@ class ShareService {
       } else if (post.mediaUrls != null && post.mediaUrls!.isNotEmpty) {
         // For gallery posts, share multiple images if available
         try {
-          final List<XFile> imageFiles = [];
-          final List<File> tempFiles = [];
+          final imageFiles = <XFile>[];
+          final tempFiles = <File>[];
           
           // Try to download up to 3 images for gallery posts
-          for (int i = 0; i < post.mediaUrls!.length && i < 3; i++) {
+          for (var i = 0; i < post.mediaUrls!.length && i < 3; i++) {
             final imageFile = await _downloadImageForSharing(post.mediaUrls![i]);
             if (imageFile != null) {
               imageFiles.add(XFile(imageFile.path));
@@ -89,7 +91,7 @@ class ShareService {
   /// Share a user profile with profile image
   Future<void> shareProfile(User user) async {
     try {
-      final String content = _buildProfileShareContent(user);
+      final content = _buildProfileShareContent(user);
       
       // Try to download and share with profile image if available
       if (user.profilePictureUrl.isNotEmpty) {
@@ -124,7 +126,7 @@ class ShareService {
   /// Share app with referral
   Future<void> shareApp({String? referralCode}) async {
     try {
-      final String content = _buildAppShareContent(referralCode);
+      final content = _buildAppShareContent(referralCode);
       
       await Share.share(
         content,
@@ -199,9 +201,7 @@ class ShareService {
     // Add role information
     buffer
       ..writeln()
-      ..writeln('${_formatRole(user.role)} on ArtFolio');
-
-    buffer
+      ..writeln('${_formatRole(user.role)} on ArtFolio')
       ..writeln()
       ..writeln('Connect with amazing artists on ArtFolio!');
     
@@ -272,12 +272,16 @@ class ShareService {
         final tempDir = await getTemporaryDirectory();
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         // Determine file extension from URL or Content-Type
-        String extension = '.jpg';
+        var extension = '.jpg';
         final contentType = response.headers['content-type'];
         if (contentType != null) {
-          if (contentType.contains('png')) extension = '.png';
-          else if (contentType.contains('gif')) extension = '.gif';
-          else if (contentType.contains('webp')) extension = '.webp';
+          if (contentType.contains('png')) {
+            extension = '.png';
+          } else if (contentType.contains('gif')) {
+            extension = '.gif';
+          } else if (contentType.contains('webp')) {
+            extension = '.webp';
+          }
         } else if (imageUrl.contains('.png')) {
           extension = '.png';
         } else if (imageUrl.contains('.gif')) {
