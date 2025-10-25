@@ -40,15 +40,19 @@ class _FeedScreenState extends State<FeedScreen> {
   Future<void> _loadInitial() async {
     setState(() => _loading = true);
     try {
-      final items = await _firestore
-          .getFeedPosts(limit: 10)
-          .timeout(const Duration(seconds: 4));
+      final results = await Future.wait([
+        _firestore.getFeedPosts(limit: 10).timeout(const Duration(seconds: 4)),
+        _firestore.getReportedPostIdsForCurrentUser(),
+      ]);
+      final items = results[0] as List<Post>;
+      final reportedIds = results[1] as Set<String>;
+      final filtered = items.where((p) => !reportedIds.contains(p.id)).toList();
       setState(() {
         _posts
           ..clear()
-          ..addAll(items);
-        _hasMore = items.length == 10;
-        _lastPostId = items.isNotEmpty ? items.last.id : null;
+          ..addAll(filtered);
+        _hasMore = filtered.length == 10; // best effort; paging still ok
+        _lastPostId = items.isNotEmpty ? items.last.id : null; // page by server order
         _usingLocal = false;
       });
 
@@ -111,12 +115,18 @@ class _FeedScreenState extends State<FeedScreen> {
     if (_usingLocal) return; // don't page local demo
     setState(() => _loading = true);
     try {
-      final items = await _firestore
-          .getFeedPosts(limit: 10, lastPostId: _lastPostId)
-          .timeout(const Duration(seconds: 4));
+      final results = await Future.wait([
+        _firestore
+            .getFeedPosts(limit: 10, lastPostId: _lastPostId)
+            .timeout(const Duration(seconds: 4)),
+        _firestore.getReportedPostIdsForCurrentUser(),
+      ]);
+      final items = results[0] as List<Post>;
+      final reportedIds = results[1] as Set<String>;
+      final filtered = items.where((p) => !reportedIds.contains(p.id)).toList();
       setState(() {
-        _posts.addAll(items);
-        _hasMore = items.length == 10;
+        _posts.addAll(filtered);
+        _hasMore = filtered.length == 10;
         _lastPostId = items.isNotEmpty ? items.last.id : _lastPostId;
       });
     } on TimeoutException {
@@ -210,7 +220,33 @@ class _FeedScreenState extends State<FeedScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [PostCard(post: post)],
+                children: [
+                  PostCard(
+                    post: post,
+                    onHidden: () {
+                      final removedIndex = index;
+                      final removed = post;
+                      setState(() => _posts.removeWhere((p) => p.id == removed.id));
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(
+                        SnackBar(
+                          content: const Text('Post hidden'),
+                          action: SnackBarAction(
+                            label: 'Undo',
+                            onPressed: () {
+                              if (!mounted) return;
+                              setState(() {
+                                final insertAt = removedIndex.clamp(0, _posts.length);
+                                _posts.insert(insertAt, removed);
+                              });
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                ],
               ),
             );
           },

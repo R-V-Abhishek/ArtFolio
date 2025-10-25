@@ -32,6 +32,8 @@ class FirestoreService {
   CollectionReference get _postsCollection => _db.collection('posts');
   CollectionReference get _notificationsCollection =>
       _db.collection('notifications');
+  CollectionReference get _postReportsCollection =>
+    _db.collection('postReports');
   CollectionReference _commentsCollection(String postId) =>
       _postsCollection.doc(postId).collection('comments');
   CollectionReference get _userFollowsCollection =>
@@ -45,6 +47,54 @@ class FirestoreService {
       await _usersCollection.doc(user.id).set(user.toMap());
     } catch (e) {
       throw ErrorHandlerService.handleFirebaseException(e);
+    }
+  }
+
+  // ===== REPORTS / MODERATION =====
+  Future<void> reportPost({
+    required String postId,
+    required String reportedBy,
+    required String ownerUserId,
+    required String reason,
+    String? details,
+  }) async {
+    try {
+      await _postReportsCollection.add({
+        'postId': postId,
+        'reportedBy': reportedBy,
+        'ownerUserId': ownerUserId,
+        'reason': reason,
+        'details': details,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw ErrorHandlerService.handleFirebaseException(e);
+    }
+  }
+
+  /// Get the set of postIds that the current user has reported.
+  /// If the user is not signed in or access fails, returns an empty set.
+  Future<Set<String>> getReportedPostIdsForCurrentUser() async {
+    try {
+      final uid = _auth.currentUser?.uid;
+      if (uid == null) return {};
+      final snap = await _postReportsCollection
+          .where('reportedBy', isEqualTo: uid)
+          .get();
+      final ids = <String>{};
+      for (final d in snap.docs) {
+        final data = d.data() as Map<String, dynamic>?;
+        final id = data?['postId'];
+        if (id is String && id.isNotEmpty) ids.add(id);
+      }
+      return ids;
+    } catch (e) {
+      // Swallow and return empty set to avoid breaking feeds on permission issues
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('Failed to load reported post ids: $e');
+      }
+      return {};
     }
   }
 

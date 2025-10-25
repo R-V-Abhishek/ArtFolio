@@ -19,9 +19,19 @@ import 'share_options_sheet.dart';
 
 class PostCard extends StatefulWidget {
 
-  const PostCard({super.key, required this.post, this.onCommentTap});
+  const PostCard({
+    super.key,
+    required this.post,
+    this.onCommentTap,
+    this.onDeleted,
+    this.onHidden,
+    this.fillViewport = false,
+  });
   final Post post;
   final VoidCallback? onCommentTap;
+  final VoidCallback? onDeleted;
+  final VoidCallback? onHidden;
+  final bool fillViewport;
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -75,6 +85,115 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 450),
     );
+  }
+
+  Future<void> _confirmAndDeletePost() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null || _author == null || _author!.id != uid) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete post?'),
+        content: const Text('This will permanently remove the post and its media.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton.tonal(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await _firestore.deletePostWithImages(widget.post.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Post deleted')));
+      }
+      widget.onDeleted?.call();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+      }
+    }
+  }
+
+  Future<void> _reportPost() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sign in to report posts')),
+      );
+      return;
+    }
+    const reasons = [
+      'Spam',
+      'Inappropriate',
+      'Harassment',
+      'Misinformation',
+      'Other',
+    ];
+    String? picked;
+    String? extra;
+    picked = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(title: Text('Report post')),
+            for (final r in reasons)
+              ListTile(
+                title: Text(r),
+                onTap: () => Navigator.pop(context, r),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (picked == null) return;
+    if (picked == 'Other') {
+      final controller = TextEditingController();
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Describe the issue'),
+          content: TextField(
+            controller: controller,
+            maxLines: 4,
+            decoration: const InputDecoration(hintText: 'Optional details'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Submit')),
+          ],
+        ),
+      );
+      if (!mounted) return;
+      if (ok != true) return;
+      extra = controller.text.trim();
+    }
+    try {
+      await _firestore.reportPost(
+        postId: widget.post.id,
+        reportedBy: uid,
+        ownerUserId: widget.post.userId,
+        reason: picked,
+        details: extra,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Report submitted')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to report: $e')));
+      }
+    }
   }
 
   @override
@@ -282,6 +401,7 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      // In full-screen pager, parent gives a bounded height; elsewhere, content sizes naturally.
       children: [
         // Header
         Padding(
@@ -414,17 +534,73 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
-              IconButton(
-                iconSize: s.size(24),
-                icon: const Icon(Icons.more_horiz),
-                onPressed: () {},
+              Builder(
+                builder: (context) {
+                  final isOwner = _author != null && _auth.currentUser?.uid == _author!.id;
+                  if (isOwner) {
+                    return PopupMenuButton<String>(
+                      icon: Icon(Icons.more_horiz, size: s.size(24)),
+                      onSelected: (value) {
+                        if (value == 'delete') _confirmAndDeletePost();
+                      },
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete_outline, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Delete post'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return PopupMenuButton<String>(
+                    icon: Icon(Icons.more_horiz, size: s.size(24)),
+                    onSelected: (value) {
+                      if (value == 'hide') {
+                        // Delegate hide to parent; parent decides UX (e.g., undo)
+                        widget.onHidden?.call();
+                      } else if (value == 'report') {
+                        _reportPost();
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: 'hide',
+                        child: Row(
+                          children: [
+                            Icon(Icons.hide_source),
+                            SizedBox(width: 8),
+                            Text('Hide post'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'report',
+                        child: Row(
+                          children: [
+                            Icon(Icons.flag_outlined, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text('Report...'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
         ),
 
         // Media
-        _buildMedia(context, radius),
+        if (widget.fillViewport)
+          Flexible(child: _buildMedia(context, radius))
+        else
+          _buildMedia(context, radius),
 
         // Actions
         Padding(

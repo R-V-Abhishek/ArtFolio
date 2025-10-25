@@ -113,7 +113,10 @@ class _ProfileScreenState extends State<ProfileScreen>
         artist = await _firestore.getArtist(targetUserId);
       }
 
-      final posts = await _firestore.getUserPosts(targetUserId);
+  final posts = await _firestore.getUserPosts(targetUserId);
+  // Hide posts reported by the current user
+  final reported = await _firestore.getReportedPostIdsForCurrentUser();
+  final filteredPosts = posts.where((p) => !reported.contains(p.id)).toList();
       final counts = await _firestore.getFollowCounts(targetUserId);
 
       var following = false;
@@ -126,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         setState(() {
           _user = user;
           _artist = artist;
-          _posts = posts;
+          _posts = filteredPosts;
           _followCounts = counts;
           _isFollowing = following;
           _loading = false;
@@ -1206,7 +1209,7 @@ class _Grid extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).pushNamed(
                   AppRoutes.postDetail,
-                  arguments: PostDetailArguments(post: p),
+                  arguments: PostDetailArguments(posts: posts, initialIndex: index),
                 );
               },
               child: media,
@@ -1267,7 +1270,7 @@ class _List extends StatelessWidget {
           onTap: () {
             Navigator.of(context).pushNamed(
               AppRoutes.postDetail,
-              arguments: PostDetailArguments(post: p),
+              arguments: PostDetailArguments(posts: posts, initialIndex: index),
             );
           },
         );

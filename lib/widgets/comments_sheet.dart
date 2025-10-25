@@ -60,8 +60,14 @@ class _CommentsSheetState extends State<CommentsSheet> {
     final theme = Theme.of(context);
     final s = Scale(context);
 
-    return SafeArea(
-      child: SizedBox(
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    return AnimatedPadding(
+      padding: EdgeInsets.only(bottom: viewInsets),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.7,
         child: Column(
           children: [
@@ -110,6 +116,8 @@ class _CommentsSheetState extends State<CommentsSheet> {
                     );
                   }
                   return ListView.separated(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: EdgeInsets.only(bottom: s.size(8)),
                     itemCount: items.length,
                     separatorBuilder: (_, index) => const Divider(height: 0),
@@ -247,7 +255,8 @@ class _CommentsSheetState extends State<CommentsSheet> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   String _timeAgo(DateTime dt) {

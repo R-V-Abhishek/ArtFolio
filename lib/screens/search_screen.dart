@@ -64,10 +64,12 @@ class _SearchScreenState extends State<SearchScreen> {
       // Run post and user searches in parallel
       final postsF = _service.searchPosts(q);
       final usersF = _service.searchUsers(q);
-      final results = await Future.wait([postsF, usersF]);
+      final results = await Future.wait([postsF, usersF, _service.getReportedPostIdsForCurrentUser()]);
       if (!mounted) return;
       setState(() {
-        _postResults = results[0] as List<Post>;
+        final posts = results[0] as List<Post>;
+        final reported = results[2] as Set<String>;
+        _postResults = posts.where((p) => !reported.contains(p.id)).toList();
         _userResults = results[1] as List<model.User>;
       });
       _remember(q);
@@ -159,7 +161,31 @@ class _SearchScreenState extends State<SearchScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) => _showUsers
           ? _UserRow(user: _userResults[index])
-          : PostCard(post: _postResults[index]),
+          : PostCard(
+              post: _postResults[index],
+              onHidden: () {
+                final removedIndex = index;
+                final removed = _postResults[index];
+                setState(() => _postResults.removeAt(index));
+                ScaffoldMessenger.of(context)
+                  ..clearSnackBars()
+                  ..showSnackBar(
+                  SnackBar(
+                    content: const Text('Post hidden'),
+                    action: SnackBarAction(
+                      label: 'Undo',
+                      onPressed: () {
+                        if (!mounted) return;
+                        setState(() {
+                          final insertAt = removedIndex.clamp(0, _postResults.length);
+                          _postResults.insert(insertAt, removed);
+                        });
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 

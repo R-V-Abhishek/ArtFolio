@@ -30,8 +30,13 @@ class EditProfileArguments {
 
 class PostDetailArguments {
 
-  PostDetailArguments({required this.post});
-  final Post post;
+  PostDetailArguments({this.post, this.posts, this.initialIndex});
+  /// Back-compat single post argument
+  final Post? post;
+  /// Optional list of posts to enable vertical paging
+  final List<Post>? posts;
+  /// Initial index within [posts], defaults to 0
+  final int? initialIndex;
 }
 
 class FollowListArguments {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/post.dart';
 import '../screens/auth_screen.dart';
 import '../screens/create_post_screen.dart';
 import '../screens/delete_account_screen.dart';
@@ -103,8 +104,20 @@ class RouteGenerator {
         if (args == null) {
           return _errorRoute('PostDetail requires post argument');
         }
+        // Normalize inputs: allow either single post or list + index
+        final List<Post> posts;
+        final int index;
+        if (args.posts != null && args.posts!.isNotEmpty) {
+          posts = args.posts!;
+          index = (args.initialIndex ?? 0).clamp(0, posts.length - 1);
+        } else if (args.post != null) {
+          posts = [args.post!];
+          index = 0;
+        } else {
+          return _errorRoute('PostDetail requires a post or posts list');
+        }
         return MaterialPageRoute(
-          builder: (_) => PostDetailScreen(post: args.post),
+          builder: (_) => PostDetailScreen(posts: posts, initialIndex: index),
           settings: settings,
         );
 
