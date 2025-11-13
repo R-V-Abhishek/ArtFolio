@@ -18,6 +18,8 @@ class _AuthScreenState extends State<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  // Flag to show/hide guest option (disabled for now)
+  static const bool _showGuestOption = false;
   final _usernameCtrl = TextEditingController();
   final _fullNameCtrl = TextEditingController();
   bool _isLogin = true;
@@ -392,12 +394,16 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ),
                         SizedBox(height: s.size(12)),
-                        TextButton.icon(
-                          onPressed: _loading
-                              ? null
-                              : SessionState.instance.enterGuest,
-                          icon: const Icon(Icons.visibility),
-                          label: const Text('Skip for now (Guest)'),
+                        // Guest option completely hidden but preserved for routing
+                        Visibility(
+                          visible: _showGuestOption,
+                          child: TextButton.icon(
+                            onPressed: _loading
+                                ? null
+                                : SessionState.instance.enterGuest,
+                            icon: const Icon(Icons.visibility),
+                            label: const Text('Skip for now (Guest)'),
+                          ),
                         ),
                         if (_loading) ...[
                           SizedBox(height: s.size(16)),

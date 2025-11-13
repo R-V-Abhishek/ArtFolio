@@ -828,6 +828,57 @@ class FirestoreService {
     }
   }
 
+  // Search posts by specific tag
+  Future<List<Post>> searchPostsByTag(String tag) async {
+    try {
+      final querySnapshot = await _postsCollection
+          .orderBy('timestamp', descending: true)
+          .get();
+
+      return querySnapshot.docs
+          .map(Post.fromSnapshot)
+          .where((post) => post.tags.any(
+            (postTag) => postTag.toLowerCase() == tag.toLowerCase(),
+          ))
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to search posts by tag: $e');
+    }
+  }
+
+  // Get popular tags (most frequently used)
+  Future<List<String>> getPopularTags({int limit = 20}) async {
+    try {
+      final querySnapshot = await _postsCollection
+          .orderBy('timestamp', descending: true)
+          .limit(500) // Get recent posts to analyze tags
+          .get();
+
+      final tagFrequency = <String, int>{};
+      
+      for (final doc in querySnapshot.docs) {
+        final post = Post.fromSnapshot(doc);
+        for (final tag in post.tags) {
+          final normalizedTag = tag.toLowerCase().trim();
+          if (normalizedTag.isNotEmpty) {
+            tagFrequency[normalizedTag] = (tagFrequency[normalizedTag] ?? 0) + 1;
+          }
+        }
+      }
+
+      // Sort by frequency and return top tags
+      final sortedTags = tagFrequency.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+
+      return sortedTags
+          .take(limit)
+          .map((entry) => entry.key)
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to get popular tags: $e');
+    }
+  }
+
   // Search users by username or fullName (case-insensitive contains, with prefix query optimization)
   Future<List<User>> searchUsers(String searchTerm, {int limit = 50}) async {
     try {
