@@ -258,15 +258,10 @@ class ProfileReadmeDisplay extends StatelessWidget {
 /// Widget to display images stored in Firestore (base64)
 class _FirestoreImageWidget extends StatefulWidget {
   const _FirestoreImageWidget({
-    super.key,
     required this.imageId,
-    this.height,
-    this.fit = BoxFit.cover,
   });
 
   final String imageId;
-  final double? height;
-  final BoxFit fit;
 
   @override
   State<_FirestoreImageWidget> createState() => _FirestoreImageWidgetState();
@@ -307,7 +302,7 @@ class _FirestoreImageWidgetState extends State<_FirestoreImageWidget> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Container(
-        height: widget.height ?? 200,
+        height: 200,
         color: Colors.grey.shade100,
         child: const Center(child: CircularProgressIndicator()),
       );
@@ -315,7 +310,7 @@ class _FirestoreImageWidgetState extends State<_FirestoreImageWidget> {
 
     if (_error != null || _base64Data == null) {
       return Container(
-        height: widget.height ?? 200,
+        height: 200,
         color: Colors.grey.shade300,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -341,17 +336,16 @@ class _FirestoreImageWidgetState extends State<_FirestoreImageWidget> {
       final bytes = base64Decode(_base64Data!);
       return Image.memory(
         bytes,
-        height: widget.height,
-        fit: widget.fit,
+        fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => Container(
-          height: widget.height ?? 200,
+          height: 200,
           color: Colors.grey.shade300,
           child: const Icon(Icons.broken_image, size: 48),
         ),
       );
     } catch (e) {
       return Container(
-        height: widget.height ?? 200,
+        height: 200,
         color: Colors.grey.shade300,
         child: const Icon(Icons.broken_image, size: 48),
       );

@@ -569,7 +569,12 @@ class _BlockEditorState extends State<_BlockEditor> {
         return const Center(
           child: Text('────────', style: TextStyle(color: Colors.grey)),
         );
-      default:
+      case ReadmeBlockType.header1:
+      case ReadmeBlockType.header2:
+      case ReadmeBlockType.header3:
+      case ReadmeBlockType.text:
+      case ReadmeBlockType.quote:
+      case ReadmeBlockType.list:
         return _buildTextEditor();
     }
   }
@@ -813,7 +818,10 @@ class _BlockEditorState extends State<_BlockEditor> {
         return 3;
       case ReadmeBlockType.list:
         return 10;
-      default:
+      case ReadmeBlockType.text:
+      case ReadmeBlockType.image:
+      case ReadmeBlockType.skillsTags:
+      case ReadmeBlockType.divider:
         return 5;
     }
   }
@@ -838,7 +846,11 @@ class _BlockEditorState extends State<_BlockEditor> {
           fontStyle: FontStyle.italic,
           color: theme.colorScheme.primary,
         );
-      default:
+      case ReadmeBlockType.text:
+      case ReadmeBlockType.list:
+      case ReadmeBlockType.image:
+      case ReadmeBlockType.skillsTags:
+      case ReadmeBlockType.divider:
         return theme.textTheme.bodyMedium!;
     }
   }
@@ -850,12 +862,10 @@ class _FirestoreImageWidget extends StatefulWidget {
     super.key,
     required this.imageId,
     this.height,
-    this.fit = BoxFit.cover,
   });
 
   final String imageId;
   final double? height;
-  final BoxFit fit;
 
   @override
   State<_FirestoreImageWidget> createState() => _FirestoreImageWidgetState();
@@ -931,7 +941,7 @@ class _FirestoreImageWidgetState extends State<_FirestoreImageWidget> {
       return Image.memory(
         bytes,
         height: widget.height,
-        fit: widget.fit,
+        fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => Container(
           height: widget.height ?? 200,
           color: Colors.grey.shade300,
