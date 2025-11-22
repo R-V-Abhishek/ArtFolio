@@ -11,7 +11,6 @@ enum NotificationType {
 }
 
 class AppNotification {
-
   AppNotification({
     required this.id,
     required this.userId,

@@ -50,9 +50,9 @@ class ShareOptionsSheet extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             SizedBox(height: s.size(16)),
-            
+
             // Share options
             if (post != null) ...[
               _ShareOption(
@@ -68,7 +68,7 @@ class ShareOptionsSheet extends StatelessWidget {
                 onTap: () => _copyPostLink(context),
               ),
             ],
-            
+
             if (user != null) ...[
               _ShareOption(
                 icon: Icons.person_outline,
@@ -83,14 +83,14 @@ class ShareOptionsSheet extends StatelessWidget {
                 onTap: () => _copyProfileLink(context),
               ),
             ],
-            
+
             _ShareOption(
               icon: Icons.apps_outlined,
               title: 'Share ArtFolio',
               subtitle: 'Invite friends to join ArtFolio',
               onTap: () => _shareApp(context),
             ),
-            
+
             SizedBox(height: s.size(16)),
           ],
         ),
@@ -100,11 +100,11 @@ class ShareOptionsSheet extends StatelessWidget {
 
   Future<void> _sharePost(BuildContext context) async {
     if (post == null) return;
-    
+
     try {
       await ShareService.instance.sharePost(post!);
       onShareComplete?.call();
-      
+
       if (context.mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -114,19 +114,19 @@ class ShareOptionsSheet extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to share post: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to share post: $e')));
       }
     }
   }
 
   Future<void> _shareProfile(BuildContext context) async {
     if (user == null) return;
-    
+
     try {
       await ShareService.instance.shareProfile(user!);
-      
+
       if (context.mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -136,9 +136,9 @@ class ShareOptionsSheet extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to share profile: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to share profile: $e')));
       }
     }
   }
@@ -146,7 +146,7 @@ class ShareOptionsSheet extends StatelessWidget {
   Future<void> _shareApp(BuildContext context) async {
     try {
       await ShareService.instance.shareApp();
-      
+
       if (context.mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -156,16 +156,16 @@ class ShareOptionsSheet extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to share app: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to share app: $e')));
       }
     }
   }
 
   Future<void> _copyPostLink(BuildContext context) async {
     if (post == null) return;
-    
+
     // TODO: Implement copy to clipboard
     if (context.mounted) {
       Navigator.of(context).pop();
@@ -177,7 +177,7 @@ class ShareOptionsSheet extends StatelessWidget {
 
   Future<void> _copyProfileLink(BuildContext context) async {
     if (user == null) return;
-    
+
     // TODO: Implement copy to clipboard
     if (context.mounted) {
       Navigator.of(context).pop();
@@ -220,7 +220,9 @@ class _ShareOption extends StatelessWidget {
               width: s.size(48),
               height: s.size(48),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.3,
+                ),
                 borderRadius: BorderRadius.circular(s.size(12)),
               ),
               child: Icon(

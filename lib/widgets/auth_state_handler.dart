@@ -17,46 +17,44 @@ class AuthStateHandler extends StatefulWidget {
 class _AuthStateHandlerState extends State<AuthStateHandler> {
   @override
   Widget build(BuildContext context) => StreamBuilder<User?>(
-      stream: AuthService.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+    stream: AuthService.instance.authStateChanges(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
 
-        if (snapshot.hasData) {
-          // User is authenticated, check if they have a profile
-          return FutureBuilder<bool>(
-            future: _hasCompleteProfile(snapshot.data!.uid),
-            builder: (context, profileSnapshot) {
-              if (profileSnapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              }
+      if (snapshot.hasData) {
+        // User is authenticated, check if they have a profile
+        return FutureBuilder<bool>(
+          future: _hasCompleteProfile(snapshot.data!.uid),
+          builder: (context, profileSnapshot) {
+            if (profileSnapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
 
-              if (profileSnapshot.data ?? false) {
-                // User has complete profile, go to home
-                return const HomeScreen();
-              } else {
-                // User needs to complete profile setup
-                final user = snapshot.data!;
-                return UserTypeSelectionScreen(
-                  uid: user.uid,
-                  email: user.email ?? '',
-                  fullName: user.displayName ?? '',
-                  profilePictureUrl: user.photoURL,
-                );
-              }
-            },
-          );
-        }
+            if (profileSnapshot.data ?? false) {
+              // User has complete profile, go to home
+              return const HomeScreen();
+            } else {
+              // User needs to complete profile setup
+              final user = snapshot.data!;
+              return UserTypeSelectionScreen(
+                uid: user.uid,
+                email: user.email ?? '',
+                fullName: user.displayName ?? '',
+                profilePictureUrl: user.photoURL,
+              );
+            }
+          },
+        );
+      }
 
-        // User is not authenticated
-        return const AuthScreen();
-      },
-    );
+      // User is not authenticated
+      return const AuthScreen();
+    },
+  );
 
   Future<bool> _hasCompleteProfile(String uid) async {
     try {

@@ -64,7 +64,7 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       // Run searches based on search type
       final futures = <Future>[];
-      
+
       if (_searchType == 'posts') {
         futures
           ..add(_service.searchPosts(q))
@@ -74,10 +74,10 @@ class _SearchScreenState extends State<SearchScreen> {
       } else if (_searchType == 'tags') {
         futures.add(_service.getPopularTags(limit: 50));
       }
-      
+
       final results = await Future.wait(futures);
       if (!mounted) return;
-      
+
       setState(() {
         if (_searchType == 'posts') {
           final posts = results[0] as List<Post>;
@@ -141,21 +141,24 @@ class _SearchScreenState extends State<SearchScreen> {
             ScaffoldMessenger.of(context)
               ..clearSnackBars()
               ..showSnackBar(
-              SnackBar(
-                content: const Text('Post hidden'),
-                action: SnackBarAction(
-                  label: 'Undo',
-                  // ignore: prefer_expression_function_bodies
-                  onPressed: () {
-                    if (!mounted) return;
-                    setState(() {
-                      final insertAt = removedIndex.clamp(0, _postResults.length);
-                      _postResults.insert(insertAt, removed);
-                    });
-                  },
+                SnackBar(
+                  content: const Text('Post hidden'),
+                  action: SnackBarAction(
+                    label: 'Undo',
+                    // ignore: prefer_expression_function_bodies
+                    onPressed: () {
+                      if (!mounted) return;
+                      setState(() {
+                        final insertAt = removedIndex.clamp(
+                          0,
+                          _postResults.length,
+                        );
+                        _postResults.insert(insertAt, removed);
+                      });
+                    },
+                  ),
                 ),
-              ),
-            );
+              );
           },
         );
       case 'tags':
@@ -163,9 +166,7 @@ class _SearchScreenState extends State<SearchScreen> {
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.tag),
-            ),
+            leading: const CircleAvatar(child: Icon(Icons.tag)),
             title: Text('#$tag'),
             subtitle: const Text('Tap to search posts with this tag'),
             onTap: () {
@@ -182,49 +183,47 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: TextField(
-            controller: _controller,
-            onChanged: _onChanged,
-            textInputAction: TextInputAction.search,
-            onSubmitted: (v) => _search(v.trim()),
-            decoration: InputDecoration(
-              hintText: 'Search posts, users, tags (#tag)...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _controller.text.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: 'Clear',
-                      // ignore: prefer_expression_function_bodies
-                      onPressed: () {
-                        _controller.clear();
-                        _onChanged('');
-                      },
-                      icon: const Icon(Icons.close),
-                    ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
+    appBar: AppBar(
+      titleSpacing: 0,
+      title: Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: TextField(
+          controller: _controller,
+          onChanged: _onChanged,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (v) => _search(v.trim()),
+          decoration: InputDecoration(
+            hintText: 'Search posts, users, tags (#tag)...',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _controller.text.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Clear',
+                    // ignore: prefer_expression_function_bodies
+                    onPressed: () {
+                      _controller.clear();
+                      _onChanged('');
+                    },
+                    icon: const Icon(Icons.close),
+                  ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
             ),
           ),
         ),
       ),
-      body: SafeArea(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: _buildBody(context),
-        ),
+    ),
+    body: SafeArea(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: _buildBody(context),
       ),
-    );
+    ),
+  );
 
   Widget _buildBody(BuildContext context) {
     if (_controller.text.isEmpty) {
@@ -237,7 +236,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (currentResults.isEmpty) {
       return _emptyState(context);
     }
-    
+
     return ListView.separated(
       controller: _scroll,
       padding: EdgeInsets.only(
@@ -274,14 +273,21 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Recent Searches Section
         if (_recent.isNotEmpty) ...[
           Row(
             children: [
-              Icon(Icons.history, size: 20, color: Theme.of(context).colorScheme.primary),
+              Icon(
+                Icons.history,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(width: 8),
-              Text('Recent searches', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Recent searches',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -307,38 +313,38 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _emptyState(BuildContext context) => Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.search_rounded,
-              size: 72,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _controller.text.isEmpty
-                  ? 'Search users or posts'
-                  : 'No results for "$_lastQuery"',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _searchType == 'users'
-                  ? 'Try searching by username or name'
-                  : _searchType == 'posts'
-                      ? 'Try searching by caption, tags, or skills'
-                      : 'Try searching for hashtags',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        ),
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.search_rounded,
+            size: 72,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _controller.text.isEmpty
+                ? 'Search users or posts'
+                : 'No results for "$_lastQuery"',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _searchType == 'users'
+                ? 'Try searching by username or name'
+                : _searchType == 'posts'
+                ? 'Try searching by caption, tags, or skills'
+                : 'Try searching for hashtags',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
       ),
-    );
+    ),
+  );
 }
 
 class _UserRow extends StatelessWidget {
@@ -348,8 +354,9 @@ class _UserRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ref = user.profilePictureUrl.trim();
-    final fallbackText = (user.username.isNotEmpty ? user.username[0] : 'A').toUpperCase();
-    
+    final fallbackText = (user.username.isNotEmpty ? user.username[0] : 'A')
+        .toUpperCase();
+
     Widget avatar;
     if (ref.isEmpty) {
       avatar = Container(
@@ -381,7 +388,8 @@ class _UserRow extends StatelessWidget {
             alignment: Alignment.center,
             child: CircularProgressIndicator(
               value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                  ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
                   : null,
               strokeWidth: 2,
             ),
@@ -461,8 +469,8 @@ class _UserRow extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: ListTile(
         leading: SizedBox(
-          width: 50, 
-          height: 50, 
+          width: 50,
+          height: 50,
           child: ClipOval(child: avatar),
         ),
         title: Row(
@@ -494,7 +502,7 @@ class _UserRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('@${user.username}'),
-            if (user.bio.isNotEmpty) 
+            if (user.bio.isNotEmpty)
               Text(
                 user.bio,
                 maxLines: 1,
@@ -507,8 +515,8 @@ class _UserRow extends StatelessWidget {
           ],
         ),
         trailing: Icon(
-          Icons.arrow_forward_ios, 
-          size: 16, 
+          Icons.arrow_forward_ios,
+          size: 16,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         // ignore: prefer_expression_function_bodies

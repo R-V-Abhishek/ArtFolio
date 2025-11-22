@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Artist schema - extension of User
 class Artist {
-
   Artist({
     required this.userId,
     required this.artForms,
@@ -13,13 +12,13 @@ class Artist {
   });
 
   factory Artist.fromMap(Map<String, dynamic> map) => Artist(
-      userId: map['userId'] ?? '',
-      artForms: List<String>.from(map['artForms'] ?? []),
-      portfolioUrls: List<String>.from(map['portfolioUrls'] ?? []),
-      reels: List<String>.from(map['reels'] ?? []),
-      followers: List<String>.from(map['followers'] ?? []),
-      following: List<String>.from(map['following'] ?? []),
-    );
+    userId: map['userId'] ?? '',
+    artForms: List<String>.from(map['artForms'] ?? []),
+    portfolioUrls: List<String>.from(map['portfolioUrls'] ?? []),
+    reels: List<String>.from(map['reels'] ?? []),
+    followers: List<String>.from(map['followers'] ?? []),
+    following: List<String>.from(map['following'] ?? []),
+  );
 
   factory Artist.fromSnapshot(DocumentSnapshot snapshot) {
     final data = snapshot.data()! as Map<String, dynamic>;
@@ -33,18 +32,17 @@ class Artist {
   final List<String> following;
 
   Map<String, dynamic> toMap() => {
-      'userId': userId,
-      'artForms': artForms,
-      'portfolioUrls': portfolioUrls,
-      'reels': reels,
-      'followers': followers,
-      'following': following,
-    };
+    'userId': userId,
+    'artForms': artForms,
+    'portfolioUrls': portfolioUrls,
+    'reels': reels,
+    'followers': followers,
+    'following': following,
+  };
 }
 
 // Audience schema - extension of User
 class Audience {
-
   Audience({
     required this.userId,
     required this.likedContent,
@@ -53,11 +51,11 @@ class Audience {
   });
 
   factory Audience.fromMap(Map<String, dynamic> map) => Audience(
-      userId: map['userId'] ?? '',
-      likedContent: List<String>.from(map['likedContent'] ?? []),
-      followingArtists: List<String>.from(map['followingArtists'] ?? []),
-      sponsorApplications: List<String>.from(map['sponsorApplications'] ?? []),
-    );
+    userId: map['userId'] ?? '',
+    likedContent: List<String>.from(map['likedContent'] ?? []),
+    followingArtists: List<String>.from(map['followingArtists'] ?? []),
+    sponsorApplications: List<String>.from(map['sponsorApplications'] ?? []),
+  );
 
   factory Audience.fromSnapshot(DocumentSnapshot snapshot) {
     final data = snapshot.data()! as Map<String, dynamic>;
@@ -69,16 +67,15 @@ class Audience {
   final List<String> sponsorApplications;
 
   Map<String, dynamic> toMap() => {
-      'userId': userId,
-      'likedContent': likedContent,
-      'followingArtists': followingArtists,
-      'sponsorApplications': sponsorApplications,
-    };
+    'userId': userId,
+    'likedContent': likedContent,
+    'followingArtists': followingArtists,
+    'sponsorApplications': sponsorApplications,
+  };
 }
 
 // Sponsor schema - extension of User
 class Sponsor {
-
   Sponsor({
     required this.userId,
     required this.companyName,
@@ -88,12 +85,12 @@ class Sponsor {
   });
 
   factory Sponsor.fromMap(Map<String, dynamic> map) => Sponsor(
-      userId: map['userId'] ?? '',
-      companyName: map['companyName'] ?? '',
-      budgetRange: Map<String, double>.from(map['budgetRange'] ?? {}),
-      sponsoredPrograms: List<String>.from(map['sponsoredPrograms'] ?? []),
-      openToApplications: map['openToApplications'] ?? false,
-    );
+    userId: map['userId'] ?? '',
+    companyName: map['companyName'] ?? '',
+    budgetRange: Map<String, double>.from(map['budgetRange'] ?? {}),
+    sponsoredPrograms: List<String>.from(map['sponsoredPrograms'] ?? []),
+    openToApplications: map['openToApplications'] ?? false,
+  );
 
   factory Sponsor.fromSnapshot(DocumentSnapshot snapshot) {
     final data = snapshot.data()! as Map<String, dynamic>;
@@ -106,17 +103,16 @@ class Sponsor {
   final bool openToApplications;
 
   Map<String, dynamic> toMap() => {
-      'userId': userId,
-      'companyName': companyName,
-      'budgetRange': budgetRange,
-      'sponsoredPrograms': sponsoredPrograms,
-      'openToApplications': openToApplications,
-    };
+    'userId': userId,
+    'companyName': companyName,
+    'budgetRange': budgetRange,
+    'sponsoredPrograms': sponsoredPrograms,
+    'openToApplications': openToApplications,
+  };
 }
 
 // Organisation schema - extension of User
 class Organisation {
-
   Organisation({
     required this.userId,
     required this.orgName,
@@ -126,12 +122,12 @@ class Organisation {
   });
 
   factory Organisation.fromMap(Map<String, dynamic> map) => Organisation(
-      userId: map['userId'] ?? '',
-      orgName: map['orgName'] ?? '',
-      childOrganisations: List<String>.from(map['childOrganisations'] ?? []),
-      hostedPrograms: List<String>.from(map['hostedPrograms'] ?? []),
-      sponsorPartners: List<String>.from(map['sponsorPartners'] ?? []),
-    );
+    userId: map['userId'] ?? '',
+    orgName: map['orgName'] ?? '',
+    childOrganisations: List<String>.from(map['childOrganisations'] ?? []),
+    hostedPrograms: List<String>.from(map['hostedPrograms'] ?? []),
+    sponsorPartners: List<String>.from(map['sponsorPartners'] ?? []),
+  );
 
   factory Organisation.fromSnapshot(DocumentSnapshot snapshot) {
     final data = snapshot.data()! as Map<String, dynamic>;
@@ -144,10 +140,10 @@ class Organisation {
   final List<String> sponsorPartners;
 
   Map<String, dynamic> toMap() => {
-      'userId': userId,
-      'orgName': orgName,
-      'childOrganisations': childOrganisations,
-      'hostedPrograms': hostedPrograms,
-      'sponsorPartners': sponsorPartners,
-    };
+    'userId': userId,
+    'orgName': orgName,
+    'childOrganisations': childOrganisations,
+    'hostedPrograms': hostedPrograms,
+    'sponsorPartners': sponsorPartners,
+  };
 }

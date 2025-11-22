@@ -2,7 +2,6 @@ import 'dart:core';
 
 /// Validation result containing success status and error message
 class ValidationResult {
-
   const ValidationResult({required this.isValid, this.errorMessage});
 
   factory ValidationResult.valid() => const ValidationResult(isValid: true);
@@ -398,7 +397,10 @@ class ValidationService {
     sanitized = sanitized.replaceAll(RegExp(r'\s{3,}'), '  ');
 
     // Remove other control characters except common ones like newlines and tabs
-    sanitized = sanitized.replaceAll(RegExp(r'[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]'), '');
+    sanitized = sanitized.replaceAll(
+      RegExp(r'[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]'),
+      '',
+    );
 
     return sanitized;
   }

@@ -5,7 +5,6 @@ import '../exceptions/app_exceptions.dart';
 
 /// Centralized error handling service for consistent error management
 class ErrorHandlerService {
-
   /// Convert Firebase exceptions to app-specific exceptions
   static AppException handleFirebaseException(dynamic error) {
     if (error is FirebaseAuthException) {
@@ -13,9 +12,7 @@ class ErrorHandlerService {
     } else if (error is FirebaseException) {
       return _handleFirestoreException(error);
     } else {
-      return PostFetchException(
-        'An unexpected error occurred: $error',
-      );
+      return PostFetchException('An unexpected error occurred: $error');
     }
   }
 

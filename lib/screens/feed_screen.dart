@@ -52,7 +52,9 @@ class _FeedScreenState extends State<FeedScreen> {
           ..clear()
           ..addAll(filtered);
         _hasMore = filtered.length == 10; // best effort; paging still ok
-        _lastPostId = items.isNotEmpty ? items.last.id : null; // page by server order
+        _lastPostId = items.isNotEmpty
+            ? items.last.id
+            : null; // page by server order
         _usingLocal = false;
       });
 
@@ -226,26 +228,31 @@ class _FeedScreenState extends State<FeedScreen> {
                     onHidden: () {
                       final removedIndex = index;
                       final removed = post;
-                      setState(() => _posts.removeWhere((p) => p.id == removed.id));
+                      setState(
+                        () => _posts.removeWhere((p) => p.id == removed.id),
+                      );
                       ScaffoldMessenger.of(context)
                         ..clearSnackBars()
                         ..showSnackBar(
-                        SnackBar(
-                          content: const Text('Post hidden'),
-                          action: SnackBarAction(
-                            label: 'Undo',
-                            onPressed: () {
-                              if (!mounted) return;
-                              setState(() {
-                                final insertAt = removedIndex.clamp(0, _posts.length);
-                                _posts.insert(insertAt, removed);
-                              });
-                            },
+                          SnackBar(
+                            content: const Text('Post hidden'),
+                            action: SnackBarAction(
+                              label: 'Undo',
+                              onPressed: () {
+                                if (!mounted) return;
+                                setState(() {
+                                  final insertAt = removedIndex.clamp(
+                                    0,
+                                    _posts.length,
+                                  );
+                                  _posts.insert(insertAt, removed);
+                                });
+                              },
+                            ),
                           ),
-                        ),
-                      );
+                        );
                     },
-                  )
+                  ),
                 ],
               ),
             );
@@ -259,10 +266,7 @@ class _FeedScreenState extends State<FeedScreen> {
 Future<List<Post>> _loadFromAssets() async {
   try {
     final list = await AssetLoader.loadJsonList('assets/mock_posts.json');
-    return list
-        .whereType<Map<String, dynamic>>()
-        .map(Post.fromJson)
-        .toList();
+    return list.whereType<Map<String, dynamic>>().map(Post.fromJson).toList();
   } catch (_) {
     return [];
   }

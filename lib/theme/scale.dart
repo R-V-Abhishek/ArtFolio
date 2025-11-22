@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 ///
 /// Baseline width is 375 (typical mobile). Scale is clamped for sanity.
 class Scale {
-
   Scale(this.context) {
     final width = MediaQuery.of(context).size.width;
     _scale = width / 375.0;

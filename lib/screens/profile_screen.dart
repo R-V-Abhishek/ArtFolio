@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/post.dart';
+import '../models/profile_readme.dart';
 import '../models/role_models.dart' as roles;
 import '../models/user.dart' as model;
 import '../routes/app_routes.dart';
@@ -16,9 +17,12 @@ import '../services/session_state.dart';
 import '../services/share_service.dart';
 import '../theme/scale.dart';
 import '../widgets/firestore_image.dart';
+import '../widgets/profile_readme_display.dart';
 import 'follow_list_screen.dart';
+import 'profile_readme_editor_screen.dart';
 
-class ProfileScreen extends StatefulWidget { // Optional: view other user's profile later
+class ProfileScreen extends StatefulWidget {
+  // Optional: view other user's profile later
   const ProfileScreen({super.key, this.userId});
   final String? userId;
 
@@ -39,9 +43,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   List<Post> _posts = const [];
   bool _gridView = true;
   bool _followBusy = false;
+  ProfileReadme? _readme;
 
   late final TabController _tabController = TabController(
-    length: 4,
+    length: 5,
     vsync: this,
   );
 
@@ -59,26 +64,26 @@ class _ProfileScreenState extends State<ProfileScreen>
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-          title: const Text('Edit bio'),
-          content: TextField(
-            controller: controller,
-            maxLines: 4,
-            decoration: const InputDecoration(
-              hintText: 'Tell people about your art, style, and interests',
-              border: OutlineInputBorder(),
-            ),
+        title: const Text('Edit bio'),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            hintText: 'Tell people about your art, style, and interests',
+            border: OutlineInputBorder(),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-              child: const Text('Save'),
-            ),
-          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
     if (result == null) return;
     try {
@@ -113,10 +118,14 @@ class _ProfileScreenState extends State<ProfileScreen>
         artist = await _firestore.getArtist(targetUserId);
       }
 
-  final posts = await _firestore.getUserPosts(targetUserId);
-  // Hide posts reported by the current user
-  final reported = await _firestore.getReportedPostIdsForCurrentUser();
-  final filteredPosts = posts.where((p) => !reported.contains(p.id)).toList();
+      final readme = await _firestore.getProfileReadme(targetUserId);
+
+      final posts = await _firestore.getUserPosts(targetUserId);
+      // Hide posts reported by the current user
+      final reported = await _firestore.getReportedPostIdsForCurrentUser();
+      final filteredPosts = posts
+          .where((p) => !reported.contains(p.id))
+          .toList();
       final counts = await _firestore.getFollowCounts(targetUserId);
 
       var following = false;
@@ -132,6 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           _posts = filteredPosts;
           _followCounts = counts;
           _isFollowing = following;
+          _readme = readme;
           _loading = false;
         });
       }
@@ -201,6 +211,100 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
+  Widget _buildReadmeTab() {
+    if (_readme == null) {
+      // No README yet
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.article_outlined,
+                size: 80,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _isOwnProfile ? 'Create Your README' : 'No README Yet',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _isOwnProfile
+                    ? 'Tell your story with a custom profile README'
+                    : 'This user hasn\'t created a README yet',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (_isOwnProfile) ...[
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () async {
+                    final result = await Navigator.of(context).push<bool>(
+                      MaterialPageRoute(
+                        builder: (ctx) =>
+                            ProfileReadmeEditorScreen(userId: _user!.id),
+                      ),
+                    );
+                    if (result ?? false) {
+                      _loadData();
+                    }
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Create README'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Display existing README
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: ProfileReadmeDisplay(
+            readme: _readme!,
+            onSkillTap: (skill) {
+              // TODO: Filter posts by skill tag
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Filter by $skill (coming soon)')),
+              );
+            },
+          ),
+        ),
+        if (_isOwnProfile)
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              mini: true,
+              onPressed: () async {
+                final result = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(
+                    builder: (ctx) => ProfileReadmeEditorScreen(
+                      userId: _user!.id,
+                      initialReadme: _readme,
+                    ),
+                  ),
+                );
+                if (result ?? false) {
+                  _loadData();
+                }
+              },
+              child: const Icon(Icons.edit),
+            ),
+          ),
+      ],
+    );
+  }
+
   Future<void> _handleMenuSelection(String value) async {
     switch (value) {
       case 'saved_posts':
@@ -233,9 +337,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       await AuthService.instance.signOut();
       if (mounted) {
         // Navigate to auth screen
-        unawaited(Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false));
+        unawaited(
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -328,7 +434,25 @@ class _ProfileScreenState extends State<ProfileScreen>
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
             pinned: true,
-            title: Text(_user!.username),
+            elevation: 0,
+            surfaceTintColor: theme.colorScheme.surface,
+            backgroundColor: theme.colorScheme.surface,
+            foregroundColor: theme.colorScheme.onSurface,
+            shadowColor: Colors.transparent,
+            title: Text(
+              _user!.username,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Container(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                height: 1,
+              ),
+            ),
             actions: [
               if (!_isOwnProfile) ...[
                 IconButton(
@@ -350,7 +474,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                       } catch (e) {
                         if (mounted && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Failed to share profile: $e')),
+                            SnackBar(
+                              content: Text('Failed to share profile: $e'),
+                            ),
                           );
                         }
                       }
@@ -445,6 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 labelColor: Theme.of(context).colorScheme.primary,
                 unselectedLabelColor: Theme.of(context).colorScheme.outline,
                 tabs: const [
+                  Tab(icon: Icon(Icons.article_outlined), text: 'README'),
                   Tab(icon: Icon(Icons.grid_on_rounded), text: 'Posts'),
                   Tab(icon: Icon(Icons.assignment_outlined), text: 'Projects'),
                   Tab(icon: Icon(Icons.group_outlined), text: 'Collabs'),
@@ -464,6 +591,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
+                // README tab
+                _buildReadmeTab(),
                 // Posts tab
                 _PostsTab(
                   posts: _posts,
@@ -499,7 +628,6 @@ class _ProfileScreenState extends State<ProfileScreen>
 }
 
 class _ProfileHeader extends StatefulWidget {
-
   const _ProfileHeader({
     required this.user,
     required this.artist,
@@ -775,9 +903,7 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                                     );
                                   }
                                   // Assume Firestore image ID
-                                  return FirestoreImage(
-                                    imageId: ref,
-                                  );
+                                  return FirestoreImage(imageId: ref);
                                 },
                               ),
                             ),
@@ -1054,15 +1180,15 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
 }
 
 Widget _avatarFallback(ThemeData theme, Scale s, String username) => Container(
-    color: theme.colorScheme.surfaceContainerHighest,
-    alignment: Alignment.center,
-    child: Text(
-      (username.isNotEmpty ? username[0] : 'A').toUpperCase(),
-      style: theme.textTheme.headlineSmall?.copyWith(
-        fontSize: s.font(theme.textTheme.headlineSmall?.fontSize ?? 24),
-      ),
+  color: theme.colorScheme.surfaceContainerHighest,
+  alignment: Alignment.center,
+  child: Text(
+    (username.isNotEmpty ? username[0] : 'A').toUpperCase(),
+    style: theme.textTheme.headlineSmall?.copyWith(
+      fontSize: s.font(theme.textTheme.headlineSmall?.fontSize ?? 24),
     ),
-  );
+  ),
+);
 
 class _TabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
   _TabBarHeaderDelegate(this.tabBar);
@@ -1088,11 +1214,11 @@ class _TabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(covariant _TabBarHeaderDelegate oldDelegate) => oldDelegate.tabBar != tabBar;
+  bool shouldRebuild(covariant _TabBarHeaderDelegate oldDelegate) =>
+      oldDelegate.tabBar != tabBar;
 }
 
 class _PostsTab extends StatelessWidget {
-
   const _PostsTab({
     required this.posts,
     required this.gridView,
@@ -1165,59 +1291,58 @@ class _Grid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-      builder: (context, constraints) {
-        // Compute columns based on available width (min tile ~120px)
-        final crossAxisCount = (constraints.maxWidth / 140).floor().clamp(2, 6);
-        const spacing = 2.0;
-        return GridView.builder(
-          padding: EdgeInsets.zero,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: spacing,
-            mainAxisSpacing: spacing,
-          ),
-          itemCount: posts.length,
-          itemBuilder: (context, index) {
-            final p = posts[index];
-            final ref = p.thumbnailUrl ?? p.primaryMediaUrl;
-            if (ref.isEmpty) {
-              return Container(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              );
-            }
-            final isUrl =
-                ref.startsWith('http://') || ref.startsWith('https://');
-            final media = isUrl
-                ? Image.network(
-                    ref,
-                    key: ValueKey(ref),
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.broken_image),
-                    ),
-                  )
-                : FirestoreImage(
-                    key: ValueKey(ref),
-                    imageId: ref,
-                  );
-            return GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                Navigator.of(context).pushNamed(
-                  AppRoutes.postDetail,
-                  arguments: PostDetailArguments(posts: posts, initialIndex: index),
-                );
-              },
-              child: media,
+    builder: (context, constraints) {
+      // Compute columns based on available width (min tile ~120px)
+      final crossAxisCount = (constraints.maxWidth / 140).floor().clamp(2, 6);
+      const spacing = 2.0;
+      return GridView.builder(
+        padding: EdgeInsets.zero,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: spacing,
+          mainAxisSpacing: spacing,
+        ),
+        itemCount: posts.length,
+        itemBuilder: (context, index) {
+          final p = posts[index];
+          final ref = p.thumbnailUrl ?? p.primaryMediaUrl;
+          if (ref.isEmpty) {
+            return Container(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
             );
-          },
-        );
-      },
-    );
+          }
+          final isUrl = ref.startsWith('http://') || ref.startsWith('https://');
+          final media = isUrl
+              ? Image.network(
+                  ref,
+                  key: ValueKey(ref),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.broken_image),
+                  ),
+                )
+              : FirestoreImage(key: ValueKey(ref), imageId: ref);
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              Navigator.of(context).pushNamed(
+                AppRoutes.postDetail,
+                arguments: PostDetailArguments(
+                  posts: posts,
+                  initialIndex: index,
+                ),
+              );
+            },
+            child: media,
+          );
+        },
+      );
+    },
+  );
 }
 
 class _List extends StatelessWidget {
@@ -1226,60 +1351,50 @@ class _List extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView.separated(
-      padding: EdgeInsets.zero,
-      itemCount: posts.length,
-      separatorBuilder: (_, i) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        final p = posts[index];
-        final ref = p.thumbnailUrl ?? p.primaryMediaUrl;
-        return ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
-          ),
-          leading: SizedBox(
-            width: 56,
-            height: 56,
-            child: ref.isEmpty
-                ? Container(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                  )
-                : (ref.startsWith('http')
-                      ? Image.network(
-                          ref,
-                          key: ValueKey(ref),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.surfaceContainerHighest,
-                                alignment: Alignment.center,
-                                child: const Icon(Icons.broken_image),
-                              ),
-                        )
-                      : FirestoreImage(
-                          key: ValueKey(ref),
-                          imageId: ref,
-                        )),
-          ),
-          title: Text(p.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
-          subtitle: Text(p.type.name.toUpperCase()),
-          onTap: () {
-            Navigator.of(context).pushNamed(
-              AppRoutes.postDetail,
-              arguments: PostDetailArguments(posts: posts, initialIndex: index),
-            );
-          },
-        );
-      },
-    );
+    padding: EdgeInsets.zero,
+    itemCount: posts.length,
+    separatorBuilder: (_, i) => const Divider(height: 1),
+    itemBuilder: (context, index) {
+      final p = posts[index];
+      final ref = p.thumbnailUrl ?? p.primaryMediaUrl;
+      return ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        leading: SizedBox(
+          width: 56,
+          height: 56,
+          child: ref.isEmpty
+              ? Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                )
+              : (ref.startsWith('http')
+                    ? Image.network(
+                        ref,
+                        key: ValueKey(ref),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.broken_image),
+                        ),
+                      )
+                    : FirestoreImage(key: ValueKey(ref), imageId: ref)),
+        ),
+        title: Text(p.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: Text(p.type.name.toUpperCase()),
+        onTap: () {
+          Navigator.of(context).pushNamed(
+            AppRoutes.postDetail,
+            arguments: PostDetailArguments(posts: posts, initialIndex: index),
+          );
+        },
+      );
+    },
+  );
 }
 
 class _PlaceholderTab extends StatelessWidget {
-
   const _PlaceholderTab({
     required this.icon,
     required this.title,

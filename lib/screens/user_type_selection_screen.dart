@@ -8,7 +8,6 @@ import '../services/user_service.dart';
 import '../theme/theme.dart';
 
 class UserTypeSelectionScreen extends StatefulWidget {
-
   const UserTypeSelectionScreen({
     super.key,
     required this.uid,
@@ -59,126 +58,123 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-        title: const Text('Choose Your Role'),
-        automaticallyImplyLeading: false,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Welcome to ArtFolio!',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'How would you like to use ArtFolio?',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _roleOptions.length,
-                itemBuilder: (context, index) {
-                  final option = _roleOptions[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _selectedRole = option.role;
-                        });
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: _selectedRole == option.role
-                                      ? AppColors.primary
-                                      : Colors.grey,
-                                  width: 2,
-                                ),
+    appBar: AppBar(
+      title: const Text('Choose Your Role'),
+      automaticallyImplyLeading: false,
+    ),
+    body: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Welcome to ArtFolio!',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'How would you like to use ArtFolio?',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _roleOptions.length,
+              itemBuilder: (context, index) {
+                final option = _roleOptions[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedRole = option.role;
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
                                 color: _selectedRole == option.role
                                     ? AppColors.primary
-                                    : Colors.transparent,
+                                    : Colors.grey,
+                                width: 2,
                               ),
-                              child: _selectedRole == option.role
-                                  ? const Icon(
-                                      Icons.check,
-                                      size: 16,
-                                      color: Colors.white,
-                                    )
-                                  : null,
+                              color: _selectedRole == option.role
+                                  ? AppColors.primary
+                                  : Colors.transparent,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        option.icon,
-                                        color: AppColors.primary,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        option.title,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleMedium,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 36),
-                                    child: Text(
-                                      option.subtitle,
+                            child: _selectedRole == option.role
+                                ? const Icon(
+                                    Icons.check,
+                                    size: 16,
+                                    color: Colors.white,
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(option.icon, color: AppColors.primary),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      option.title,
                                       style: Theme.of(
                                         context,
-                                      ).textTheme.bodySmall,
+                                      ).textTheme.titleMedium,
                                     ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 36),
+                                  child: Text(
+                                    option.subtitle,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _selectedRole != null && !_isCreating
-                    ? _createUserAccount
-                    : null,
-                child: _isCreating
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Continue'),
-              ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _selectedRole != null && !_isCreating
+                  ? _createUserAccount
+                  : null,
+              child: _isCreating
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Continue'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
+    ),
+  );
 
   Future<void> _createUserAccount() async {
     if (_selectedRole == null) return;
@@ -220,7 +216,6 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
 }
 
 class UserRoleOption {
-
   UserRoleOption({
     required this.role,
     required this.title,

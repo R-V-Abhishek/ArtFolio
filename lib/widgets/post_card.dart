@@ -18,7 +18,6 @@ import 'firestore_image.dart';
 import 'share_options_sheet.dart';
 
 class PostCard extends StatefulWidget {
-
   const PostCard({
     super.key,
     required this.post,
@@ -94,9 +93,14 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete post?'),
-        content: const Text('This will permanently remove the post and its media.'),
+        content: const Text(
+          'This will permanently remove the post and its media.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton.tonal(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Delete'),
@@ -108,12 +112,16 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
     try {
       await _firestore.deletePostWithImages(widget.post.id);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Post deleted')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Post deleted')));
       }
       widget.onDeleted?.call();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
       }
     }
   }
@@ -121,9 +129,9 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
   Future<void> _reportPost() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign in to report posts')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Sign in to report posts')));
       return;
     }
     const reasons = [
@@ -144,10 +152,7 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
           children: [
             const ListTile(title: Text('Report post')),
             for (final r in reasons)
-              ListTile(
-                title: Text(r),
-                onTap: () => Navigator.pop(context, r),
-              ),
+              ListTile(title: Text(r), onTap: () => Navigator.pop(context, r)),
             const SizedBox(height: 8),
           ],
         ),
@@ -167,8 +172,14 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
             decoration: const InputDecoration(hintText: 'Optional details'),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Submit')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Submit'),
+            ),
           ],
         ),
       );
@@ -185,13 +196,15 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
         details: extra,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Report submitted')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Report submitted')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to report: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to report: $e')));
       }
     }
   }
@@ -283,13 +296,15 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
         _isSaved = !_isSaved; // Optimistic update
       });
 
-      final newSavedState = await _savedPostsService.togglePostSave(widget.post.id);
-      
+      final newSavedState = await _savedPostsService.togglePostSave(
+        widget.post.id,
+      );
+
       if (mounted) {
         setState(() {
           _isSaved = newSavedState;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(newSavedState ? 'Post saved' : 'Post unsaved'),
@@ -482,9 +497,7 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                               );
                             }
                             // Firestore image id
-                            return FirestoreImage(
-                              imageId: ref,
-                            );
+                            return FirestoreImage(imageId: ref);
                           },
                         ),
                       ),
@@ -536,7 +549,8 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                 ),
               Builder(
                 builder: (context) {
-                  final isOwner = _author != null && _auth.currentUser?.uid == _author!.id;
+                  final isOwner =
+                      _author != null && _auth.currentUser?.uid == _author!.id;
                   if (isOwner) {
                     return PopupMenuButton<String>(
                       icon: Icon(Icons.more_horiz, size: s.size(24)),
@@ -746,7 +760,9 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                     ],
                   ),
                   maxLines: _showMeta ? null : 3,
-                  overflow: _showMeta ? TextOverflow.visible : TextOverflow.ellipsis,
+                  overflow: _showMeta
+                      ? TextOverflow.visible
+                      : TextOverflow.ellipsis,
                 ),
                 // Show "more" button if caption is long or if there are tags/location to show
                 if (!_showMeta && (_isLongCaption() || _hasMetaToShow()))
@@ -812,9 +828,7 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                 'less',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.outline,
-                  fontSize: s.font(
-                    theme.textTheme.bodyMedium?.fontSize ?? 14,
-                  ),
+                  fontSize: s.font(theme.textTheme.bodyMedium?.fontSize ?? 14),
                 ),
               ),
             ),
@@ -876,9 +890,12 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
       child = Stack(
         fit: StackFit.expand,
         children: [
-          if (thumb.isNotEmpty) _buildImage(thumb) else Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                ),
+          if (thumb.isNotEmpty)
+            _buildImage(thumb)
+          else
+            Container(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            ),
           const Center(
             child: CircleAvatar(
               radius: 28,
@@ -949,7 +966,8 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
 
   bool _isLongCaption() => widget.post.caption.length > 100;
 
-  bool _hasMetaToShow() => widget.post.tags.isNotEmpty || widget.post.location != null;
+  bool _hasMetaToShow() =>
+      widget.post.tags.isNotEmpty || widget.post.location != null;
 }
 
 class _TagsWrap extends StatelessWidget {
@@ -981,27 +999,27 @@ class _NetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Image.network(
-      url,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return Container(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          alignment: Alignment.center,
-          child: CircularProgressIndicator(
-            value: progress.expectedTotalBytes != null
-                ? progress.cumulativeBytesLoaded /
-                      (progress.expectedTotalBytes ?? 1)
-                : null,
-          ),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) => Container(
+    url,
+    fit: BoxFit.cover,
+    loadingBuilder: (context, child, progress) {
+      if (progress == null) return child;
+      return Container(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         alignment: Alignment.center,
-        child: const Icon(Icons.broken_image),
-      ),
-    );
+        child: CircularProgressIndicator(
+          value: progress.expectedTotalBytes != null
+              ? progress.cumulativeBytesLoaded /
+                    (progress.expectedTotalBytes ?? 1)
+              : null,
+        ),
+      );
+    },
+    errorBuilder: (context, error, stackTrace) => Container(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      alignment: Alignment.center,
+      child: const Icon(Icons.broken_image),
+    ),
+  );
 }
 
 class _GalleryDots extends StatelessWidget {
@@ -1011,30 +1029,30 @@ class _GalleryDots extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(12),
+    decoration: BoxDecoration(
+      color: Colors.black54,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(length, (i) {
+          final active = i == current;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.symmetric(horizontal: 2),
+            width: active ? 8 : 6,
+            height: active ? 8 : 6,
+            decoration: BoxDecoration(
+              color: active ? Colors.white : Colors.white70,
+              shape: BoxShape.circle,
+            ),
+          );
+        }),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(length, (i) {
-            final active = i == current;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              width: active ? 8 : 6,
-              height: active ? 8 : 6,
-              decoration: BoxDecoration(
-                color: active ? Colors.white : Colors.white70,
-                shape: BoxShape.circle,
-              ),
-            );
-          }),
-        ),
-      ),
-    );
+    ),
+  );
 }
 
 class _LikeOverlay extends StatelessWidget {
@@ -1044,95 +1062,96 @@ class _LikeOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-      animation: animation,
-      builder: (context, _) {
-        final t = Curves.easeOutCubic.transform(animation.value);
-        final ringScale1 = 0.6 + 0.5 * t;
-        final ringScale2 = 0.8 + 0.9 * t;
-        final ringOpacity = (1.0 - t).clamp(0.0, 1.0);
-        final heartScale = 1.0 + 0.25 * Curves.elasticOut.transform(t);
-        const fadeStart = 0.6; // keep fully visible for 60% of the timeline
-        final heartOpacity = t < fadeStart
-            ? 1.0
-            : (1.0 -
-                      Curves.easeOut.transform(
-                        ((t - fadeStart) / (1 - fadeStart)).clamp(0.0, 1.0),
-                      ))
-                  .clamp(0.0, 1.0);
-        return SizedBox(
-          width: 220,
-          height: 220,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Opacity(
-                opacity: ringOpacity * 0.5,
-                child: Transform.scale(
-                  scale: ringScale2,
-                  child: Container(
-                    width: 140,
-                    height: 140,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: color.withValues(alpha: 0.35),
-                        width: 6 * (1.0 - t) + 1.5,
-                      ),
+    animation: animation,
+    builder: (context, _) {
+      final t = Curves.easeOutCubic.transform(animation.value);
+      final ringScale1 = 0.6 + 0.5 * t;
+      final ringScale2 = 0.8 + 0.9 * t;
+      final ringOpacity = (1.0 - t).clamp(0.0, 1.0);
+      final heartScale = 1.0 + 0.25 * Curves.elasticOut.transform(t);
+      const fadeStart = 0.6; // keep fully visible for 60% of the timeline
+      final heartOpacity = t < fadeStart
+          ? 1.0
+          : (1.0 -
+                    Curves.easeOut.transform(
+                      ((t - fadeStart) / (1 - fadeStart)).clamp(0.0, 1.0),
+                    ))
+                .clamp(0.0, 1.0);
+      return SizedBox(
+        width: 220,
+        height: 220,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Opacity(
+              opacity: ringOpacity * 0.5,
+              child: Transform.scale(
+                scale: ringScale2,
+                child: Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: color.withValues(alpha: 0.35),
+                      width: 6 * (1.0 - t) + 1.5,
                     ),
                   ),
                 ),
               ),
-              Opacity(
-                opacity: ringOpacity * 0.8,
-                child: Transform.scale(
-                  scale: ringScale1,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: color.withValues(alpha: 0.45),
-                        width: 8 * (1.0 - t) + 2,
-                      ),
+            ),
+            Opacity(
+              opacity: ringOpacity * 0.8,
+              child: Transform.scale(
+                scale: ringScale1,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: color.withValues(alpha: 0.45),
+                      width: 8 * (1.0 - t) + 2,
                     ),
                   ),
                 ),
               ),
-              Opacity(
+            ),
+            Opacity(
+              opacity: heartOpacity,
+              child: Transform.scale(
+                scale: heartScale,
+                child: const Icon(
+                  Icons.favorite,
+                  size: 96,
+                  color: Color(0xFFFF8DA1), // subtle pink
+                ),
+              ),
+            ),
+            // Sparkles (gold) - 5 rays moving from heart to ring, fading with the heart
+            ...List.generate(5, (i) {
+              const step = 360 / 5;
+              final angle = -18 + step * i;
+              const startR = 14.0;
+              const endR = 105.0; // approx outer ring radius
+              return _Sparkle(
+                angleDeg: angle,
+                startRadius: startR,
+                endRadius: endR,
+                t: t,
+                color: const Color(0xFFFFD700), // gold
                 opacity: heartOpacity,
-                child: Transform.scale(
-                  scale: heartScale,
-                  child: const Icon(
-                    Icons.favorite,
-                    size: 96,
-                    color: Color(0xFFFF8DA1), // subtle pink
-                  ),
-                ),
-              ),
-              // Sparkles (gold) - 5 rays moving from heart to ring, fading with the heart
-              ...List.generate(5, (i) {
-                const step = 360 / 5;
-                final angle = -18 + step * i;
-                const startR = 14.0;
-                const endR = 105.0; // approx outer ring radius
-                return _Sparkle(
-                  angleDeg: angle,
-                  startRadius: startR,
-                  endRadius: endR,
-                  t: t,
-                  color: const Color(0xFFFFD700), // gold
-                  opacity: heartOpacity,
-                );
-              }),
-            ],
-          ),
-        );
-      },
-    );
+              );
+            }),
+          ],
+        ),
+      );
+    },
+  );
 }
 
-class _Sparkle extends StatelessWidget { // typically synced with heartOpacity
+class _Sparkle extends StatelessWidget {
+  // typically synced with heartOpacity
   const _Sparkle({
     required this.angleDeg,
     required this.startRadius,
@@ -1181,15 +1200,15 @@ class _MiniBurst extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-      animation: animation,
-      builder: (context, _) {
-        if (animation.value <= 0.001) return const SizedBox.shrink();
-        return CustomPaint(
-          painter: _MiniBurstPainter(animation.value, const Color(0xFFFFD700)),
-          size: const Size(40, 40),
-        );
-      },
-    );
+    animation: animation,
+    builder: (context, _) {
+      if (animation.value <= 0.001) return const SizedBox.shrink();
+      return CustomPaint(
+        painter: _MiniBurstPainter(animation.value, const Color(0xFFFFD700)),
+        size: const Size(40, 40),
+      );
+    },
+  );
 }
 
 class _MiniBurstPainter extends CustomPainter {
@@ -1219,5 +1238,6 @@ class _MiniBurstPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _MiniBurstPainter oldDelegate) => oldDelegate.v != v || oldDelegate.color != color;
+  bool shouldRepaint(covariant _MiniBurstPainter oldDelegate) =>
+      oldDelegate.v != v || oldDelegate.color != color;
 }

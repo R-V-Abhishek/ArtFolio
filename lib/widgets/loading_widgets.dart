@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 /// A widget that wraps content and shows a loading overlay when needed
 class LoadingOverlay extends StatelessWidget {
-
   const LoadingOverlay({
     super.key,
     required this.child,
@@ -34,7 +33,6 @@ class LoadingOverlay extends StatelessWidget {
 
 /// A simplified loading widget for buttons
 class LoadingButton extends StatelessWidget {
-
   const LoadingButton({
     super.key,
     required this.onPressed,
@@ -51,30 +49,29 @@ class LoadingButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ElevatedButton(
-      onPressed: isLoading ? null : onPressed,
-      style: style,
-      child: isLoading
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                if (loadingText != null) ...[
-                  const SizedBox(width: 8),
-                  Text(loadingText!),
-                ],
+    onPressed: isLoading ? null : onPressed,
+    style: style,
+    child: isLoading
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              if (loadingText != null) ...[
+                const SizedBox(width: 8),
+                Text(loadingText!),
               ],
-            )
-          : child,
-    );
+            ],
+          )
+        : child,
+  );
 }
 
 /// A widget that shows loading indicator in place of content
 class LoadingPlaceholder extends StatelessWidget {
-
   const LoadingPlaceholder({
     super.key,
     required this.isLoading,
@@ -97,26 +94,25 @@ class LoadingPlaceholder extends StatelessWidget {
   }
 
   Widget _buildDefaultLoading(BuildContext context) => Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(),
-          if (loadingMessage != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              loadingMessage!,
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-          ],
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const CircularProgressIndicator(),
+        if (loadingMessage != null) ...[
+          const SizedBox(height: 16),
+          Text(
+            loadingMessage!,
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
         ],
-      ),
-    );
+      ],
+    ),
+  );
 }
 
 /// Shimmer loading effect for list items
 class ShimmerLoading extends StatefulWidget {
-
   const ShimmerLoading({
     super.key,
     required this.child,
@@ -192,16 +188,16 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) => ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-              colors: [baseColor, highlightColor, baseColor],
-              stops: [
-                (_animation.value - 0.3).clamp(0.0, 1.0),
-                _animation.value.clamp(0.0, 1.0),
-                (_animation.value + 0.3).clamp(0.0, 1.0),
-              ],
-            ).createShader(bounds),
-          child: widget.child,
-        ),
+        shaderCallback: (bounds) => LinearGradient(
+          colors: [baseColor, highlightColor, baseColor],
+          stops: [
+            (_animation.value - 0.3).clamp(0.0, 1.0),
+            _animation.value.clamp(0.0, 1.0),
+            (_animation.value + 0.3).clamp(0.0, 1.0),
+          ],
+        ).createShader(bounds),
+        child: widget.child,
+      ),
     );
   }
 }

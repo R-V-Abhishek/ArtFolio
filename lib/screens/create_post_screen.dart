@@ -131,14 +131,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   PostType _parseType(String? name) => PostType.values.firstWhere(
-      (e) => e.name == name,
-      orElse: () => PostType.image,
-    );
+    (e) => e.name == name,
+    orElse: () => PostType.image,
+  );
 
-  PostVisibility _parseVisibility(String? name) => PostVisibility.values.firstWhere(
-      (e) => e.name == name,
-      orElse: () => PostVisibility.public,
-    );
+  PostVisibility _parseVisibility(String? name) => PostVisibility.values
+      .firstWhere((e) => e.name == name, orElse: () => PostVisibility.public);
 
   // Image picking
   Future<void> _pickFromCamera() async {
@@ -438,131 +436,138 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) => PopScope(
-      canPop: !_hasUnsavedChanges,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        final navigator = Navigator.of(context);
-        final shouldSave = await _confirmDiscardOrSave();
-        if (shouldSave ?? false) {
-          await _saveDraft();
-        }
-        // Use navigator captured before await to avoid using context after async gap
-        unawaited(navigator.maybePop());
-      },
-      child: Scaffold(
-        // Ensure content shifts for the keyboard on small screens
-        resizeToAvoidBottomInset: true,
-        appBar: AppBar(
-          title: const Text('Create Post'),
-          actions: [
-            IconButton(
-              tooltip: 'Save draft',
-              onPressed: _saveDraft,
-              icon: const Icon(Icons.save_outlined),
-            ),
-            const SizedBox(width: 8),
-          ],
-        ),
-        body: Stack(
-          children: [
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 900;
-                if (wide) {
-                  // In wide layouts, make both panes independently scrollable
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.only(bottom: 100), // Space for bottom nav
-                          child: _buildMediaPane(),
-                        ),
-                      ),
-                      const VerticalDivider(width: 1),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: EdgeInsets.only(
-                            bottom: MediaQuery.of(context).viewInsets.bottom + 100, // Space for bottom nav + keyboard
-                          ),
-                          child: _buildFormPane(),
-                        ),
-                      ),
-                    ],
-                  );
-                }
-                // On narrow layouts, make the whole screen scrollable and keyboard-safe
-                return SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    16,
-                    16,
-                    16 + MediaQuery.of(context).viewInsets.bottom + 100, // Extra padding for bottom nav
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildMediaPane(),
-                      const SizedBox(height: 16),
-                      _buildFormPane(),
-                    ],
-                  ),
-                );
-              },
-            ),
-            if (_isUploading) _buildUploadingOverlay(),
-          ],
-        ),
-        bottomNavigationBar: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _hasUnsavedChanges ? _saveDraft : null,
-                    icon: const Icon(Icons.drafts_outlined),
-                    label: const Text('Save draft'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: _isUploading ? null : _submit,
-                    icon: const Icon(Icons.send_rounded),
-                    label: const Text('Post'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-  bool get _hasUnsavedChanges => _captionCtrl.text.trim().isNotEmpty ||
-        _images.isNotEmpty ||
-        _tags.isNotEmpty ||
-        _skills.isNotEmpty ||
-        _location != null;
-
-  Future<bool?> _confirmDiscardOrSave() async => showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Leave without posting?'),
-        content: const Text('You have unsaved changes. Save as draft?'),
+    canPop: !_hasUnsavedChanges,
+    onPopInvokedWithResult: (didPop, result) async {
+      if (didPop) return;
+      final navigator = Navigator.of(context);
+      final shouldSave = await _confirmDiscardOrSave();
+      if (shouldSave ?? false) {
+        await _saveDraft();
+      }
+      // Use navigator captured before await to avoid using context after async gap
+      unawaited(navigator.maybePop());
+    },
+    child: Scaffold(
+      // Ensure content shifts for the keyboard on small screens
+      resizeToAvoidBottomInset: true,
+      appBar: AppBar(
+        title: const Text('Create Post'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Discard'),
+          IconButton(
+            tooltip: 'Save draft',
+            onPressed: _saveDraft,
+            icon: const Icon(Icons.save_outlined),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Save draft'),
-          ),
+          const SizedBox(width: 8),
         ],
       ),
-    );
+      body: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 900;
+              if (wide) {
+                // In wide layouts, make both panes independently scrollable
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.only(
+                          bottom: 100,
+                        ), // Space for bottom nav
+                        child: _buildMediaPane(),
+                      ),
+                    ),
+                    const VerticalDivider(width: 1),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.only(
+                          bottom:
+                              MediaQuery.of(context).viewInsets.bottom +
+                              100, // Space for bottom nav + keyboard
+                        ),
+                        child: _buildFormPane(),
+                      ),
+                    ),
+                  ],
+                );
+              }
+              // On narrow layouts, make the whole screen scrollable and keyboard-safe
+              return SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  16 +
+                      MediaQuery.of(context).viewInsets.bottom +
+                      100, // Extra padding for bottom nav
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildMediaPane(),
+                    const SizedBox(height: 16),
+                    _buildFormPane(),
+                  ],
+                ),
+              );
+            },
+          ),
+          if (_isUploading) _buildUploadingOverlay(),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _hasUnsavedChanges ? _saveDraft : null,
+                  icon: const Icon(Icons.drafts_outlined),
+                  label: const Text('Save draft'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _isUploading ? null : _submit,
+                  icon: const Icon(Icons.send_rounded),
+                  label: const Text('Post'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  bool get _hasUnsavedChanges =>
+      _captionCtrl.text.trim().isNotEmpty ||
+      _images.isNotEmpty ||
+      _tags.isNotEmpty ||
+      _skills.isNotEmpty ||
+      _location != null;
+
+  Future<bool?> _confirmDiscardOrSave() async => showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Leave without posting?'),
+      content: const Text('You have unsaved changes. Save as draft?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Discard'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Save draft'),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildMediaPane() {
     final isIdea = _type == PostType.idea;
@@ -580,7 +585,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   children: [
                     const Icon(Icons.photo_library_outlined),
                     const SizedBox(width: 8),
-                    Text('Media', style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      'Media',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -661,33 +669,33 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     crossAxisSpacing: 8,
                   ),
                   itemBuilder: (context, index) => Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(_images[index], fit: BoxFit.cover),
-                        ),
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: InkResponse(
-                            onTap: () => _removeImageAt(index),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              padding: const EdgeInsets.all(4),
-                              child: const Icon(
-                                Icons.close,
-                                size: 16,
-                                color: Colors.white,
-                              ),
+                    fit: StackFit.expand,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(_images[index], fit: BoxFit.cover),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: InkResponse(
+                          onTap: () => _removeImageAt(index),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            child: const Icon(
+                              Icons.close,
+                              size: 16,
+                              color: Colors.white,
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ],
@@ -697,207 +705,166 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   Widget _emptyHint(String text) => Container(
-      height: 180,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+    height: 180,
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Center(
+      child: Text(
+        text,
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
       ),
-      child: Center(
-        child: Text(
-          text,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-        ),
-      ),
-    );
+    ),
+  );
 
   Widget _buildFormPane() => Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Type selection
-            Text('Post type', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth > 500) {
-                  // Use SegmentedButton for wider screens
-                  return SegmentedButton<PostType>(
-                    segments: const [
-                      ButtonSegment(
-                        value: PostType.image,
-                        label: Text('Image'),
-                        icon: Icon(Icons.image_outlined),
-                      ),
-                      ButtonSegment(
-                        value: PostType.gallery,
-                        label: Text('Gallery'),
-                        icon: Icon(Icons.grid_on_outlined),
-                      ),
-                      ButtonSegment(
-                        value: PostType.idea,
-                        label: Text('Idea'),
-                        icon: Icon(Icons.lightbulb_outline),
-                      ),
-                    ],
-                    selected: {_type},
-                    onSelectionChanged: (s) {
-                      setState(() {
-                        _type = s.first;
-                        if (_type == PostType.idea) _images.clear();
-                        if (_type == PostType.image && _images.length > 1) {
-                          _images
-                            ..retainWhere((element) => element == _images.first)
-                            ..removeRange(1, _images.length);
-                        }
-                      });
-                    },
-                  );
-                } else {
-                  // Use Wrap with ChoiceChips for narrower screens
-                  return Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [PostType.image, PostType.gallery, PostType.idea].map((type) {
-                      final isSelected = _type == type;
-                      IconData icon;
-                      String label;
-                      
-                      switch (type) {
-                        case PostType.image:
-                          icon = Icons.image_outlined;
-                          label = 'Image';
-                        case PostType.gallery:
-                          icon = Icons.grid_on_outlined;
-                          label = 'Gallery';
-                        case PostType.idea:
-                          icon = Icons.lightbulb_outline;
-                          label = 'Idea';
-                        case PostType.video:
-                        case PostType.reel:
-                        case PostType.live:
-                          // These cases shouldn't occur since we only include 3 types
-                          icon = Icons.help_outline;
-                          label = 'Unknown';
+    margin: const EdgeInsets.all(16),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Type selection
+          Text('Post type', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth > 500) {
+                // Use SegmentedButton for wider screens
+                return SegmentedButton<PostType>(
+                  segments: const [
+                    ButtonSegment(
+                      value: PostType.image,
+                      label: Text('Image'),
+                      icon: Icon(Icons.image_outlined),
+                    ),
+                    ButtonSegment(
+                      value: PostType.gallery,
+                      label: Text('Gallery'),
+                      icon: Icon(Icons.grid_on_outlined),
+                    ),
+                    ButtonSegment(
+                      value: PostType.idea,
+                      label: Text('Idea'),
+                      icon: Icon(Icons.lightbulb_outline),
+                    ),
+                  ],
+                  selected: {_type},
+                  onSelectionChanged: (s) {
+                    setState(() {
+                      _type = s.first;
+                      if (_type == PostType.idea) _images.clear();
+                      if (_type == PostType.image && _images.length > 1) {
+                        _images
+                          ..retainWhere((element) => element == _images.first)
+                          ..removeRange(1, _images.length);
                       }
-                      
-                      return ChoiceChip(
-                        avatar: Icon(icon, size: 18),
-                        label: Text(label),
-                        selected: isSelected,
-                        onSelected: (_) {
-                          setState(() {
-                            _type = type;
-                            if (_type == PostType.idea) _images.clear();
-                            if (_type == PostType.image && _images.length > 1) {
-                              _images
-                                ..retainWhere((element) => element == _images.first)
-                                ..removeRange(1, _images.length);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
-                  );
-                }
-              },
-            ),
+                    });
+                  },
+                );
+              } else {
+                // Use Wrap with ChoiceChips for narrower screens
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [PostType.image, PostType.gallery, PostType.idea].map((
+                    type,
+                  ) {
+                    final isSelected = _type == type;
+                    IconData icon;
+                    String label;
 
-            const SizedBox(height: 16),
-            TextField(
-              controller: _captionCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Caption',
-                hintText: 'Say something about your post…',
-              ),
-              maxLength: 2200,
-              maxLines: null,
-            ),
+                    switch (type) {
+                      case PostType.image:
+                        icon = Icons.image_outlined;
+                        label = 'Image';
+                      case PostType.gallery:
+                        icon = Icons.grid_on_outlined;
+                        label = 'Gallery';
+                      case PostType.idea:
+                        icon = Icons.lightbulb_outline;
+                        label = 'Idea';
+                      case PostType.video:
+                      case PostType.reel:
+                      case PostType.live:
+                        // These cases shouldn't occur since we only include 3 types
+                        icon = Icons.help_outline;
+                        label = 'Unknown';
+                    }
 
-            const SizedBox(height: 16),
-            _chipsInput(
-              label: 'Skills',
-              controller: _skillCtrl,
-              values: _skills,
-              suggestions: const [
-                'OilPainting',
-                'Sketching',
-                'Watercolor',
-                'Portrait',
-                'Landscape',
-                'DigitalArt',
-                'Sculpture',
-                'Photography',
-              ],
-            ),
-
-            const SizedBox(height: 12),
-            _chipsInput(
-              label: 'Tags',
-              controller: _tagCtrl,
-              values: _tags,
-              prefix: '#',
-            ),
-
-            const SizedBox(height: 16),
-            // Visibility + location
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth > 600) {
-                  // Use Row for wider screens
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<PostVisibility>(
-                          initialValue: _visibility,
-                          items: PostVisibility.values
-                              .map(
-                                (v) => DropdownMenuItem(
-                                  value: v,
-                                  child: Text(_visibilityLabel(v)),
-                                ),
+                    return ChoiceChip(
+                      avatar: Icon(icon, size: 18),
+                      label: Text(label),
+                      selected: isSelected,
+                      onSelected: (_) {
+                        setState(() {
+                          _type = type;
+                          if (_type == PostType.idea) _images.clear();
+                          if (_type == PostType.image && _images.length > 1) {
+                            _images
+                              ..retainWhere(
+                                (element) => element == _images.first,
                               )
-                              .toList(),
-                          onChanged: (v) => setState(() => _visibility = v!),
-                          decoration: const InputDecoration(labelText: 'Visibility'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          readOnly: true,
-                          onTap: _editLocation,
-                          decoration: InputDecoration(
-                            labelText: 'Location (optional)',
-                            hintText: 'Add location',
-                            suffixIcon: IconButton(
-                              tooltip: 'Edit',
-                              onPressed: _editLocation,
-                              icon: const Icon(Icons.place_outlined),
-                            ),
-                          ),
-                          controller: TextEditingController(
-                            text: _location == null
-                                ? ''
-                                : [
-                                    _location!.city,
-                                    _location!.state,
-                                    _location!.country,
-                                  ].where((e) => (e ?? '').isNotEmpty).join(', '),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                } else {
-                  // Use Column for narrower screens
-                  return Column(
-                    children: [
-                      DropdownButtonFormField<PostVisibility>(
+                              ..removeRange(1, _images.length);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                );
+              }
+            },
+          ),
+
+          const SizedBox(height: 16),
+          TextField(
+            controller: _captionCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Caption',
+              hintText: 'Say something about your post…',
+            ),
+            maxLength: 2200,
+            maxLines: null,
+          ),
+
+          const SizedBox(height: 16),
+          _chipsInput(
+            label: 'Skills',
+            controller: _skillCtrl,
+            values: _skills,
+            suggestions: const [
+              'OilPainting',
+              'Sketching',
+              'Watercolor',
+              'Portrait',
+              'Landscape',
+              'DigitalArt',
+              'Sculpture',
+              'Photography',
+            ],
+          ),
+
+          const SizedBox(height: 12),
+          _chipsInput(
+            label: 'Tags',
+            controller: _tagCtrl,
+            values: _tags,
+            prefix: '#',
+          ),
+
+          const SizedBox(height: 16),
+          // Visibility + location
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth > 600) {
+                // Use Row for wider screens
+                return Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<PostVisibility>(
                         initialValue: _visibility,
                         items: PostVisibility.values
                             .map(
@@ -908,10 +875,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             )
                             .toList(),
                         onChanged: (v) => setState(() => _visibility = v!),
-                        decoration: const InputDecoration(labelText: 'Visibility'),
+                        decoration: const InputDecoration(
+                          labelText: 'Visibility',
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      TextFormField(
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
                         readOnly: true,
                         onTap: _editLocation,
                         decoration: InputDecoration(
@@ -933,15 +904,60 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                 ].where((e) => (e ?? '').isNotEmpty).join(', '),
                         ),
                       ),
-                    ],
-                  );
-                }
-              },
-            ),
-          ],
-        ),
+                    ),
+                  ],
+                );
+              } else {
+                // Use Column for narrower screens
+                return Column(
+                  children: [
+                    DropdownButtonFormField<PostVisibility>(
+                      initialValue: _visibility,
+                      items: PostVisibility.values
+                          .map(
+                            (v) => DropdownMenuItem(
+                              value: v,
+                              child: Text(_visibilityLabel(v)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => setState(() => _visibility = v!),
+                      decoration: const InputDecoration(
+                        labelText: 'Visibility',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      readOnly: true,
+                      onTap: _editLocation,
+                      decoration: InputDecoration(
+                        labelText: 'Location (optional)',
+                        hintText: 'Add location',
+                        suffixIcon: IconButton(
+                          tooltip: 'Edit',
+                          onPressed: _editLocation,
+                          icon: const Icon(Icons.place_outlined),
+                        ),
+                      ),
+                      controller: TextEditingController(
+                        text: _location == null
+                            ? ''
+                            : [
+                                _location!.city,
+                                _location!.state,
+                                _location!.country,
+                              ].where((e) => (e ?? '').isNotEmpty).join(', '),
+                      ),
+                    ),
+                  ],
+                );
+              }
+            },
+          ),
+        ],
       ),
-    );
+    ),
+  );
 
   String _visibilityLabel(PostVisibility v) {
     switch (v) {
@@ -963,89 +979,89 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     List<String> suggestions = const [],
     String prefix = '',
   }) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.titleMedium),
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final v in values)
+            InputChip(
+              label: Text('$prefix$v'),
+              onDeleted: () => setState(() => values.remove(v)),
+            ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 300),
+        child: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: 'Add ${label.toLowerCase()}…',
+            isDense: true,
+          ),
+          onSubmitted: (val) {
+            final t = val.trim();
+            if (t.isEmpty) return;
+            setState(
+              () => values.add(prefix == '#' ? t.replaceAll('#', '') : t),
+            );
+            controller.clear();
+          },
+        ),
+      ),
+      if (suggestions.isNotEmpty) ...[
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final v in values)
-              InputChip(
-                label: Text('$prefix$v'),
-                onDeleted: () => setState(() => values.remove(v)),
-              ),
-          ],
+          children: suggestions.take(8).map((s) {
+            final isSelected = values.contains(s);
+            return ChoiceChip(
+              label: Text(s),
+              selected: isSelected,
+              onSelected: (_) {
+                setState(() {
+                  if (isSelected) {
+                    values.remove(s);
+                  } else {
+                    values.add(s);
+                  }
+                });
+              },
+            );
+          }).toList(),
         ),
-        const SizedBox(height: 8),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 300),
-          child: TextField(
-            controller: controller,
-            decoration: InputDecoration(
-              hintText: 'Add ${label.toLowerCase()}…',
-              isDense: true,
-            ),
-            onSubmitted: (val) {
-              final t = val.trim();
-              if (t.isEmpty) return;
-              setState(
-                () => values.add(prefix == '#' ? t.replaceAll('#', '') : t),
-              );
-              controller.clear();
-            },
-          ),
-        ),
-        if (suggestions.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: suggestions.take(8).map((s) {
-              final isSelected = values.contains(s);
-              return ChoiceChip(
-                label: Text(s),
-                selected: isSelected,
-                onSelected: (_) {
-                  setState(() {
-                    if (isSelected) {
-                      values.remove(s);
-                    } else {
-                      values.add(s);
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          ),
-        ],
       ],
-    );
+    ],
+  );
 
   Widget _buildUploadingOverlay() => ColoredBox(
-      color: Colors.black45,
-      child: Center(
-        child: Card(
-          margin: const EdgeInsets.all(32),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const CircularProgressIndicator.adaptive(),
-                    const SizedBox(width: 16),
-                    Text(_uploadStatus ?? 'Uploading…'),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                LinearProgressIndicator(value: _progress),
-              ],
-            ),
+    color: Colors.black45,
+    child: Center(
+      child: Card(
+        margin: const EdgeInsets.all(32),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const CircularProgressIndicator.adaptive(),
+                  const SizedBox(width: 16),
+                  Text(_uploadStatus ?? 'Uploading…'),
+                ],
+              ),
+              const SizedBox(height: 16),
+              LinearProgressIndicator(value: _progress),
+            ],
           ),
         ),
       ),
-    );
+    ),
+  );
 }

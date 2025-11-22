@@ -294,17 +294,18 @@ class ImageCacheService {
   Future<void> preloadImages(List<String> imageUrls) async {
     for (final url in imageUrls) {
       // Preload in background without blocking
-      unawaited(getCachedImage(url).catchError((e) {
-        debugPrint('Failed to preload image: $url, error: $e');
-        return null;
-      }));
+      unawaited(
+        getCachedImage(url).catchError((e) {
+          debugPrint('Failed to preload image: $url, error: $e');
+          return null;
+        }),
+      );
     }
   }
 }
 
 /// Custom image widget with caching support
 class CachedNetworkImage extends StatefulWidget {
-
   const CachedNetworkImage({
     super.key,
     required this.imageUrl,

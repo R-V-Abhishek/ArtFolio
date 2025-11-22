@@ -175,5 +175,21 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated(); // For tracking user events
     }
+    
+    // Profile READMEs - custom profile pages
+    match /profileReadmes/{userId} {
+      // Anyone can read READMEs (public profile content)
+      allow read: if isAuthenticated();
+      // Only the user can create/update/delete their own README
+      allow create, update, delete: if isOwner(userId);
+    }
+    
+    // Post reports collection - for content moderation
+    match /postReports/{reportId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+        request.auth.uid == request.resource.data.reportedBy;
+      allow update, delete: if false; // Only system/admin can modify reports
+    }
   }
 }

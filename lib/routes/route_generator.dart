@@ -146,29 +146,29 @@ class RouteGenerator {
   }
 
   static Route<dynamic> _errorRoute(String message) => MaterialPageRoute(
-      builder: (context) => Scaffold(
-        appBar: AppBar(title: const Text('Error')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              const Text(
-                'Navigation Error',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(message),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () =>
-                    Navigator.of(context).pushReplacementNamed(AppRoutes.home),
-                child: const Text('Go to Home'),
-              ),
-            ],
-          ),
+    builder: (context) => Scaffold(
+      appBar: AppBar(title: const Text('Error')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            const Text(
+              'Navigation Error',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(message),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.of(context).pushReplacementNamed(AppRoutes.home),
+              child: const Text('Go to Home'),
+            ),
+          ],
         ),
       ),
-    );
+    ),
+  );
 }

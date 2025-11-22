@@ -101,9 +101,11 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
 
       // Navigate to auth screen
       if (mounted) {
-        unawaited(Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false));
+        unawaited(
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false),
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -152,32 +154,33 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     }
   }
 
-  Future<bool> _showFinalConfirmationDialog() async => await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-              title: const Text('Final Confirmation'),
-              content: const Text(
-                'This action is IRREVERSIBLE. All your data will be permanently deleted. '
-                'Are you absolutely sure you want to delete your account?',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Yes, Delete Forever'),
-                ),
-              ],
+  Future<bool> _showFinalConfirmationDialog() async =>
+      await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Final Confirmation'),
+          content: const Text(
+            'This action is IRREVERSIBLE. All your data will be permanently deleted. '
+            'Are you absolutely sure you want to delete your account?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
             ),
-        ) ??
-        false;
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Yes, Delete Forever'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
 
   Future<bool> _showReauthenticationDialog() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -195,38 +198,38 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-            title: const Text('Re-authentication Required'),
-            content: const Text(
-              'For security, you need to sign in again with Google before deleting your account.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await AccountDeletionService.reauthenticateUser();
-                    if (context.mounted) {
-                      Navigator.of(context).pop(true);
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      Navigator.of(context).pop(false);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Re-authentication failed: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Sign in with Google'),
-              ),
-            ],
+          title: const Text('Re-authentication Required'),
+          content: const Text(
+            'For security, you need to sign in again with Google before deleting your account.',
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await AccountDeletionService.reauthenticateUser();
+                  if (context.mounted) {
+                    Navigator.of(context).pop(true);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    Navigator.of(context).pop(false);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Re-authentication failed: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Sign in with Google'),
+            ),
+          ],
+        ),
       );
       return result ?? false;
     } else {
@@ -236,58 +239,58 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-            title: const Text('Re-authentication Required'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('For security, please enter your password again:'),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(),
-                  ),
+          title: const Text('Re-authentication Required'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('For security, please enter your password again:'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
                 ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  passwordController.dispose();
-                  Navigator.of(context).pop(false);
-                },
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await AccountDeletionService.reauthenticateUser(
-                      email: user.email,
-                      password: passwordController.text,
-                    );
-                    passwordController.dispose();
-                    if (context.mounted) {
-                      Navigator.of(context).pop(true);
-                    }
-                  } catch (e) {
-                    passwordController.dispose();
-                    if (context.mounted) {
-                      Navigator.of(context).pop(false);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Re-authentication failed: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Confirm'),
               ),
             ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                passwordController.dispose();
+                Navigator.of(context).pop(false);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await AccountDeletionService.reauthenticateUser(
+                    email: user.email,
+                    password: passwordController.text,
+                  );
+                  passwordController.dispose();
+                  if (context.mounted) {
+                    Navigator.of(context).pop(true);
+                  }
+                } catch (e) {
+                  passwordController.dispose();
+                  if (context.mounted) {
+                    Navigator.of(context).pop(false);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Re-authentication failed: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Confirm'),
+            ),
+          ],
+        ),
       );
       return result ?? false;
     }
@@ -361,7 +364,8 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             // Password Re-authentication
             if (user?.providerData.any(
                   (info) => info.providerId == 'password',
-                ) ?? false) ...[
+                ) ??
+                false) ...[
               Text(
                 'Confirm your password:',
                 style: Theme.of(context).textTheme.titleMedium,
@@ -460,39 +464,39 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   }
 
   Widget _buildDataSummaryCard() => Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Your Data Summary',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            ...(_deletionSummary?.entries.map((entry) {
-                  final icon = _getIconForDataType(entry.key);
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      children: [
-                        Icon(icon, size: 20, color: Colors.grey[600]),
-                        const SizedBox(width: 12),
-                        Text('${entry.value} ${entry.key}'),
-                      ],
-                    ),
-                  );
-                }).toList() ??
-                []),
-            const Divider(),
-            const Text(
-              'All of this data will be permanently deleted.',
-              style: TextStyle(fontStyle: FontStyle.italic, color: Colors.red),
-            ),
-          ],
-        ),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your Data Summary',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 12),
+          ...(_deletionSummary?.entries.map((entry) {
+                final icon = _getIconForDataType(entry.key);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(icon, size: 20, color: Colors.grey[600]),
+                      const SizedBox(width: 12),
+                      Text('${entry.value} ${entry.key}'),
+                    ],
+                  ),
+                );
+              }).toList() ??
+              []),
+          const Divider(),
+          const Text(
+            'All of this data will be permanently deleted.',
+            style: TextStyle(fontStyle: FontStyle.italic, color: Colors.red),
+          ),
+        ],
       ),
-    );
+    ),
+  );
 
   IconData _getIconForDataType(String dataType) {
     switch (dataType) {

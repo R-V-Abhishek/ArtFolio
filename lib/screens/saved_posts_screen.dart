@@ -16,22 +16,18 @@ class SavedPostsScreen extends StatefulWidget {
 
 class _SavedPostsScreenState extends State<SavedPostsScreen> {
   final _savedPostsService = SavedPostsService.instance;
-  
+
   @override
   Widget build(BuildContext context) {
     final s = Scale(context);
-    
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Saved Posts'),
-      ),
+      appBar: AppBar(title: const Text('Saved Posts')),
       body: StreamBuilder<List<Post>>(
         stream: _savedPostsService.streamSavedPosts(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -49,7 +45,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
             child: ListView.separated(
               padding: EdgeInsets.all(s.size(8)),
               itemCount: posts.length,
-              separatorBuilder: (context, index) => SizedBox(height: s.size(12)),
+              separatorBuilder: (context, index) =>
+                  SizedBox(height: s.size(12)),
               itemBuilder: (context, index) {
                 final post = posts[index];
                 return PostCard(
@@ -66,7 +63,7 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
 
   Widget _buildEmptyWidget() {
     final s = Scale(context);
-    
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(s.size(24)),
@@ -81,16 +78,16 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
             SizedBox(height: s.size(16)),
             Text(
               'No Saved Posts',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.grey[600],
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(color: Colors.grey[600]),
             ),
             SizedBox(height: s.size(8)),
             Text(
               'Posts you save will appear here',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[500],
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: s.size(24)),
@@ -109,31 +106,27 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
 
   Widget _buildErrorWidget(String error) {
     final s = Scale(context);
-    
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(s.size(24)),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: s.size(64),
-              color: Colors.red[400],
-            ),
+            Icon(Icons.error_outline, size: s.size(64), color: Colors.red[400]),
             SizedBox(height: s.size(16)),
             Text(
               'Something went wrong',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.red[600],
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(color: Colors.red[600]),
             ),
             SizedBox(height: s.size(8)),
             Text(
               'Failed to load saved posts',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: s.size(16)),

@@ -10,7 +10,6 @@ import 'storage_service.dart';
 
 /// Exception thrown when account deletion requires recent authentication
 class RecentLoginRequiredException implements Exception {
-
   const RecentLoginRequiredException(
     this.message, {
     required this.originalException,
@@ -454,8 +453,7 @@ class AccountDeletionService {
           throw Exception('Google sign-in was cancelled');
         }
 
-        final googleAuth =
-            await googleUser.authentication;
+        final googleAuth = await googleUser.authentication;
         credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
           idToken: googleAuth.idToken,

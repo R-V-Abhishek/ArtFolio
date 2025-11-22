@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import '../services/firestore_image_service.dart';
 
 class FirestoreImage extends StatefulWidget {
-
   const FirestoreImage({
     super.key,
     required this.imageId,
@@ -108,20 +107,20 @@ class _FirestoreImageState extends State<FirestoreImage> {
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
-      errorBuilder: (context, error, stackTrace) => widget.errorWidget ??
-            Container(
-              width: widget.width,
-              height: widget.height,
-              color: Colors.red.shade100,
-              child: const Center(child: Icon(Icons.error, color: Colors.red)),
-            ),
+      errorBuilder: (context, error, stackTrace) =>
+          widget.errorWidget ??
+          Container(
+            width: widget.width,
+            height: widget.height,
+            color: Colors.red.shade100,
+            child: const Center(child: Icon(Icons.error, color: Colors.red)),
+          ),
     );
   }
 }
 
 // Helper widget for displaying base64 images directly
 class Base64Image extends StatelessWidget {
-
   const Base64Image({
     super.key,
     required this.base64Data,

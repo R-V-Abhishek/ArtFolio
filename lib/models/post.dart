@@ -8,7 +8,6 @@ enum PostVisibility { public, private, sponsorsOnly, followersOnly }
 
 // Model for location data
 class PostLocation {
-
   PostLocation({
     this.city,
     this.state,
@@ -18,12 +17,12 @@ class PostLocation {
   });
 
   factory PostLocation.fromMap(Map<String, dynamic> map) => PostLocation(
-      city: map['city'],
-      state: map['state'],
-      country: map['country'],
-      latitude: map['latitude']?.toDouble(),
-      longitude: map['longitude']?.toDouble(),
-    );
+    city: map['city'],
+    state: map['state'],
+    country: map['country'],
+    latitude: map['latitude']?.toDouble(),
+    longitude: map['longitude']?.toDouble(),
+  );
   final String? city;
   final String? state;
   final String? country;
@@ -31,17 +30,16 @@ class PostLocation {
   final double? longitude;
 
   Map<String, dynamic> toMap() => {
-      'city': city,
-      'state': state,
-      'country': country,
-      'latitude': latitude,
-      'longitude': longitude,
-    };
+    'city': city,
+    'state': state,
+    'country': country,
+    'latitude': latitude,
+    'longitude': longitude,
+  };
 }
 
 // Model for collaboration details
 class CollaborationInfo {
-
   CollaborationInfo({
     required this.collaboratorIds,
     this.sponsorId,
@@ -49,27 +47,29 @@ class CollaborationInfo {
     this.sponsorshipDetails,
   });
 
-  factory CollaborationInfo.fromMap(Map<String, dynamic> map) => CollaborationInfo(
-      collaboratorIds: List<String>.from(map['collaboratorIds'] ?? []),
-      sponsorId: map['sponsorId'],
-      isSponsored: map['isSponsored'] ?? false,
-      sponsorshipDetails: map['sponsorshipDetails'],
-    );
+  factory CollaborationInfo.fromMap(Map<String, dynamic> map) =>
+      CollaborationInfo(
+        collaboratorIds: List<String>.from(map['collaboratorIds'] ?? []),
+        sponsorId: map['sponsorId'],
+        isSponsored: map['isSponsored'] ?? false,
+        sponsorshipDetails: map['sponsorshipDetails'],
+      );
   final List<String> collaboratorIds;
   final String? sponsorId;
   final bool isSponsored;
   final String? sponsorshipDetails;
 
   Map<String, dynamic> toMap() => {
-      'collaboratorIds': collaboratorIds,
-      'sponsorId': sponsorId,
-      'isSponsored': isSponsored,
-      'sponsorshipDetails': sponsorshipDetails,
-    };
+    'collaboratorIds': collaboratorIds,
+    'sponsorId': sponsorId,
+    'isSponsored': isSponsored,
+    'sponsorshipDetails': sponsorshipDetails,
+  };
 }
 
 // Enhanced Post model
-class Post { // Last like/comment time
+class Post {
+  // Last like/comment time
 
   Post({
     required this.id,
@@ -103,48 +103,48 @@ class Post { // Last like/comment time
 
   // Create Post from Firestore document
   factory Post.fromMap(Map<String, dynamic> map, String documentId) => Post(
-      id: documentId,
-      userId: map['userId'] ?? '',
-      type: PostType.values.firstWhere(
-        (e) => e.name == map['type'],
-        orElse: () => PostType.image,
-      ),
-      mediaUrl: map['mediaUrl'],
-      mediaUrls: map['mediaUrls'] != null
-          ? List<String>.from(map['mediaUrls'])
-          : null,
-      caption: map['caption'] ?? '',
-      description: map['description'],
-      skills: List<String>.from(map['skills'] ?? []),
-      tags: List<String>.from(map['tags'] ?? []),
-      timestamp: (map['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate(),
-      visibility: PostVisibility.values.firstWhere(
-        (e) => e.name == map['visibility'],
-        orElse: () => PostVisibility.public,
-      ),
-      likesCount: map['likesCount'] ?? 0,
-      commentsCount: map['commentsCount'] ?? 0,
-      sharesCount: map['sharesCount'] ?? 0,
-      viewsCount: map['viewsCount'] ?? 0,
-      likedBy: List<String>.from(map['likedBy'] ?? []),
-      location: map['location'] != null
-          ? PostLocation.fromMap(map['location'])
-          : null,
-      collaboration: map['collaboration'] != null
-          ? CollaborationInfo.fromMap(map['collaboration'])
-          : null,
-      duration: map['duration'],
-      thumbnailUrl: map['thumbnailUrl'],
-      aspectRatio: map['aspectRatio']?.toDouble(),
-      allowComments: map['allowComments'] ?? true,
-      allowSharing: map['allowSharing'] ?? true,
-      isPinned: map['isPinned'] ?? false,
-      demographics: map['demographics'] != null
-          ? Map<String, int>.from(map['demographics'])
-          : null,
-      lastEngagement: (map['lastEngagement'] as Timestamp?)?.toDate(),
-    );
+    id: documentId,
+    userId: map['userId'] ?? '',
+    type: PostType.values.firstWhere(
+      (e) => e.name == map['type'],
+      orElse: () => PostType.image,
+    ),
+    mediaUrl: map['mediaUrl'],
+    mediaUrls: map['mediaUrls'] != null
+        ? List<String>.from(map['mediaUrls'])
+        : null,
+    caption: map['caption'] ?? '',
+    description: map['description'],
+    skills: List<String>.from(map['skills'] ?? []),
+    tags: List<String>.from(map['tags'] ?? []),
+    timestamp: (map['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    updatedAt: (map['updatedAt'] as Timestamp?)?.toDate(),
+    visibility: PostVisibility.values.firstWhere(
+      (e) => e.name == map['visibility'],
+      orElse: () => PostVisibility.public,
+    ),
+    likesCount: map['likesCount'] ?? 0,
+    commentsCount: map['commentsCount'] ?? 0,
+    sharesCount: map['sharesCount'] ?? 0,
+    viewsCount: map['viewsCount'] ?? 0,
+    likedBy: List<String>.from(map['likedBy'] ?? []),
+    location: map['location'] != null
+        ? PostLocation.fromMap(map['location'])
+        : null,
+    collaboration: map['collaboration'] != null
+        ? CollaborationInfo.fromMap(map['collaboration'])
+        : null,
+    duration: map['duration'],
+    thumbnailUrl: map['thumbnailUrl'],
+    aspectRatio: map['aspectRatio']?.toDouble(),
+    allowComments: map['allowComments'] ?? true,
+    allowSharing: map['allowSharing'] ?? true,
+    isPinned: map['isPinned'] ?? false,
+    demographics: map['demographics'] != null
+        ? Map<String, int>.from(map['demographics'])
+        : null,
+    lastEngagement: (map['lastEngagement'] as Timestamp?)?.toDate(),
+  );
 
   // Create Post from Firestore DocumentSnapshot
   factory Post.fromSnapshot(DocumentSnapshot snapshot) {
@@ -235,36 +235,36 @@ class Post { // Last like/comment time
 
   // Convert Post to Map for Firestore
   Map<String, dynamic> toMap() => {
-      'id': id,
-      'userId': userId,
-      'type': type.name,
-      'mediaUrl': mediaUrl,
-      'mediaUrls': mediaUrls,
-      'caption': caption,
-      'description': description,
-      'skills': skills,
-      'tags': tags,
-      'timestamp': Timestamp.fromDate(timestamp),
-      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
-      'visibility': visibility.name,
-      'likesCount': likesCount,
-      'commentsCount': commentsCount,
-      'sharesCount': sharesCount,
-      'viewsCount': viewsCount,
-      'likedBy': likedBy,
-      'location': location?.toMap(),
-      'collaboration': collaboration?.toMap(),
-      'duration': duration,
-      'thumbnailUrl': thumbnailUrl,
-      'aspectRatio': aspectRatio,
-      'allowComments': allowComments,
-      'allowSharing': allowSharing,
-      'isPinned': isPinned,
-      'demographics': demographics,
-      'lastEngagement': lastEngagement != null
-          ? Timestamp.fromDate(lastEngagement!)
-          : null,
-    };
+    'id': id,
+    'userId': userId,
+    'type': type.name,
+    'mediaUrl': mediaUrl,
+    'mediaUrls': mediaUrls,
+    'caption': caption,
+    'description': description,
+    'skills': skills,
+    'tags': tags,
+    'timestamp': Timestamp.fromDate(timestamp),
+    'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
+    'visibility': visibility.name,
+    'likesCount': likesCount,
+    'commentsCount': commentsCount,
+    'sharesCount': sharesCount,
+    'viewsCount': viewsCount,
+    'likedBy': likedBy,
+    'location': location?.toMap(),
+    'collaboration': collaboration?.toMap(),
+    'duration': duration,
+    'thumbnailUrl': thumbnailUrl,
+    'aspectRatio': aspectRatio,
+    'allowComments': allowComments,
+    'allowSharing': allowSharing,
+    'isPinned': isPinned,
+    'demographics': demographics,
+    'lastEngagement': lastEngagement != null
+        ? Timestamp.fromDate(lastEngagement!)
+        : null,
+  };
 
   // Copy with method for updating posts
   Post copyWith({
@@ -296,34 +296,34 @@ class Post { // Last like/comment time
     Map<String, int>? demographics,
     DateTime? lastEngagement,
   }) => Post(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      type: type ?? this.type,
-      mediaUrl: mediaUrl ?? this.mediaUrl,
-      mediaUrls: mediaUrls ?? this.mediaUrls,
-      caption: caption ?? this.caption,
-      description: description ?? this.description,
-      skills: skills ?? this.skills,
-      tags: tags ?? this.tags,
-      timestamp: timestamp ?? this.timestamp,
-      updatedAt: updatedAt ?? this.updatedAt,
-      visibility: visibility ?? this.visibility,
-      likesCount: likesCount ?? this.likesCount,
-      commentsCount: commentsCount ?? this.commentsCount,
-      sharesCount: sharesCount ?? this.sharesCount,
-      viewsCount: viewsCount ?? this.viewsCount,
-      likedBy: likedBy ?? this.likedBy,
-      location: location ?? this.location,
-      collaboration: collaboration ?? this.collaboration,
-      duration: duration ?? this.duration,
-      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
-      aspectRatio: aspectRatio ?? this.aspectRatio,
-      allowComments: allowComments ?? this.allowComments,
-      allowSharing: allowSharing ?? this.allowSharing,
-      isPinned: isPinned ?? this.isPinned,
-      demographics: demographics ?? this.demographics,
-      lastEngagement: lastEngagement ?? this.lastEngagement,
-    );
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    type: type ?? this.type,
+    mediaUrl: mediaUrl ?? this.mediaUrl,
+    mediaUrls: mediaUrls ?? this.mediaUrls,
+    caption: caption ?? this.caption,
+    description: description ?? this.description,
+    skills: skills ?? this.skills,
+    tags: tags ?? this.tags,
+    timestamp: timestamp ?? this.timestamp,
+    updatedAt: updatedAt ?? this.updatedAt,
+    visibility: visibility ?? this.visibility,
+    likesCount: likesCount ?? this.likesCount,
+    commentsCount: commentsCount ?? this.commentsCount,
+    sharesCount: sharesCount ?? this.sharesCount,
+    viewsCount: viewsCount ?? this.viewsCount,
+    likedBy: likedBy ?? this.likedBy,
+    location: location ?? this.location,
+    collaboration: collaboration ?? this.collaboration,
+    duration: duration ?? this.duration,
+    thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+    aspectRatio: aspectRatio ?? this.aspectRatio,
+    allowComments: allowComments ?? this.allowComments,
+    allowSharing: allowSharing ?? this.allowSharing,
+    isPinned: isPinned ?? this.isPinned,
+    demographics: demographics ?? this.demographics,
+    lastEngagement: lastEngagement ?? this.lastEngagement,
+  );
 
   // Helper methods for engagement
   bool isLikedBy(String userId) => likedBy.contains(userId);
@@ -340,7 +340,8 @@ class Post { // Last like/comment time
       mediaUrl ?? (mediaUrls?.isNotEmpty ?? false ? mediaUrls!.first : '');
 
   @override
-  String toString() => 'Post(id: $id, userId: $userId, type: $type, caption: $caption, skills: $skills, timestamp: $timestamp, likesCount: $likesCount)';
+  String toString() =>
+      'Post(id: $id, userId: $userId, type: $type, caption: $caption, skills: $skills, timestamp: $timestamp, likesCount: $likesCount)';
 
   @override
   bool operator ==(Object other) {
@@ -356,10 +357,11 @@ class Post { // Last like/comment time
   }
 
   @override
-  int get hashCode => id.hashCode ^
-        userId.hashCode ^
-        type.hashCode ^
-        mediaUrl.hashCode ^
-        caption.hashCode ^
-        timestamp.hashCode;
+  int get hashCode =>
+      id.hashCode ^
+      userId.hashCode ^
+      type.hashCode ^
+      mediaUrl.hashCode ^
+      caption.hashCode ^
+      timestamp.hashCode;
 }

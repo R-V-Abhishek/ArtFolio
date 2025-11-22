@@ -73,9 +73,7 @@ ThemeData _baseLight(ColorScheme scheme) {
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: AppColors.primary.withValues(alpha: 0.15),
-        ),
+        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.15)),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(

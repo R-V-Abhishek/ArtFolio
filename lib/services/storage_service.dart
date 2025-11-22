@@ -76,11 +76,11 @@ class StorageService {
     File? file,
     Uint8List? data,
   }) async => uploadImage(
-      fileName: fileName,
-      folder: 'profiles/$userId',
-      file: file,
-      data: data,
-    );
+    fileName: fileName,
+    folder: 'profiles/$userId',
+    file: file,
+    data: data,
+  );
 
   // Upload post image
   Future<String> uploadPostImage({
@@ -89,11 +89,11 @@ class StorageService {
     File? file,
     Uint8List? data,
   }) async => uploadImage(
-      fileName: fileName,
-      folder: 'posts/$postId',
-      file: file,
-      data: data,
-    );
+    fileName: fileName,
+    folder: 'posts/$postId',
+    file: file,
+    data: data,
+  );
 
   // Upload artwork image
   Future<String> uploadArtworkImage({
@@ -103,11 +103,11 @@ class StorageService {
     File? file,
     Uint8List? data,
   }) async => uploadImage(
-      fileName: fileName,
-      folder: 'artworks/$artistId/$artworkId',
-      file: file,
-      data: data,
-    );
+    fileName: fileName,
+    folder: 'artworks/$artistId/$artworkId',
+    file: file,
+    data: data,
+  );
 
   // Delete image by URL
   Future<void> deleteImage(String downloadURL) async {
@@ -217,6 +217,8 @@ class StorageService {
       );
     }
 
-    return uploadTask.snapshotEvents.map((snapshot) => snapshot.bytesTransferred / snapshot.totalBytes);
+    return uploadTask.snapshotEvents.map(
+      (snapshot) => snapshot.bytesTransferred / snapshot.totalBytes,
+    );
   }
 }

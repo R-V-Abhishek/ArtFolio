@@ -4,7 +4,11 @@ import '../models/post.dart';
 import '../widgets/post_card.dart';
 
 class PostDetailScreen extends StatefulWidget {
-  const PostDetailScreen({super.key, required this.posts, this.initialIndex = 0});
+  const PostDetailScreen({
+    super.key,
+    required this.posts,
+    this.initialIndex = 0,
+  });
   final List<Post> posts;
   final int initialIndex;
 
@@ -27,7 +31,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ctx = _initialItemKey.currentContext;
       if (ctx != null) {
-        Scrollable.ensureVisible(ctx, duration: const Duration(milliseconds: 1));
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 1),
+        );
       }
     });
   }
@@ -85,30 +92,33 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 ScaffoldMessenger.of(context)
                   ..clearSnackBars()
                   ..showSnackBar(
-                  SnackBar(
-                    content: const Text('Post hidden'),
-                    action: SnackBarAction(
-                      label: 'Undo',
-                      onPressed: () {
-                        if (!mounted) return;
-                        setState(() {
-                          final insertAt = removedIndex.clamp(0, _posts.length);
-                          _posts.insert(insertAt, removed);
-                        });
-                        // Ensure the restored item is visible
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          final ctx = key?.currentContext;
-                          if (ctx != null) {
-                            Scrollable.ensureVisible(
-                              ctx,
-                              duration: const Duration(milliseconds: 200),
+                    SnackBar(
+                      content: const Text('Post hidden'),
+                      action: SnackBarAction(
+                        label: 'Undo',
+                        onPressed: () {
+                          if (!mounted) return;
+                          setState(() {
+                            final insertAt = removedIndex.clamp(
+                              0,
+                              _posts.length,
                             );
-                          }
-                        });
-                      },
+                            _posts.insert(insertAt, removed);
+                          });
+                          // Ensure the restored item is visible
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            final ctx = key?.currentContext;
+                            if (ctx != null) {
+                              Scrollable.ensureVisible(
+                                ctx,
+                                duration: const Duration(milliseconds: 200),
+                              );
+                            }
+                          });
+                        },
+                      ),
                     ),
-                  ),
-                );
+                  );
               },
             ),
           );

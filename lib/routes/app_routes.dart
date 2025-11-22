@@ -1,5 +1,4 @@
 class AppRoutes {
-
   // Prevent instantiation
   AppRoutes._();
   // Auth routes

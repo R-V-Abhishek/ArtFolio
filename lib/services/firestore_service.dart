@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../models/app_notification.dart';
 import '../models/comment.dart';
 import '../models/post.dart';
+import '../models/profile_readme.dart';
 import '../models/role_models.dart';
 import '../models/user.dart';
 import 'error_handler_service.dart';
@@ -33,11 +34,13 @@ class FirestoreService {
   CollectionReference get _notificationsCollection =>
       _db.collection('notifications');
   CollectionReference get _postReportsCollection =>
-    _db.collection('postReports');
+      _db.collection('postReports');
   CollectionReference _commentsCollection(String postId) =>
       _postsCollection.doc(postId).collection('comments');
   CollectionReference get _userFollowsCollection =>
       _db.collection('userFollows');
+  CollectionReference get _profileReadmesCollection =>
+      _db.collection('profileReadmes');
 
   // ===== USER MANAGEMENT =====
 
@@ -416,9 +419,7 @@ class FirestoreService {
           .where('userId', isEqualTo: userId)
           .get();
 
-      final items = querySnapshot.docs
-          .map(Post.fromSnapshot)
-          .toList()
+      final items = querySnapshot.docs.map(Post.fromSnapshot).toList()
         ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
       return items;
     } catch (e) {
@@ -430,33 +431,35 @@ class FirestoreService {
 
   Stream<List<Comment>> streamComments(String postId, {int limit = 100}) {
     final currentUserId = _auth.currentUser?.uid;
-    
-    return _commentsCollection(postId)
-        .orderBy('createdAt', descending: false)
-        .limit(limit)
-        .snapshots()
-        .map((snap) {
-          final comments = snap.docs.map((d) => Comment.fromSnapshot(d, postId)).toList();
-          
-          // Sort comments: user's comments first, then others by newest first
-          if (currentUserId != null) {
-            comments.sort((a, b) {
-              final aIsUser = a.userId == currentUserId;
-              final bIsUser = b.userId == currentUserId;
-              
-              if (aIsUser && !bIsUser) return -1; // User's comment comes first
-              if (!aIsUser && bIsUser) return 1;  // Other user's comment comes after
-              
-              // If both are user's comments or both are others', sort by newest first
-              return b.createdAt.compareTo(a.createdAt);
-            });
-          } else {
-            // If no current user, just sort by newest first
-            comments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          }
-          
-          return comments;
+
+    return _commentsCollection(
+      postId,
+    ).orderBy('createdAt', descending: false).limit(limit).snapshots().map((
+      snap,
+    ) {
+      final comments = snap.docs
+          .map((d) => Comment.fromSnapshot(d, postId))
+          .toList();
+
+      // Sort comments: user's comments first, then others by newest first
+      if (currentUserId != null) {
+        comments.sort((a, b) {
+          final aIsUser = a.userId == currentUserId;
+          final bIsUser = b.userId == currentUserId;
+
+          if (aIsUser && !bIsUser) return -1; // User's comment comes first
+          if (!aIsUser && bIsUser) return 1; // Other user's comment comes after
+
+          // If both are user's comments or both are others', sort by newest first
+          return b.createdAt.compareTo(a.createdAt);
         });
+      } else {
+        // If no current user, just sort by newest first
+        comments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      }
+
+      return comments;
+    });
   }
 
   Future<void> addComment({
@@ -837,9 +840,11 @@ class FirestoreService {
 
       return querySnapshot.docs
           .map(Post.fromSnapshot)
-          .where((post) => post.tags.any(
-            (postTag) => postTag.toLowerCase() == tag.toLowerCase(),
-          ))
+          .where(
+            (post) => post.tags.any(
+              (postTag) => postTag.toLowerCase() == tag.toLowerCase(),
+            ),
+          )
           .toList();
     } catch (e) {
       throw Exception('Failed to search posts by tag: $e');
@@ -855,13 +860,14 @@ class FirestoreService {
           .get();
 
       final tagFrequency = <String, int>{};
-      
+
       for (final doc in querySnapshot.docs) {
         final post = Post.fromSnapshot(doc);
         for (final tag in post.tags) {
           final normalizedTag = tag.toLowerCase().trim();
           if (normalizedTag.isNotEmpty) {
-            tagFrequency[normalizedTag] = (tagFrequency[normalizedTag] ?? 0) + 1;
+            tagFrequency[normalizedTag] =
+                (tagFrequency[normalizedTag] ?? 0) + 1;
           }
         }
       }
@@ -870,10 +876,7 @@ class FirestoreService {
       final sortedTags = tagFrequency.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
 
-      return sortedTags
-          .take(limit)
-          .map((entry) => entry.key)
-          .toList();
+      return sortedTags.take(limit).map((entry) => entry.key).toList();
     } catch (e) {
       throw Exception('Failed to get popular tags: $e');
     }
@@ -940,11 +943,12 @@ class FirestoreService {
   // ===== NOTIFICATIONS =====
 
   /// Stream unread count badge for current user
-  Stream<int> unreadNotificationsCountStream(String userId) => _notificationsCollection
-        .where('userId', isEqualTo: userId)
-        .where('read', isEqualTo: false)
-        .snapshots()
-        .map((snap) => snap.size);
+  Stream<int> unreadNotificationsCountStream(String userId) =>
+      _notificationsCollection
+          .where('userId', isEqualTo: userId)
+          .where('read', isEqualTo: false)
+          .snapshots()
+          .map((snap) => snap.size);
 
   /// Fetch notifications page for a user ordered by createdAt desc
   Future<NotificationsPage> getNotificationsPage({
@@ -1214,9 +1218,7 @@ class FirestoreService {
         likedBy: ['audience1'],
         duration: 45, // 45 seconds
         aspectRatio: 1.5, // 600/400
-        collaboration: CollaborationInfo(
-          collaboratorIds: ['studio123'],
-        ),
+        collaboration: CollaborationInfo(collaboratorIds: ['studio123']),
         lastEngagement: now.subtract(const Duration(hours: 3)),
       ),
 
@@ -1387,6 +1389,47 @@ class FirestoreService {
       );
     } catch (e) {
       debugPrint('❌ Storage integration test failed: $e');
+    }
+  }
+
+  // ===== PROFILE README =====
+
+  /// Save a profile README for a user
+  Future<void> saveProfileReadme(ProfileReadme readme) async {
+    try {
+      await _profileReadmesCollection.doc(readme.userId).set(readme.toMap());
+    } catch (e) {
+      throw ErrorHandlerService.handleFirebaseException(e);
+    }
+  }
+
+  /// Get a user's profile README
+  Future<ProfileReadme?> getProfileReadme(String userId) async {
+    try {
+      final doc = await _profileReadmesCollection.doc(userId).get();
+      if (!doc.exists) return null;
+      return ProfileReadme.fromSnapshot(doc);
+    } catch (e) {
+      throw ErrorHandlerService.handleFirebaseException(e);
+    }
+  }
+
+  /// Check if user has a profile README
+  Future<bool> hasProfileReadme(String userId) async {
+    try {
+      final doc = await _profileReadmesCollection.doc(userId).get();
+      return doc.exists;
+    } catch (e) {
+      throw ErrorHandlerService.handleFirebaseException(e);
+    }
+  }
+
+  /// Delete a user's profile README
+  Future<void> deleteProfileReadme(String userId) async {
+    try {
+      await _profileReadmesCollection.doc(userId).delete();
+    } catch (e) {
+      throw ErrorHandlerService.handleFirebaseException(e);
     }
   }
 }

@@ -159,9 +159,7 @@ class _FollowListScreenState extends State<FollowListScreen> {
                                 errorBuilder: (c, e, s) => fallback,
                               );
                             }
-                            return FirestoreImage(
-                              imageId: ref,
-                            );
+                            return FirestoreImage(imageId: ref);
                           },
                         ),
                       ),

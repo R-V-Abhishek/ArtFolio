@@ -117,5 +117,6 @@ class FirestoreImageService {
   }
 
   // Convert base64 to Uint8List for display
-  Uint8List base64ToUint8List(String base64String) => base64Decode(base64String);
+  Uint8List base64ToUint8List(String base64String) =>
+      base64Decode(base64String);
 }

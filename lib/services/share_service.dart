@@ -13,11 +13,11 @@ import 'firestore_image_service.dart';
 class ShareService {
   // Private constructor
   ShareService._();
-  
+
   // Singleton instance
   static final ShareService _instance = ShareService._();
   static ShareService get instance => _instance;
-  
+
   // Image service for handling Firestore images
   final FirestoreImageService _imageService = FirestoreImageService();
 
@@ -26,7 +26,7 @@ class ShareService {
     try {
       final username = author?.username ?? 'Unknown Artist';
       final content = _buildPostShareContent(post, username);
-      
+
       // Try to download and share with image if available
       if (post.mediaUrl != null && post.mediaUrl!.isNotEmpty) {
         try {
@@ -50,16 +50,18 @@ class ShareService {
         try {
           final imageFiles = <XFile>[];
           final tempFiles = <File>[];
-          
+
           // Try to download up to 3 images for gallery posts
           for (var i = 0; i < post.mediaUrls!.length && i < 3; i++) {
-            final imageFile = await _downloadImageForSharing(post.mediaUrls![i]);
+            final imageFile = await _downloadImageForSharing(
+              post.mediaUrls![i],
+            );
             if (imageFile != null) {
               imageFiles.add(XFile(imageFile.path));
               tempFiles.add(imageFile);
             }
           }
-          
+
           if (imageFiles.isNotEmpty) {
             await Share.shareXFiles(
               imageFiles,
@@ -77,7 +79,7 @@ class ShareService {
           debugPrint('Failed to download gallery images for sharing: $e');
         }
       }
-      
+
       // Fall back to text-only sharing
       await Share.share(
         content,
@@ -92,11 +94,13 @@ class ShareService {
   Future<void> shareProfile(User user) async {
     try {
       final content = _buildProfileShareContent(user);
-      
+
       // Try to download and share with profile image if available
       if (user.profilePictureUrl.isNotEmpty) {
         try {
-          final imageFile = await _downloadImageForSharing(user.profilePictureUrl);
+          final imageFile = await _downloadImageForSharing(
+            user.profilePictureUrl,
+          );
           if (imageFile != null) {
             await Share.shareXFiles(
               [XFile(imageFile.path)],
@@ -112,7 +116,7 @@ class ShareService {
           debugPrint('Failed to download profile image for sharing: $e');
         }
       }
-      
+
       // Fall back to text-only sharing
       await Share.share(
         content,
@@ -127,7 +131,7 @@ class ShareService {
   Future<void> shareApp({String? referralCode}) async {
     try {
       final content = _buildAppShareContent(referralCode);
-      
+
       await Share.share(
         content,
         subject: 'Join me on ArtFolio - The Creative Network!',
@@ -138,10 +142,7 @@ class ShareService {
   }
 
   /// Share with custom content
-  Future<void> shareCustom({
-    required String text,
-    String? subject,
-  }) async {
+  Future<void> shareCustom({required String text, String? subject}) async {
     try {
       await Share.share(text, subject: subject);
     } catch (e) {
@@ -151,13 +152,12 @@ class ShareService {
 
   /// Build content string for sharing a post
   String _buildPostShareContent(Post post, String username) {
-    final buffer = StringBuffer()
-      ..writeln('🎨 Amazing artwork by @$username');
-    
+    final buffer = StringBuffer()..writeln('🎨 Amazing artwork by @$username');
+
     if (post.caption.isNotEmpty) {
       // Limit caption length for sharing - shorter for better readability
-      final caption = post.caption.length > 150 
-          ? '${post.caption.substring(0, 150)}...' 
+      final caption = post.caption.length > 150
+          ? '${post.caption.substring(0, 150)}...'
           : post.caption;
       buffer
         ..writeln()
@@ -171,7 +171,10 @@ class ShareService {
         buffer.write('Skills: ${post.skills.take(2).join(', ')}');
       }
       if (post.tags.isNotEmpty) {
-        final tags = post.tags.take(3).map((tag) => tag.startsWith('#') ? tag : '#$tag').join(' ');
+        final tags = post.tags
+            .take(3)
+            .map((tag) => tag.startsWith('#') ? tag : '#$tag')
+            .join(' ');
         buffer.write(' $tags');
       }
     }
@@ -179,8 +182,10 @@ class ShareService {
     buffer
       ..writeln()
       ..writeln()
-      ..writeln('Discover more amazing artists on ArtFolio!'); // Removed app store link since you don't have one
-    
+      ..writeln(
+        'Discover more amazing artists on ArtFolio!',
+      ); // Removed app store link since you don't have one
+
     return buffer.toString();
   }
 
@@ -188,10 +193,10 @@ class ShareService {
   String _buildProfileShareContent(User user) {
     final buffer = StringBuffer()
       ..writeln('👨‍🎨 Check out @${user.username}\'s profile!');
-    
+
     if (user.bio.isNotEmpty) {
-      final bio = user.bio.length > 120 
-          ? '${user.bio.substring(0, 120)}...' 
+      final bio = user.bio.length > 120
+          ? '${user.bio.substring(0, 120)}...'
           : user.bio;
       buffer
         ..writeln()
@@ -204,7 +209,7 @@ class ShareService {
       ..writeln('${_formatRole(user.role)} on ArtFolio')
       ..writeln()
       ..writeln('Connect with amazing artists on ArtFolio!');
-    
+
     return buffer.toString();
   }
 
@@ -213,22 +218,24 @@ class ShareService {
     final buffer = StringBuffer()
       ..writeln('🎨 Join me on ArtFolio - The Creative Network!')
       ..writeln()
-      ..writeln('Where artists, students, sponsors, and art enthusiasts connect:')
+      ..writeln(
+        'Where artists, students, sponsors, and art enthusiasts connect:',
+      )
       ..writeln('• Showcase amazing artwork')
       ..writeln('• Connect with fellow creatives')
       ..writeln('• Discover new talent')
       ..writeln('• Share artistic journeys');
-    
+
     if (referralCode != null) {
       buffer
         ..writeln()
         ..writeln('Use my referral code: $referralCode');
     }
-    
+
     buffer
       ..writeln()
       ..writeln('Download ArtFolio today!');
-    
+
     return buffer.toString();
   }
 
@@ -265,7 +272,7 @@ class ShareService {
           return null;
         }
       }
-      
+
       // Handle regular URLs including Firebase Storage URLs
       final response = await http.get(Uri.parse(imageUrl));
       if (response.statusCode == 200) {
@@ -289,7 +296,7 @@ class ShareService {
         } else if (imageUrl.contains('.webp')) {
           extension = '.webp';
         }
-        
+
         final fileName = 'artfolio_share_$timestamp$extension';
         final file = File('${tempDir.path}/$fileName');
         await file.writeAsBytes(response.bodyBytes);

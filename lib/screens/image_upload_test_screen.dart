@@ -136,221 +136,219 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-        title: const Text('Firebase Storage Test'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Instructions
+    appBar: AppBar(
+      title: const Text('Firebase Storage Test'),
+      backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+    ),
+    body: SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Instructions
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Firestore Image Storage Test',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'This screen tests Firestore image storage functionality by uploading and displaying images using base64 encoding.',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Image selection buttons
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _selectImage(ImageSource.gallery),
+                  icon: const Icon(Icons.photo_library),
+                  label: const Text('Gallery'),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _selectImage(ImageSource.camera),
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('Camera'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Selected image preview
+          if (_selectedImage != null) ...[
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Firestore Image Storage Test',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                      'Selected Image',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'This screen tests Firestore image storage functionality by uploading and displaying images using base64 encoding.',
+                    Container(
+                      height: 200,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _isUploading ? null : _uploadImage,
+                      icon: _isUploading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.cloud_upload),
+                      label: Text(
+                        _isUploading ? 'Uploading...' : 'Upload to Firestore',
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 16),
+          ],
 
-            // Image selection buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _selectImage(ImageSource.gallery),
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text('Gallery'),
-                  ),
+          // Upload progress
+          if (_isUploading) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Text(
+                      'Upload Progress',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(value: _uploadProgress),
+                    const SizedBox(height: 8),
+                    Text('${(_uploadProgress * 100).toStringAsFixed(1)}%'),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _selectImage(ImageSource.camera),
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Camera'),
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 16),
+          ],
 
-            // Selected image preview
-            if (_selectedImage != null) ...[
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Selected Image',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 200,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(8),
+          // Uploaded image display
+          if (_uploadedImageId != null) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Uploaded Image',
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                        IconButton(
+                          onPressed: _deleteUploadedImage,
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          tooltip: 'Delete from Firestore',
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 200,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.green),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: _isUploading ? null : _uploadImage,
-                        icon: _isUploading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.cloud_upload),
-                        label: Text(
-                          _isUploading ? 'Uploading...' : 'Upload to Firestore',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // Upload progress
-            if (_isUploading) ...[
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Upload Progress',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(value: _uploadProgress),
-                      const SizedBox(height: 8),
-                      Text('${(_uploadProgress * 100).toStringAsFixed(1)}%'),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // Uploaded image display
-            if (_uploadedImageId != null) ...[
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Uploaded Image',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          IconButton(
-                            onPressed: _deleteUploadedImage,
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            tooltip: 'Delete from Firestore',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 200,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.green),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: FirestoreImage(
-                            imageId: _uploadedImageId!,
-                            errorWidget: ColoredBox(
-                              color: Colors.red.shade100,
-                              child: const Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.error, color: Colors.red),
-                                    Text('Failed to load image'),
-                                  ],
-                                ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: FirestoreImage(
+                          imageId: _uploadedImageId!,
+                          errorWidget: ColoredBox(
+                            color: Colors.red.shade100,
+                            child: const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.error, color: Colors.red),
+                                  Text('Failed to load image'),
+                                ],
                               ),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      SelectableText(
-                        'Image ID: $_uploadedImageId',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 8),
+                    SelectableText(
+                      'Image ID: $_uploadedImageId',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-            ],
-
-            // Error message
-            if (_errorMessage != null) ...[
-              Card(
-                color: Colors.red.shade50,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.error, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text(
-                            'Error',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
+            const SizedBox(height: 16),
           ],
-        ),
+
+          // Error message
+          if (_errorMessage != null) ...[
+            Card(
+              color: Colors.red.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.error, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text(
+                          'Error',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
-    );
+    ),
+  );
 }

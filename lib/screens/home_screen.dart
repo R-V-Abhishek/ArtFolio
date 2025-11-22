@@ -125,7 +125,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   break;
                 case 'test_storage':
-                  unawaited(Navigator.of(context).pushNamed(AppRoutes.imageUploadTest));
+                  unawaited(
+                    Navigator.of(context).pushNamed(AppRoutes.imageUploadTest),
+                  );
                   break;
               }
             },

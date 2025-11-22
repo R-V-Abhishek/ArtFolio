@@ -189,17 +189,17 @@ class _ImprovedFeedScreenState extends State<ImprovedFeedScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-        title: const Text('Feed'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => _loadPosts(isRefresh: true),
-          ),
-        ],
-      ),
-      body: _buildBody(),
-    );
+    appBar: AppBar(
+      title: const Text('Feed'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: () => _loadPosts(isRefresh: true),
+        ),
+      ],
+    ),
+    body: _buildBody(),
+  );
 
   Widget _buildBody() {
     if (_isLoading && _posts.isEmpty) {
@@ -260,116 +260,116 @@ class _ImprovedFeedScreenState extends State<ImprovedFeedScreen> {
   );
 
   Widget _buildEmptyWidget() => Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.post_add_outlined, size: 64, color: Colors.grey),
-          const SizedBox(height: 16),
-          Text('No posts yet', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Be the first to share something amazing!',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              // Navigate to create post screen
-            },
-            child: const Text('Create Post'),
-          ),
-        ],
-      ),
-    );
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.post_add_outlined, size: 64, color: Colors.grey),
+        const SizedBox(height: 16),
+        Text('No posts yet', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Text(
+          'Be the first to share something amazing!',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: () {
+            // Navigate to create post screen
+          },
+          child: const Text('Create Post'),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildPostCard(Post post) => Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // User info header
-          ListTile(
-            leading: const CircleAvatar(
-              child: Text('U'), // Replace with actual user data when available
-            ),
-            title: Text(
-              'User ${post.userId.substring(0, 8)}...',
-            ), // Placeholder until user data is available
-            subtitle: Text(_formatTimestamp(post.timestamp)),
-            trailing: IconButton(
-              icon: const Icon(Icons.more_vert),
-              onPressed: () => _showPostOptions(post),
+    margin: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // User info header
+        ListTile(
+          leading: const CircleAvatar(
+            child: Text('U'), // Replace with actual user data when available
+          ),
+          title: Text(
+            'User ${post.userId.substring(0, 8)}...',
+          ), // Placeholder until user data is available
+          subtitle: Text(_formatTimestamp(post.timestamp)),
+          trailing: IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: () => _showPostOptions(post),
+          ),
+        ),
+
+        // Post content
+        if (post.caption.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              post.caption,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
 
-          // Post content
-          if (post.caption.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                post.caption,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ),
-
-          // Post image with caching
-          if (post.mediaUrl?.isNotEmpty ?? false)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: CachedNetworkImage(
-                  imageUrl: post.mediaUrl!,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  placeholder: ShimmerLoading(
-                    isLoading: true,
-                    child: Container(height: 200, color: Colors.grey),
-                  ),
-                  errorWidget: Container(
-                    height: 200,
-                    color: Colors.grey[300],
-                    child: const Center(
-                      child: Icon(Icons.broken_image, size: 48),
-                    ),
+        // Post image with caching
+        if (post.mediaUrl?.isNotEmpty ?? false)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: CachedNetworkImage(
+                imageUrl: post.mediaUrl!,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                placeholder: ShimmerLoading(
+                  isLoading: true,
+                  child: Container(height: 200, color: Colors.grey),
+                ),
+                errorWidget: Container(
+                  height: 200,
+                  color: Colors.grey[300],
+                  child: const Center(
+                    child: Icon(Icons.broken_image, size: 48),
                   ),
                 ),
               ),
             ),
-
-          // Action buttons
-          OverflowBar(
-            children: [
-              TextButton.icon(
-                onPressed: () => _handleLike(post),
-                icon: Icon(
-                  post.likedBy.contains('currentUserId')
-                      ? Icons.favorite
-                      : Icons.favorite_border,
-                  color: post.likedBy.contains('currentUserId')
-                      ? Colors.red
-                      : null,
-                ),
-                label: Text('${post.likesCount}'),
-              ),
-              TextButton.icon(
-                onPressed: () => _navigateToComments(post),
-                icon: const Icon(Icons.comment_outlined),
-                label: Text('${post.commentsCount}'),
-              ),
-              TextButton.icon(
-                onPressed: () => _sharePost(post),
-                icon: const Icon(Icons.share_outlined),
-                label: const Text('Share'),
-              ),
-            ],
           ),
-        ],
-      ),
-    );
+
+        // Action buttons
+        OverflowBar(
+          children: [
+            TextButton.icon(
+              onPressed: () => _handleLike(post),
+              icon: Icon(
+                post.likedBy.contains('currentUserId')
+                    ? Icons.favorite
+                    : Icons.favorite_border,
+                color: post.likedBy.contains('currentUserId')
+                    ? Colors.red
+                    : null,
+              ),
+              label: Text('${post.likesCount}'),
+            ),
+            TextButton.icon(
+              onPressed: () => _navigateToComments(post),
+              icon: const Icon(Icons.comment_outlined),
+              label: Text('${post.commentsCount}'),
+            ),
+            TextButton.icon(
+              onPressed: () => _sharePost(post),
+              icon: const Icon(Icons.share_outlined),
+              label: const Text('Share'),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
 
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
@@ -426,7 +426,7 @@ class _ImprovedFeedScreenState extends State<ImprovedFeedScreen> {
     try {
       await ShareService.instance.sharePost(post);
       await _firestoreService.incrementPostShares(post.id);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Post shared successfully!')),
@@ -434,9 +434,9 @@ class _ImprovedFeedScreenState extends State<ImprovedFeedScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to share post: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to share post: $e')));
       }
     }
   }

@@ -288,21 +288,22 @@ class _AuthScreenState extends State<AuthScreen> {
                                   labelText: 'Password',
                                   prefixIcon: const Icon(Icons.lock_outline),
                                   suffixIcon: StatefulBuilder(
-                                    builder: (context, setIconState) => IconButton(
-                                        tooltip: 'Show/Hide password',
-                                        icon: Icon(
-                                          _obscurePassword
-                                              ? Icons.visibility
-                                              : Icons.visibility_off,
+                                    builder: (context, setIconState) =>
+                                        IconButton(
+                                          tooltip: 'Show/Hide password',
+                                          icon: Icon(
+                                            _obscurePassword
+                                                ? Icons.visibility
+                                                : Icons.visibility_off,
+                                          ),
+                                          onPressed: () {
+                                            setState(
+                                              () => _obscurePassword =
+                                                  !_obscurePassword,
+                                            );
+                                            setIconState(() {});
+                                          },
                                         ),
-                                        onPressed: () {
-                                          setState(
-                                            () => _obscurePassword =
-                                                !_obscurePassword,
-                                          );
-                                          setIconState(() {});
-                                        },
-                                      ),
                                   ),
                                 ),
                                 obscureText: _obscurePassword,
