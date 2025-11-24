@@ -689,6 +689,56 @@ class FirestoreService {
     }
   }
 
+  // Get explore posts (diverse, trending content from all users)
+  Future<List<Post>> getExplorePosts({int limit = 100}) async {
+    try {
+      // Fetch all public posts (not just recent ones)
+      final querySnapshot = await _postsCollection
+          .where('visibility', isEqualTo: 'public')
+          .orderBy('timestamp', descending: true)
+          .limit(limit)
+          .get();
+
+      return querySnapshot.docs.map(Post.fromSnapshot).toList();
+    } catch (e) {
+      throw Exception('Failed to get explore posts: $e');
+    }
+  }
+
+  // Get posts by multiple skills (OR query simulation)
+  Future<List<Post>> getPostsBySkills(
+    List<String> skills, {
+    int limit = 50,
+  }) async {
+    try {
+      if (skills.isEmpty) {
+        return getExplorePosts(limit: limit);
+      }
+
+      // Fetch posts for each skill and combine
+      final allPosts = <String, Post>{};
+
+      for (final skill in skills.take(5)) {
+        // Limit to 5 skills to avoid too many queries
+        final querySnapshot = await _postsCollection
+            .where('skills', arrayContains: skill)
+            .where('visibility', isEqualTo: 'public')
+            .orderBy('timestamp', descending: true)
+            .limit(limit ~/ skills.length)
+            .get();
+
+        for (final doc in querySnapshot.docs) {
+          final post = Post.fromSnapshot(doc);
+          allPosts[post.id] = post;
+        }
+      }
+
+      return allPosts.values.toList();
+    } catch (e) {
+      throw Exception('Failed to get posts by skills: $e');
+    }
+  }
+
   // Get posts by skill tags
   Future<List<Post>> getPostsBySkill(String skill) async {
     try {
@@ -754,6 +804,88 @@ class FirestoreService {
       }
     } catch (e) {
       throw Exception('Failed to toggle post like: $e');
+    }
+  }
+
+  // Give or remove kudos on a post
+  Future<void> togglePostKudos(
+    String postId,
+    String userId,
+    String? kudosType,
+  ) async {
+    try {
+      final postRef = _postsCollection.doc(postId);
+      final postSnapshot = await postRef.get();
+
+      if (!postSnapshot.exists) {
+        throw Exception('Post not found');
+      }
+
+      final postData = postSnapshot.data()! as Map<String, dynamic>;
+      final kudosGivenBy = Map<String, String>.from(
+        postData['kudosGivenBy'] ?? {},
+      );
+      final kudosByType = Map<String, int>.from(postData['kudosByType'] ?? {});
+      final ownerId = (postData['userId'] as String?) ?? '';
+
+      // Check if user already gave kudos
+      final existingKudosType = kudosGivenBy[userId];
+
+      if (kudosType == null) {
+        // Remove kudos
+        if (existingKudosType != null) {
+          kudosGivenBy.remove(userId);
+          kudosByType[existingKudosType] =
+              (kudosByType[existingKudosType] ?? 1) - 1;
+          if (kudosByType[existingKudosType]! <= 0) {
+            kudosByType.remove(existingKudosType);
+          }
+        }
+      } else {
+        // Add or change kudos
+        if (existingKudosType != null) {
+          // User is changing their kudos type
+          kudosByType[existingKudosType] =
+              (kudosByType[existingKudosType] ?? 1) - 1;
+          if (kudosByType[existingKudosType]! <= 0) {
+            kudosByType.remove(existingKudosType);
+          }
+        }
+        kudosGivenBy[userId] = kudosType;
+        kudosByType[kudosType] = (kudosByType[kudosType] ?? 0) + 1;
+      }
+
+      // Calculate total kudos count
+      final totalCount = kudosByType.values.fold<int>(
+        0,
+        (acc, value) => acc + value,
+      );
+
+      await postRef.update({
+        'kudosGivenBy': kudosGivenBy,
+        'kudosByType': kudosByType,
+        'kudosCount': totalCount,
+        'lastEngagement': FieldValue.serverTimestamp(),
+      });
+
+      // Best-effort notification for post owner (skip self-kudos)
+      if (kudosType != null && ownerId.isNotEmpty && ownerId != userId) {
+        try {
+          final giver = await getUser(userId);
+          await _notificationsCollection.add({
+            'userId': ownerId,
+            'type': 'kudos',
+            'postId': postId,
+            'title': '${giver?.username ?? 'Someone'} gave kudos: $kudosType',
+            'createdAt': FieldValue.serverTimestamp(),
+            'read': false,
+          });
+        } catch (_) {
+          // ignore notification failures
+        }
+      }
+    } catch (e) {
+      throw Exception('Failed to toggle post kudos: $e');
     }
   }
 

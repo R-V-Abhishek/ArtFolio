@@ -41,7 +41,7 @@ dependencies:
   firebase_storage: ^13.0.1 # For image storage
   flutter_screenutil: ^5.9.0
   flutter_svg: ^2.0.10+1
-  google_fonts: ^6.2.1
+  google_fonts: ^6.3.2
   google_sign_in: ^6.1.5
   http: ^1.2.2 # For HTTP requests
   image_cropper: ^11.0.0

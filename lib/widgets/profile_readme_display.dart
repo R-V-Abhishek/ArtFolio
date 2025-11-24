@@ -186,8 +186,9 @@ class ProfileReadmeDisplay extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color:
-            Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+        color: Theme.of(
+          context,
+        ).colorScheme.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border(
           left: BorderSide(
@@ -257,9 +258,7 @@ class ProfileReadmeDisplay extends StatelessWidget {
 
 /// Widget to display images stored in Firestore (base64)
 class _FirestoreImageWidget extends StatefulWidget {
-  const _FirestoreImageWidget({
-    required this.imageId,
-  });
+  const _FirestoreImageWidget({required this.imageId});
 
   final String imageId;
 

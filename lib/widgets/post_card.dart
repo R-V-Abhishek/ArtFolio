@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 
+import '../models/kudos.dart';
 import '../models/post.dart';
 import '../models/user.dart' as model;
 import '../routes/app_routes.dart';
@@ -15,6 +16,7 @@ import '../services/share_service.dart';
 import '../theme/scale.dart';
 import 'comments_sheet.dart';
 import 'firestore_image.dart';
+import 'kudos_sheet.dart';
 import 'share_options_sheet.dart';
 
 class PostCard extends StatefulWidget {
@@ -42,9 +44,10 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
   final _savedPostsService = SavedPostsService.instance;
 
   // Local optimistic state
-  late int _likesCount;
+  late int _kudosCount;
+  late KudosType? _userKudosType; // Type of kudos given by current user
+  late Map<String, int> _kudosByType;
   late int _commentsCount; // Add local comment count
-  late bool _isLiked;
   late bool _isSaved; // Add saved state
   int _currentPage = 0; // for gallery
   model.User? _author;
@@ -62,11 +65,21 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _likesCount = widget.post.likesCount;
+    _kudosCount = widget.post.kudosCount;
+    _kudosByType = Map<String, int>.from(widget.post.kudosByType);
     _commentsCount =
         widget.post.commentsCount; // Initialize local comment count
     final uid = _auth.currentUser?.uid;
-    _isLiked = uid != null && widget.post.likedBy.contains(uid);
+    // Get user's kudos type if they gave one
+    final userKudosTypeName = uid != null
+        ? widget.post.kudosGivenBy[uid]
+        : null;
+    _userKudosType = userKudosTypeName != null
+        ? KudosType.values.firstWhere(
+            (e) => e.name == userKudosTypeName,
+            orElse: () => KudosType.greatComposition,
+          )
+        : null;
     _isSaved = false; // Initialize as false, will be loaded async
     _loadAuthor();
     _loadSavedState();
@@ -74,7 +87,7 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
     _likeOverlayCtrl =
         AnimationController(
           vsync: this,
-          duration: const Duration(milliseconds: 1600),
+          duration: const Duration(milliseconds: 1200),
         )..addStatusListener((status) {
           if (status == AnimationStatus.completed) {
             if (mounted) setState(() => _showOverlay = false);
@@ -82,7 +95,7 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
         });
     _iconBurstCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 450),
+      duration: const Duration(milliseconds: 400),
     );
   }
 
@@ -328,39 +341,83 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _toggleLike() async {
+  Future<void> _showKudosSheet() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Sign in to like posts')));
+        ).showSnackBar(const SnackBar(content: Text('Sign in to give kudos')));
       }
       return;
     }
 
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => KudosSheet(
+        postId: widget.post.id,
+        currentKudosType: _userKudosType,
+        onKudosSelected: _handleKudosSelected,
+      ),
+    );
+  }
+
+  Future<void> _handleKudosSelected(KudosType? kudosType) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+
+    final oldKudosType = _userKudosType;
+    final oldCount = _kudosCount;
+    final oldByType = Map<String, int>.from(_kudosByType);
+
+    // Optimistic update
     setState(() {
-      _isLiked = !_isLiked;
-      _likesCount += _isLiked ? 1 : -1;
-      if (_isLiked) {
-        _startLikeAnimations();
+      if (oldKudosType != null) {
+        // Remove old kudos
+        _kudosByType[oldKudosType.name] =
+            (_kudosByType[oldKudosType.name] ?? 1) - 1;
+        if (_kudosByType[oldKudosType.name]! <= 0) {
+          _kudosByType.remove(oldKudosType.name);
+        }
       }
+
+      if (kudosType != null) {
+        // Add new kudos
+        _kudosByType[kudosType.name] = (_kudosByType[kudosType.name] ?? 0) + 1;
+        _startLikeAnimations(); // Reuse animation for kudos
+      }
+
+      _userKudosType = kudosType;
+      _kudosCount = _kudosByType.values.fold<int>(0, (acc, val) => acc + val);
     });
 
     try {
-      await _firestore.togglePostLike(widget.post.id, uid);
+      await _firestore.togglePostKudos(widget.post.id, uid, kudosType?.name);
     } catch (e) {
       // Revert on failure
       if (mounted) {
         setState(() {
-          _isLiked = !_isLiked;
-          _likesCount += _isLiked ? 1 : -1;
+          _userKudosType = oldKudosType;
+          _kudosCount = oldCount;
+          _kudosByType = oldByType;
         });
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to update like: $e')));
+        ).showSnackBar(SnackBar(content: Text('Failed to update kudos: $e')));
       }
     }
+  }
+
+  void _showKudosBreakdown() {
+    if (_kudosCount == 0) return;
+    showDialog<void>(
+      context: context,
+      builder: (_) => KudosBreakdownDialog(
+        kudosByType: _kudosByType,
+        totalCount: _kudosCount,
+      ),
+    );
   }
 
   Future<void> _toggleFollowAuthor() async {
@@ -629,18 +686,20 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                   children: [
                     IconButton(
                       iconSize: s.size(28),
-                      onPressed: _toggleLike,
+                      onPressed: _showKudosSheet,
                       icon: Icon(
-                        _isLiked ? Icons.favorite : Icons.favorite_border,
-                        color: _isLiked
-                            ? theme.colorScheme.error
+                        _userKudosType != null
+                            ? Icons.auto_awesome
+                            : Icons.auto_awesome_outlined,
+                        color: _userKudosType != null
+                            ? theme.colorScheme.primary
                             : theme.colorScheme.onSurface,
                       ),
                     ),
                     IgnorePointer(
                       child: _MiniBurst(
                         animation: _iconBurstCtrl,
-                        color: theme.colorScheme.error,
+                        color: theme.colorScheme.primary,
                       ),
                     ),
                   ],
@@ -718,11 +777,34 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
         // Counts
         Padding(
           padding: EdgeInsets.symmetric(horizontal: s.size(16)),
-          child: Text(
-            '$_likesCount likes  •  $_commentsCount comments',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: s.font(theme.textTheme.bodyMedium?.fontSize ?? 14),
+          child: GestureDetector(
+            onTap: _kudosCount > 0 ? _showKudosBreakdown : null,
+            child: RichText(
+              text: TextSpan(
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: s.font(theme.textTheme.bodyMedium?.fontSize ?? 14),
+                ),
+                children: [
+                  if (_kudosCount > 0) ...[
+                    TextSpan(
+                      text: '$_kudosCount kudos',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.primary,
+                        decoration: TextDecoration.underline,
+                        decorationColor: theme.colorScheme.primary.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                    ),
+                    const TextSpan(text: '  •  '),
+                  ],
+                  TextSpan(
+                    text: '$_commentsCount comments',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -909,13 +991,8 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onDoubleTap: () {
-        if (!_isLiked) {
-          _toggleLike();
-        } else {
-          _startLikeAnimations();
-        }
-      },
+      // Double tap now shows kudos sheet instead of auto-liking
+      onDoubleTap: _showKudosSheet,
       onTap: _ensureViewIncremented,
       child: AspectRatio(
         aspectRatio: aspect,

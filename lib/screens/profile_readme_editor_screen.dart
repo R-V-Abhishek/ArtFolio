@@ -858,11 +858,7 @@ class _BlockEditorState extends State<_BlockEditor> {
 
 /// Widget to display images stored in Firestore (base64)
 class _FirestoreImageWidget extends StatefulWidget {
-  const _FirestoreImageWidget({
-    super.key,
-    required this.imageId,
-    this.height,
-  });
+  const _FirestoreImageWidget({super.key, required this.imageId, this.height});
 
   final String imageId;
   final double? height;

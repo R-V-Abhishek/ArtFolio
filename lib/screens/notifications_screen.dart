@@ -90,6 +90,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     switch (t) {
       case NotificationType.like:
         return Icons.favorite;
+      case NotificationType.kudos:
+        return Icons.auto_awesome;
       case NotificationType.comment:
         return Icons.mode_comment;
       case NotificationType.share:

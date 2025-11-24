@@ -1055,6 +1055,7 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                     child: _Stat(
                       number: widget.counts['followers'] ?? 0,
                       label: 'Followers',
+                      // De-emphasize follower count (default is false)
                     ),
                   ),
                 ),
@@ -1072,11 +1073,16 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                     child: _Stat(
                       number: widget.counts['following'] ?? 0,
                       label: 'Following',
+                      // De-emphasize following count (default is false)
                     ),
                   ),
                 ),
                 Expanded(
-                  child: _Stat(number: widget.postsCount, label: 'Posts'),
+                  child: _Stat(
+                    number: widget.postsCount,
+                    label: 'Posts',
+                    emphasize: true, // Emphasize post count
+                  ),
                 ),
               ],
             ),
@@ -1423,9 +1429,14 @@ class _PlaceholderTab extends StatelessWidget {
 }
 
 class _Stat extends StatelessWidget {
-  const _Stat({required this.number, required this.label});
+  const _Stat({
+    required this.number,
+    required this.label,
+    this.emphasize = false,
+  });
   final int? number;
   final String label;
+  final bool emphasize; // If true, use larger, bolder style
 
   @override
   Widget build(BuildContext context) {
@@ -1435,15 +1446,25 @@ class _Stat extends StatelessWidget {
       children: [
         Text(
           number?.toString() ?? '-',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
+          style: emphasize
+              ? theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                )
+              : theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 2),
         Text(
           label,
-          style: theme.textTheme.bodySmall,
+          style: emphasize
+              ? theme.textTheme.bodySmall
+              : theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 11,
+                ),
           textAlign: TextAlign.center,
         ),
       ],

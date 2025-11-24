@@ -9,7 +9,7 @@ import '../services/firestore_service.dart';
 import '../services/session_state.dart';
 import '../theme/scale.dart';
 import '../theme/theme.dart';
-import 'feed_screen.dart';
+import 'explore_screen.dart';
 import 'profile_screen.dart';
 import 'search_screen.dart';
 
@@ -155,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: const [
-          FeedScreen(),
+          ExploreScreen(),
           SearchScreen(),
           SizedBox.shrink(), // Create handled via FAB/center action
           ProfileScreen(),
@@ -194,9 +194,9 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Feed',
+            icon: Icon(Icons.explore_outlined),
+            selectedIcon: Icon(Icons.explore),
+            label: 'Explore',
           ),
           NavigationDestination(
             icon: Icon(Icons.search_outlined),

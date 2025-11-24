@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum NotificationType {
   like,
+  kudos,
   comment,
   share,
   follow,

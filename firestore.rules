@@ -62,10 +62,11 @@ service cloud.firestore {
       allow update: if isAuthenticated() && (
         // Owner can update any field
         request.auth.uid == resource.data.userId ||
-        // Any user can update engagement metrics (likes, comments, shares, views)
+        // Any user can update engagement metrics (likes, comments, shares, views, kudos)
         (request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['likesCount', 'commentsCount', 'sharesCount', 'viewsCount', 
-                    'likedBy', 'lastEngagement', 'demographics']))
+                    'likedBy', 'kudosCount', 'kudosByType', 'kudosGivenBy',
+                    'lastEngagement', 'demographics']))
       );
       
       // Allow post owners to delete their posts

@@ -89,6 +89,9 @@ class Post {
     this.sharesCount = 0,
     this.viewsCount = 0,
     this.likedBy = const [],
+    this.kudosCount = 0,
+    this.kudosByType = const {},
+    this.kudosGivenBy = const {},
     this.location,
     this.collaboration,
     this.duration,
@@ -128,6 +131,13 @@ class Post {
     sharesCount: map['sharesCount'] ?? 0,
     viewsCount: map['viewsCount'] ?? 0,
     likedBy: List<String>.from(map['likedBy'] ?? []),
+    kudosCount: map['kudosCount'] ?? 0,
+    kudosByType: map['kudosByType'] != null
+        ? Map<String, int>.from(map['kudosByType'])
+        : {},
+    kudosGivenBy: map['kudosGivenBy'] != null
+        ? Map<String, String>.from(map['kudosGivenBy'])
+        : {},
     location: map['location'] != null
         ? PostLocation.fromMap(map['location'])
         : null,
@@ -215,6 +225,11 @@ class Post {
   final int viewsCount;
   final List<String> likedBy; // User IDs who liked
 
+  // Kudos (professional feedback)
+  final int kudosCount;
+  final Map<String, int> kudosByType; // Count by kudos type name
+  final Map<String, String> kudosGivenBy; // userId -> kudosType mapping
+
   // Location and collaboration
   final PostLocation? location;
   final CollaborationInfo? collaboration;
@@ -252,6 +267,9 @@ class Post {
     'sharesCount': sharesCount,
     'viewsCount': viewsCount,
     'likedBy': likedBy,
+    'kudosCount': kudosCount,
+    'kudosByType': kudosByType,
+    'kudosGivenBy': kudosGivenBy,
     'location': location?.toMap(),
     'collaboration': collaboration?.toMap(),
     'duration': duration,
@@ -285,6 +303,9 @@ class Post {
     int? sharesCount,
     int? viewsCount,
     List<String>? likedBy,
+    int? kudosCount,
+    Map<String, int>? kudosByType,
+    Map<String, String>? kudosGivenBy,
     PostLocation? location,
     CollaborationInfo? collaboration,
     int? duration,
@@ -313,6 +334,9 @@ class Post {
     sharesCount: sharesCount ?? this.sharesCount,
     viewsCount: viewsCount ?? this.viewsCount,
     likedBy: likedBy ?? this.likedBy,
+    kudosCount: kudosCount ?? this.kudosCount,
+    kudosByType: kudosByType ?? this.kudosByType,
+    kudosGivenBy: kudosGivenBy ?? this.kudosGivenBy,
     location: location ?? this.location,
     collaboration: collaboration ?? this.collaboration,
     duration: duration ?? this.duration,
@@ -338,6 +362,42 @@ class Post {
   // Get main media URL (for backward compatibility)
   String get primaryMediaUrl =>
       mediaUrl ?? (mediaUrls?.isNotEmpty ?? false ? mediaUrls!.first : '');
+
+  // Calculate trending score based on engagement and recency
+  // Higher score = more trending
+  double get trendingScore {
+    final now = DateTime.now();
+    final ageInHours = now.difference(timestamp).inHours;
+
+    // Penalize older posts exponentially
+    // Posts older than 7 days get minimal boost
+    final recencyFactor =
+        ageInHours <=
+            168 // 7 days
+        ? 1.0 /
+              (1.0 + ageInHours / 24.0) // Decay over days
+        : 0.1;
+
+    // Engagement score with weighted metrics
+    final engagementScore =
+        (likesCount * 1.0) + // Likes worth 1 point
+        (commentsCount * 3.0) + // Comments worth 3 points (more valuable)
+        (sharesCount * 5.0) + // Shares worth 5 points (most valuable)
+        (kudosCount * 4.0) + // Kudos worth 4 points (professional feedback)
+        (viewsCount * 0.1); // Views worth 0.1 points
+
+    return engagementScore * recencyFactor;
+  }
+
+  // Get total engagement count
+  int get totalEngagement =>
+      likesCount + commentsCount + sharesCount + kudosCount;
+
+  // Check if post is trending (high engagement in last 48 hours)
+  bool get isTrending {
+    final ageInHours = DateTime.now().difference(timestamp).inHours;
+    return ageInHours <= 48 && trendingScore > 10.0;
+  }
 
   @override
   String toString() =>
