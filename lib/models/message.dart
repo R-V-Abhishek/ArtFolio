@@ -13,17 +13,17 @@ class Message {
   });
 
   factory Message.fromMap(Map<String, dynamic> map) => Message(
-        id: map['id'] ?? '',
-        conversationId: map['conversationId'] ?? '',
-        senderId: map['senderId'] ?? '',
-        receiverId: map['receiverId'] ?? '',
-        text: map['text'] ?? '',
-        imageUrl: map['imageUrl'] ?? '',
-        createdAt: map['createdAt'] != null 
-            ? (map['createdAt'] as Timestamp).toDate()
-            : DateTime.now(), // Fallback for pending server timestamp
-        isRead: map['isRead'] ?? false,
-      );
+    id: map['id'] ?? '',
+    conversationId: map['conversationId'] ?? '',
+    senderId: map['senderId'] ?? '',
+    receiverId: map['receiverId'] ?? '',
+    text: map['text'] ?? '',
+    imageUrl: map['imageUrl'] ?? '',
+    createdAt: map['createdAt'] != null
+        ? (map['createdAt'] as Timestamp).toDate()
+        : DateTime.now(), // Fallback for pending server timestamp
+    isRead: map['isRead'] ?? false,
+  );
 
   factory Message.fromSnapshot(DocumentSnapshot snapshot) {
     final data = snapshot.data()! as Map<String, dynamic>;
@@ -40,15 +40,15 @@ class Message {
   final bool isRead;
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'conversationId': conversationId,
-        'senderId': senderId,
-        'receiverId': receiverId,
-        'text': text,
-        'imageUrl': imageUrl,
-        'createdAt': Timestamp.fromDate(createdAt),
-        'isRead': isRead,
-      };
+    'id': id,
+    'conversationId': conversationId,
+    'senderId': senderId,
+    'receiverId': receiverId,
+    'text': text,
+    'imageUrl': imageUrl,
+    'createdAt': Timestamp.fromDate(createdAt),
+    'isRead': isRead,
+  };
 }
 
 class Conversation {
@@ -61,12 +61,12 @@ class Conversation {
   });
 
   factory Conversation.fromMap(Map<String, dynamic> map) => Conversation(
-        id: map['id'] ?? '',
-        participants: List<String>.from(map['participants'] ?? []),
-        lastMessage: map['lastMessage'] ?? '',
-        lastMessageTime: (map['lastMessageTime'] as Timestamp).toDate(),
-        unreadCount: Map<String, int>.from(map['unreadCount'] ?? {}),
-      );
+    id: map['id'] ?? '',
+    participants: List<String>.from(map['participants'] ?? []),
+    lastMessage: map['lastMessage'] ?? '',
+    lastMessageTime: (map['lastMessageTime'] as Timestamp).toDate(),
+    unreadCount: Map<String, int>.from(map['unreadCount'] ?? {}),
+  );
 
   factory Conversation.fromSnapshot(DocumentSnapshot snapshot) {
     final data = snapshot.data()! as Map<String, dynamic>;
@@ -80,10 +80,10 @@ class Conversation {
   final Map<String, int> unreadCount;
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'participants': participants,
-        'lastMessage': lastMessage,
-        'lastMessageTime': Timestamp.fromDate(lastMessageTime),
-        'unreadCount': unreadCount,
-      };
+    'id': id,
+    'participants': participants,
+    'lastMessage': lastMessage,
+    'lastMessageTime': Timestamp.fromDate(lastMessageTime),
+    'unreadCount': unreadCount,
+  };
 }

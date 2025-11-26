@@ -56,6 +56,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   rename: ^3.1.0
+  flutter_launcher_icons: ^0.14.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -104,3 +105,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Flutter Launcher Icons configuration
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/icons/logo.png"
+  adaptive_icon_background: "#155E5C"
+  adaptive_icon_foreground: "assets/icons/logo.png"

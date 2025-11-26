@@ -44,7 +44,9 @@ class _ChatScreenState extends State<ChatScreen> {
         .getOrCreateConversation(widget.otherUser.id);
     setState(() {
       _conversationId = conversationId;
-      _messagesStream = MessagingService.instance.getMessagesStream(conversationId);
+      _messagesStream = MessagingService.instance.getMessagesStream(
+        conversationId,
+      );
       _isLoading = false;
     });
     await MessagingService.instance.markAsRead(conversationId);
@@ -55,7 +57,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty) return;
 
     _controller.clear();
-    
+
     // Send message
     await MessagingService.instance.sendMessage(
       conversationId: _conversationId,
@@ -66,7 +68,9 @@ class _ChatScreenState extends State<ChatScreen> {
     // Force stream to refresh by updating key
     setState(() {
       _streamKey++;
-      _messagesStream = MessagingService.instance.getMessagesStream(_conversationId);
+      _messagesStream = MessagingService.instance.getMessagesStream(
+        _conversationId,
+      );
     });
 
     // Scroll to bottom after sending
@@ -157,7 +161,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
                       final messages = snapshot.data ?? [];
                       if (kDebugMode) {
-                        debugPrint('Loaded ${messages.length} messages for conversation $_conversationId');
+                        debugPrint(
+                          'Loaded ${messages.length} messages for conversation $_conversationId',
+                        );
                       }
 
                       if (messages.isEmpty) {
@@ -171,7 +177,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
                       // Auto-scroll to newest message when data updates
                       WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (_scrollController.hasClients && _scrollController.offset > 0) {
+                        if (_scrollController.hasClients &&
+                            _scrollController.offset > 0) {
                           _scrollController.animateTo(
                             0,
                             duration: const Duration(milliseconds: 300),
@@ -187,13 +194,11 @@ class _ChatScreenState extends State<ChatScreen> {
                         itemCount: messages.length,
                         itemBuilder: (context, index) {
                           final message = messages[index];
-                          final isMe = message.senderId ==
+                          final isMe =
+                              message.senderId ==
                               FirebaseAuth.instance.currentUser?.uid;
 
-                          return _MessageBubble(
-                            message: message,
-                            isMe: isMe,
-                          );
+                          return _MessageBubble(message: message, isMe: isMe);
                         },
                       );
                     },
@@ -224,9 +229,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                 borderSide: BorderSide.none,
                               ),
                               filled: true,
-                              fillColor: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
+                              fillColor: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 8,
@@ -253,10 +258,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildAvatar(BuildContext context) {
     final ref = widget.otherUser.profilePictureUrl.trim();
-    final fallbackText = (widget.otherUser.username.isNotEmpty
-            ? widget.otherUser.username[0]
-            : 'A')
-        .toUpperCase();
+    final fallbackText =
+        (widget.otherUser.username.isNotEmpty
+                ? widget.otherUser.username[0]
+                : 'A')
+            .toUpperCase();
 
     Widget avatar;
     if (ref.isEmpty) {
@@ -283,19 +289,12 @@ class _ChatScreenState extends State<ChatScreen> {
       avatar = FirestoreImage(imageId: ref, width: 40, height: 40);
     }
 
-    return SizedBox(
-      width: 40,
-      height: 40,
-      child: ClipOval(child: avatar),
-    );
+    return SizedBox(width: 40, height: 40, child: ClipOval(child: avatar));
   }
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({
-    required this.message,
-    required this.isMe,
-  });
+  const _MessageBubble({required this.message, required this.isMe});
 
   final Message message;
   final bool isMe;
@@ -305,8 +304,9 @@ class _MessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        mainAxisAlignment:
-            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         children: [
           Container(
             constraints: BoxConstraints(
@@ -339,10 +339,9 @@ class _MessageBubble extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     color: isMe
-                        ? Theme.of(context)
-                            .colorScheme
-                            .onPrimary
-                            .withValues(alpha: 0.7)
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.onPrimary.withValues(alpha: 0.7)
                         : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),

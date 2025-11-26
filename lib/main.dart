@@ -55,28 +55,27 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<ThemeMode>(
-      valueListenable: themeController,
-      builder: (context, mode, _) => ValueListenableBuilder<bool>(
-        valueListenable: SessionState.instance.guestMode,
-        builder: (context, isGuest, _) => ScreenUtilInit(
-          designSize: const Size(375, 812),
-          minTextAdapt: true,
-          builder: (context, child) => MaterialApp(
-            title: 'ArtFolio',
-            debugShowCheckedModeBanner: false,
-            theme: lightTheme,
-            darkTheme: darkTheme,
-            themeMode: mode,
+    valueListenable: themeController,
+    builder: (context, mode, _) => ValueListenableBuilder<bool>(
+      valueListenable: SessionState.instance.guestMode,
+      builder: (context, isGuest, _) => ScreenUtilInit(
+        designSize: const Size(375, 812),
+        minTextAdapt: true,
+        builder: (context, child) => MaterialApp(
+          title: 'ArtFolio',
+          debugShowCheckedModeBanner: false,
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: mode,
 
-            builder: (context, innerChild) => ResponsiveScaffold(
-              child: innerChild ?? const SizedBox.shrink(),
-            ),
+          builder: (context, innerChild) =>
+              ResponsiveScaffold(child: innerChild ?? const SizedBox.shrink()),
 
-            // Use route generator for named navigation
-            onGenerateRoute: RouteGenerator.generateRoute,
-            initialRoute: '/',
-          ),
+          // Use route generator for named navigation
+          onGenerateRoute: RouteGenerator.generateRoute,
+          initialRoute: '/',
         ),
       ),
-    );
+    ),
+  );
 }

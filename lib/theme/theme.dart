@@ -1,26 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Central color palette for the app.
+/// Central color palette for the app - based on ArtFolio logo.
 class AppColors {
-  // Luminous Canvas palette
-  static const Color primary = Color(0xFFFF6B6B); // Coral Red
-  static const Color secondary = Color(0xFF4ECDC4); // Turquoise Mint
-  static const Color accentYellow = Color(0xFFFFD93D); // Bright Golden Yellow
-  static const Color deepTeal = Color(0xFF1A535C); // For icons/app bar text
+  // ArtFolio logo palette
+  static const Color primary = Color(
+    0xFFE85D52,
+  ); // Coral Red (brush stroke & "Folio")
+  static const Color secondary = Color(0xFF60C4AE); // Teal Green (letter "A")
+  static const Color accent = Color(0xFFE2B444); // Golden Yellow (book element)
+  static const Color darkTeal = Color(0xFF155E5C); // Dark Teal (paint drop)
+  static const Color neutral = Color(
+    0xFF3F3029,
+  ); // Brown/Deep Neutral (shading)
 
-  static const Color background = Color(0xFFFAFAFA); // Soft Off-White
+  // Backgrounds inspired by logo warmth
+  static const Color background = Color(
+    0xFFFAF8F5,
+  ); // Warm Off-White with hint of golden
   static const Color surface = Color(0xFFFFFFFF); // Cards
+
+  // Gradient backgrounds for special screens
+  static const Color gradientStart = Color(0xFFF5F9F8); // Light teal tint
+  static const Color gradientEnd = Color(0xFFFFF9F0); // Light golden tint
 
   static const Color textPrimary = Color(0xFF1A1A1A);
   static const Color textSecondary = Color(0xFF555555);
 }
 
 /// Manages light/dark theme mode with [ValueNotifier].
+/// Defaults to system theme preference.
 class ThemeController extends ValueNotifier<ThemeMode> {
-  ThemeController() : super(ThemeMode.light);
+  ThemeController() : super(ThemeMode.system);
+
   void toggle() {
-    value = value == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    if (value == ThemeMode.dark) {
+      value = ThemeMode.light;
+    } else {
+      value = ThemeMode.dark;
+    }
+  }
+
+  ThemeMode get themeMode => value;
+  set themeMode(ThemeMode mode) => value = mode;
+
+  void useSystemTheme() {
+    value = ThemeMode.system;
   }
 }
 
@@ -29,23 +54,23 @@ final ThemeController themeController = ThemeController();
 ThemeData _baseLight(ColorScheme scheme) {
   final textTheme = GoogleFonts.quicksandTextTheme().apply(
     bodyColor: AppColors.textSecondary,
-    displayColor: AppColors.textPrimary,
+    displayColor: AppColors.neutral,
   );
   final display = GoogleFonts.poppinsTextTheme(textTheme).copyWith(
     headlineLarge: GoogleFonts.poppins(
       fontWeight: FontWeight.bold,
       fontSize: 28,
-      color: AppColors.textPrimary,
+      color: AppColors.neutral,
     ),
     headlineMedium: GoogleFonts.poppins(
       fontWeight: FontWeight.w600,
       fontSize: 22,
-      color: AppColors.textPrimary,
+      color: AppColors.neutral,
     ),
     titleLarge: GoogleFonts.poppins(
       fontWeight: FontWeight.w600,
       fontSize: 20,
-      color: AppColors.textPrimary,
+      color: AppColors.neutral,
     ),
     bodyMedium: GoogleFonts.quicksand(
       fontSize: 16,
@@ -61,7 +86,7 @@ ThemeData _baseLight(ColorScheme scheme) {
     textTheme: display,
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
-      foregroundColor: AppColors.deepTeal,
+      foregroundColor: AppColors.darkTeal,
       elevation: 0,
       centerTitle: false,
     ),
@@ -73,7 +98,7 @@ ThemeData _baseLight(ColorScheme scheme) {
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.15)),
+        side: BorderSide(color: AppColors.accent.withValues(alpha: 0.15)),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -86,8 +111,8 @@ ThemeData _baseLight(ColorScheme scheme) {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.deepTeal,
-        side: BorderSide(color: AppColors.deepTeal.withValues(alpha: 0.3)),
+        foregroundColor: AppColors.darkTeal,
+        side: BorderSide(color: AppColors.darkTeal.withValues(alpha: 0.3)),
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
@@ -101,7 +126,7 @@ ThemeData _baseLight(ColorScheme scheme) {
 
 ThemeData _baseDark(ColorScheme scheme) {
   final textTheme = GoogleFonts.quicksandTextTheme().apply(
-    bodyColor: Colors.white70,
+    bodyColor: Colors.white.withValues(alpha: 0.87),
     displayColor: Colors.white,
   );
   final display = GoogleFonts.poppinsTextTheme(textTheme).copyWith(
@@ -113,21 +138,30 @@ ThemeData _baseDark(ColorScheme scheme) {
     headlineMedium: GoogleFonts.poppins(
       fontWeight: FontWeight.w600,
       fontSize: 22,
-      color: Colors.white,
+      color: Colors.white.withValues(alpha: 0.95),
     ),
     titleLarge: GoogleFonts.poppins(
       fontWeight: FontWeight.w600,
       fontSize: 20,
-      color: Colors.white,
+      color: Colors.white.withValues(alpha: 0.95),
     ),
-    bodyMedium: GoogleFonts.quicksand(fontSize: 16, color: Colors.white70),
+    bodyMedium: GoogleFonts.quicksand(
+      fontSize: 16,
+      color: Colors.white.withValues(alpha: 0.87),
+    ),
+    bodySmall: GoogleFonts.quicksand(
+      fontSize: 14,
+      color: Colors.white.withValues(alpha: 0.6),
+    ),
   );
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
     brightness: Brightness.dark,
-    scaffoldBackgroundColor: const Color(0xFF121212),
+    scaffoldBackgroundColor: const Color(
+      0xFF0D1117,
+    ), // Darker for better contrast
     visualDensity: VisualDensity.adaptivePlatformDensity,
     textTheme: display,
     appBarTheme: const AppBarTheme(
@@ -137,14 +171,19 @@ ThemeData _baseDark(ColorScheme scheme) {
       centerTitle: false,
     ),
     inputDecorationTheme: InputDecorationTheme(
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      filled: true,
+      fillColor: const Color(0xFF21262D),
     ),
     cardTheme: CardThemeData(
-      color: const Color(0xFF1E1E1E),
+      color: const Color(0xFF161B22), // Better contrast surface
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+        side: BorderSide(color: AppColors.secondary.withValues(alpha: 0.15)),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -170,16 +209,45 @@ ThemeData _baseDark(ColorScheme scheme) {
   );
 }
 
-/// Light color scheme.
-final ColorScheme _lightScheme = ColorScheme.fromSeed(
-  seedColor: AppColors.primary,
-).copyWith(secondary: AppColors.secondary, surface: AppColors.surface);
+/// Light color scheme based on ArtFolio logo palette.
+final ColorScheme _lightScheme =
+    ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      primary: AppColors.primary,
+      secondary: AppColors.secondary,
+      tertiary: AppColors.accent,
+    ).copyWith(
+      surface: AppColors.surface,
+      primaryContainer: AppColors.secondary.withValues(alpha: 0.2),
+      secondaryContainer: AppColors.accent.withValues(alpha: 0.2),
+    );
 
-/// Dark color scheme.
-final ColorScheme _darkScheme = ColorScheme.fromSeed(
-  seedColor: AppColors.primary,
-  brightness: Brightness.dark,
-);
+/// Dark color scheme based on ArtFolio logo palette with improved contrast.
+final ColorScheme _darkScheme =
+    ColorScheme.fromSeed(
+      seedColor: AppColors.darkTeal,
+      primary: AppColors.primary.withValues(
+        red: 0.95,
+        green: 0.43,
+        blue: 0.38,
+      ), // Lighter coral for dark mode
+      secondary: AppColors.secondary.withValues(
+        red: 0.47,
+        green: 0.83,
+        blue: 0.75,
+      ), // Brighter teal
+      tertiary: AppColors.accent,
+      brightness: Brightness.dark,
+    ).copyWith(
+      surface: const Color(0xFF161B22),
+      surfaceContainerHighest: const Color(0xFF21262D), // Chat message bubbles
+      primaryContainer: const Color(0xFF1C4D49), // Darker teal for containers
+      secondaryContainer: const Color(
+        0xFF2D2419,
+      ), // Darker neutral for containers
+      onSurface: Colors.white.withValues(alpha: 0.87),
+      onSurfaceVariant: Colors.white.withValues(alpha: 0.6),
+    );
 
 ThemeData get lightTheme => _baseLight(_lightScheme);
 ThemeData get darkTheme => _baseDark(_darkScheme);

@@ -55,8 +55,8 @@ class ConversationsScreen extends StatelessWidget {
                   Text(
                     'Please check your connection and try again',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -93,8 +93,8 @@ class ConversationsScreen extends StatelessWidget {
                   Text(
                     'Start a conversation with an artist',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -105,8 +105,9 @@ class ConversationsScreen extends StatelessWidget {
             itemCount: conversations.length,
             itemBuilder: (context, index) {
               final conversation = conversations[index];
-              final otherUserId = conversation.participants
-                  .firstWhere((id) => id != currentUserId);
+              final otherUserId = conversation.participants.firstWhere(
+                (id) => id != currentUserId,
+              );
 
               return FutureBuilder<model.User?>(
                 future: FirestoreService().getUserById(otherUserId),
@@ -208,8 +209,8 @@ class _ConversationTile extends StatelessWidget {
 
   Widget _buildAvatar(BuildContext context) {
     final ref = user.profilePictureUrl.trim();
-    final fallbackText =
-        (user.username.isNotEmpty ? user.username[0] : 'A').toUpperCase();
+    final fallbackText = (user.username.isNotEmpty ? user.username[0] : 'A')
+        .toUpperCase();
 
     Widget avatar;
     if (ref.isEmpty) {
@@ -236,11 +237,7 @@ class _ConversationTile extends StatelessWidget {
       avatar = FirestoreImage(imageId: ref, width: 50, height: 50);
     }
 
-    return SizedBox(
-      width: 50,
-      height: 50,
-      child: ClipOval(child: avatar),
-    );
+    return SizedBox(width: 50, height: 50, child: ClipOval(child: avatar));
   }
 
   String _formatTime(DateTime time) {

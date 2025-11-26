@@ -13,6 +13,7 @@ import '../theme/theme.dart';
 import 'explore_screen.dart';
 import 'profile_screen.dart';
 import 'search_screen.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -106,14 +107,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     return IconButton(
                       tooltip: 'Messages',
                       onPressed: () {
-                        Navigator.of(context).pushNamed(
-                          AppRoutes.conversations,
-                        );
+                        Navigator.of(
+                          context,
+                        ).pushNamed(AppRoutes.conversations);
                       },
                       icon: const Icon(Icons.message_outlined),
                     );
                   }
-                  
+
                   final count = snap.data ?? 0;
                   return Stack(
                     clipBehavior: Clip.none,
@@ -121,9 +122,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       IconButton(
                         tooltip: 'Messages',
                         onPressed: () {
-                          Navigator.of(context).pushNamed(
-                            AppRoutes.conversations,
-                          );
+                          Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.conversations);
                         },
                         icon: const Icon(Icons.message_outlined),
                       ),
@@ -185,7 +186,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   break;
                 case 'test_storage':
-                  unawaited(Navigator.of(context).pushNamed(AppRoutes.imageUploadTest));
+                  unawaited(
+                    Navigator.of(context).pushNamed(AppRoutes.imageUploadTest),
+                  );
                   break;
               }
             },

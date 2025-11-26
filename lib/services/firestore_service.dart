@@ -700,17 +700,19 @@ class FirestoreService {
           .get();
 
       final posts = querySnapshot.docs.map(Post.fromSnapshot).toList();
-      
+
       // If no posts found, try without visibility filter (fallback for old data)
       if (posts.isEmpty) {
-        debugPrint('No posts with visibility filter in explore, trying without filter...');
+        debugPrint(
+          'No posts with visibility filter in explore, trying without filter...',
+        );
         final fallbackQuery = await _postsCollection
             .orderBy('timestamp', descending: true)
             .limit(limit)
             .get();
         return fallbackQuery.docs.map(Post.fromSnapshot).toList();
       }
-      
+
       return posts;
     } catch (e) {
       debugPrint('getExplorePosts error: $e');
@@ -722,7 +724,9 @@ class FirestoreService {
             .get();
         return fallbackQuery.docs.map(Post.fromSnapshot).toList();
       } catch (fallbackError) {
-        throw Exception('Failed to get explore posts: $e (fallback also failed: $fallbackError)');
+        throw Exception(
+          'Failed to get explore posts: $e (fallback also failed: $fallbackError)',
+        );
       }
     }
   }
@@ -949,7 +953,7 @@ class FirestoreService {
 
       final querySnapshot = await query.limit(limit).get();
       final posts = querySnapshot.docs.map(Post.fromSnapshot).toList();
-      
+
       // If no posts found, try without visibility filter (fallback for old data)
       if (posts.isEmpty && lastPostId == null) {
         debugPrint('No posts with visibility filter, trying without filter...');
@@ -971,7 +975,9 @@ class FirestoreService {
             .get();
         return fallbackQuery.docs.map(Post.fromSnapshot).toList();
       } catch (fallbackError) {
-        throw Exception('Failed to get feed posts: $e (fallback also failed: $fallbackError)');
+        throw Exception(
+          'Failed to get feed posts: $e (fallback also failed: $fallbackError)',
+        );
       }
     }
   }

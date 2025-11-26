@@ -45,9 +45,7 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('New Message'),
-      ),
+      appBar: AppBar(title: const Text('New Message')),
       body: Column(
         children: [
           Padding(
@@ -68,30 +66,30 @@ class _NewMessageScreenState extends State<NewMessageScreen> {
             child: _isSearching
                 ? const Center(child: CircularProgressIndicator())
                 : _users.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.search,
-                              size: 64,
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Search for users to message',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search,
+                          size: 64,
+                          color: Theme.of(context).colorScheme.outline,
                         ),
-                      )
-                    : ListView.builder(
-                        itemCount: _users.length,
-                        itemBuilder: (context, index) {
-                          final user = _users[index];
-                          return _UserTile(user: user);
-                        },
-                      ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Search for users to message',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _users.length,
+                    itemBuilder: (context, index) {
+                      final user = _users[index];
+                      return _UserTile(user: user);
+                    },
+                  ),
           ),
         ],
       ),
@@ -128,8 +126,8 @@ class _UserTile extends StatelessWidget {
 
   Widget _buildAvatar(BuildContext context) {
     final ref = user.profilePictureUrl.trim();
-    final fallbackText =
-        (user.username.isNotEmpty ? user.username[0] : 'A').toUpperCase();
+    final fallbackText = (user.username.isNotEmpty ? user.username[0] : 'A')
+        .toUpperCase();
 
     Widget avatar;
     if (ref.isEmpty) {
@@ -156,10 +154,6 @@ class _UserTile extends StatelessWidget {
       avatar = FirestoreImage(imageId: ref, width: 50, height: 50);
     }
 
-    return SizedBox(
-      width: 50,
-      height: 50,
-      child: ClipOval(child: avatar),
-    );
+    return SizedBox(width: 50, height: 50, child: ClipOval(child: avatar));
   }
 }

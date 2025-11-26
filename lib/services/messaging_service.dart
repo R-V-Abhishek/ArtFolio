@@ -18,8 +18,10 @@ class MessagingService {
     final participants = [currentUserId, otherUserId]..sort();
     final conversationId = participants.join('_');
 
-    final conversationDoc =
-        await _firestore.collection('conversations').doc(conversationId).get();
+    final conversationDoc = await _firestore
+        .collection('conversations')
+        .doc(conversationId)
+        .get();
 
     if (!conversationDoc.exists) {
       await _firestore.collection('conversations').doc(conversationId).set({
@@ -88,10 +90,7 @@ class MessagingService {
         'type': 'message',
         'title': 'New message',
         'actorId': currentUserId,
-        'data': {
-          'conversationId': conversationId,
-          'preview': preview,
-        },
+        'data': {'conversationId': conversationId, 'preview': preview},
         'createdAt': FieldValue.serverTimestamp(),
         'read': false,
       });
@@ -129,8 +128,7 @@ class MessagingService {
         .orderBy('lastMessageTime', descending: true)
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs.map(Conversation.fromSnapshot).toList(),
+          (snapshot) => snapshot.docs.map(Conversation.fromSnapshot).toList(),
         );
   }
 
@@ -142,23 +140,26 @@ class MessagingService {
         .orderBy('createdAt', descending: true)
         .snapshots(includeMetadataChanges: true)
         .handleError((error) {
-      if (kDebugMode) {
-        debugPrint('Error loading messages: $error');
-      }
-      // If index is building, try without orderBy
-      return _firestore
-          .collection('messages')
-          .where('conversationId', isEqualTo: conversationId)
-          .snapshots(includeMetadataChanges: true);
-    }).map((snapshot) {
-      if (kDebugMode) {
-        debugPrint('Stream update: ${snapshot.docs.length} messages, fromCache: ${snapshot.metadata.isFromCache}');
-      }
-      final messages = snapshot.docs.map(Message.fromSnapshot).toList();
-      // Sort manually if we couldn't use orderBy
-      messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      return messages;
-    });
+          if (kDebugMode) {
+            debugPrint('Error loading messages: $error');
+          }
+          // If index is building, try without orderBy
+          return _firestore
+              .collection('messages')
+              .where('conversationId', isEqualTo: conversationId)
+              .snapshots(includeMetadataChanges: true);
+        })
+        .map((snapshot) {
+          if (kDebugMode) {
+            debugPrint(
+              'Stream update: ${snapshot.docs.length} messages, fromCache: ${snapshot.metadata.isFromCache}',
+            );
+          }
+          final messages = snapshot.docs.map(Message.fromSnapshot).toList();
+          // Sort manually if we couldn't use orderBy
+          messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return messages;
+        });
   }
 
   // Get total unread count for current user
@@ -168,13 +169,13 @@ class MessagingService {
         .where('participants', arrayContains: currentUserId)
         .snapshots()
         .map((snapshot) {
-      var total = 0;
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final unreadCount = data['unreadCount'] as Map<String, dynamic>?;
-        total += (unreadCount?[currentUserId] as int?) ?? 0;
-      }
-      return total;
-    });
+          var total = 0;
+          for (final doc in snapshot.docs) {
+            final data = doc.data();
+            final unreadCount = data['unreadCount'] as Map<String, dynamic>?;
+            total += (unreadCount?[currentUserId] as int?) ?? 0;
+          }
+          return total;
+        });
   }
 }
