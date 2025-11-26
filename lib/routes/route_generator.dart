@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../models/post.dart';
 import '../screens/auth_screen.dart';
+import '../screens/chat_screen.dart';
+import '../screens/conversations_screen.dart';
 import '../screens/create_post_screen.dart';
 import '../screens/delete_account_screen.dart';
 import '../screens/edit_profile_screen.dart';
 import '../screens/follow_list_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/image_upload_test_screen.dart';
+import '../screens/new_message_screen.dart';
 import '../screens/notifications_screen.dart';
 import '../screens/post_detail_screen.dart';
 import '../screens/profile_screen.dart';
@@ -137,6 +140,28 @@ class RouteGenerator {
       case AppRoutes.savedPosts:
         return MaterialPageRoute(
           builder: (_) => const SavedPostsScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.conversations:
+        return MaterialPageRoute(
+          builder: (_) => const ConversationsScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.chat:
+        final args = settings.arguments as ChatArguments?;
+        if (args == null) {
+          return _errorRoute('Chat requires ChatArguments');
+        }
+        return MaterialPageRoute(
+          builder: (_) => ChatScreen(otherUser: args.otherUser),
+          settings: settings,
+        );
+
+      case AppRoutes.newMessage:
+        return MaterialPageRoute(
+          builder: (_) => const NewMessageScreen(),
           settings: settings,
         );
 

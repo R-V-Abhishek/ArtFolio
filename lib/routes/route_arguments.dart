@@ -1,5 +1,5 @@
 import '../models/post.dart';
-import '../models/user.dart';
+import '../models/user.dart' as model;
 import '../screens/follow_list_screen.dart';
 
 class UserTypeSelectionArguments {
@@ -22,7 +22,7 @@ class ProfileArguments {
 
 class EditProfileArguments {
   EditProfileArguments({required this.user});
-  final User user;
+  final model.User user;
 }
 
 class PostDetailArguments {
@@ -48,4 +48,9 @@ class CommentsArguments {
   CommentsArguments({required this.postId, required this.allowComments});
   final String postId;
   final bool allowComments;
+}
+
+class ChatArguments {
+  ChatArguments({required this.otherUser});
+  final model.User otherUser;
 }

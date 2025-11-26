@@ -6,13 +6,13 @@ import 'package:flutter/material.dart';
 import '../routes/app_routes.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../services/messaging_service.dart';
 import '../services/session_state.dart';
 import '../theme/scale.dart';
 import '../theme/theme.dart';
 import 'explore_screen.dart';
 import 'profile_screen.dart';
 import 'search_screen.dart';
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -85,6 +85,70 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
+          // Messages button with unread count
+          Builder(
+            builder: (context) {
+              final uid = FirebaseAuth.instance.currentUser?.uid;
+              if (uid == null) {
+                return IconButton(
+                  tooltip: 'Messages',
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(AppRoutes.conversations);
+                  },
+                  icon: const Icon(Icons.message_outlined),
+                );
+              }
+              return StreamBuilder<int>(
+                stream: MessagingService.instance.getUnreadCountStream(),
+                builder: (context, snap) {
+                  // Handle errors gracefully
+                  if (snap.hasError) {
+                    return IconButton(
+                      tooltip: 'Messages',
+                      onPressed: () {
+                        Navigator.of(context).pushNamed(
+                          AppRoutes.conversations,
+                        );
+                      },
+                      icon: const Icon(Icons.message_outlined),
+                    );
+                  }
+                  
+                  final count = snap.data ?? 0;
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      IconButton(
+                        tooltip: 'Messages',
+                        onPressed: () {
+                          Navigator.of(context).pushNamed(
+                            AppRoutes.conversations,
+                          );
+                        },
+                        icon: const Icon(Icons.message_outlined),
+                      ),
+                      if (count > 0)
+                        Positioned(
+                          right: s.size(10),
+                          top: s.size(10),
+                          child: Container(
+                            padding: EdgeInsets.all(s.size(4)),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.error,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: BoxConstraints(
+                              minWidth: s.size(10),
+                              minHeight: s.size(10),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Toggle theme',
             onPressed: themeController.toggle,
@@ -94,22 +158,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   : Icons.wb_sunny,
             ),
           ),
-          IconButton(
-            tooltip: isGuest ? 'Sign In' : 'Sign Out',
-            icon: Icon(isGuest ? Icons.login : Icons.logout),
-            onPressed: () async {
-              if (isGuest) {
-                SessionState.instance.exitGuest();
-              } else {
-                await AuthService.instance.signOut();
-              }
-            },
-          ),
           PopupMenuButton<String>(
-            tooltip: 'Test Options',
-            icon: const Icon(Icons.science),
+            tooltip: 'Menu',
+            icon: const Icon(Icons.more_vert),
             onSelected: (value) async {
               switch (value) {
+                case 'logout':
+                  if (isGuest) {
+                    SessionState.instance.exitGuest();
+                  } else {
+                    await AuthService.instance.signOut();
+                  }
+                  break;
                 case 'test_firestore':
                   final firestoreService = FirestoreService();
                   await firestoreService.testFetchPosts();
@@ -125,14 +185,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   break;
                 case 'test_storage':
-                  unawaited(
-                    Navigator.of(context).pushNamed(AppRoutes.imageUploadTest),
-                  );
+                  unawaited(Navigator.of(context).pushNamed(AppRoutes.imageUploadTest));
                   break;
               }
             },
-            itemBuilder: (context) => const [
+            itemBuilder: (context) => [
               PopupMenuItem(
+                value: 'logout',
+                child: ListTile(
+                  leading: Icon(isGuest ? Icons.login : Icons.logout),
+                  title: Text(isGuest ? 'Sign In' : 'Sign Out'),
+                ),
+              ),
+              const PopupMenuItem(
                 value: 'test_firestore',
                 child: ListTile(
                   leading: Icon(Icons.cloud),
@@ -140,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: Text('Fetch posts from database'),
                 ),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'test_storage',
                 child: ListTile(
                   leading: Icon(Icons.cloud_upload),

@@ -699,9 +699,31 @@ class FirestoreService {
           .limit(limit)
           .get();
 
-      return querySnapshot.docs.map(Post.fromSnapshot).toList();
+      final posts = querySnapshot.docs.map(Post.fromSnapshot).toList();
+      
+      // If no posts found, try without visibility filter (fallback for old data)
+      if (posts.isEmpty) {
+        debugPrint('No posts with visibility filter in explore, trying without filter...');
+        final fallbackQuery = await _postsCollection
+            .orderBy('timestamp', descending: true)
+            .limit(limit)
+            .get();
+        return fallbackQuery.docs.map(Post.fromSnapshot).toList();
+      }
+      
+      return posts;
     } catch (e) {
-      throw Exception('Failed to get explore posts: $e');
+      debugPrint('getExplorePosts error: $e');
+      // Fallback: try simple query without visibility filter
+      try {
+        final fallbackQuery = await _postsCollection
+            .orderBy('timestamp', descending: true)
+            .limit(limit)
+            .get();
+        return fallbackQuery.docs.map(Post.fromSnapshot).toList();
+      } catch (fallbackError) {
+        throw Exception('Failed to get explore posts: $e (fallback also failed: $fallbackError)');
+      }
     }
   }
 
@@ -915,6 +937,7 @@ class FirestoreService {
   // Get posts for feed (mixed content, optimized for engagement)
   Future<List<Post>> getFeedPosts({int limit = 20, String? lastPostId}) async {
     try {
+      // Try with visibility filter first
       var query = _postsCollection
           .where('visibility', isEqualTo: 'public')
           .orderBy('timestamp', descending: true);
@@ -925,10 +948,31 @@ class FirestoreService {
       }
 
       final querySnapshot = await query.limit(limit).get();
+      final posts = querySnapshot.docs.map(Post.fromSnapshot).toList();
+      
+      // If no posts found, try without visibility filter (fallback for old data)
+      if (posts.isEmpty && lastPostId == null) {
+        debugPrint('No posts with visibility filter, trying without filter...');
+        final fallbackQuery = await _postsCollection
+            .orderBy('timestamp', descending: true)
+            .limit(limit)
+            .get();
+        return fallbackQuery.docs.map(Post.fromSnapshot).toList();
+      }
 
-      return querySnapshot.docs.map(Post.fromSnapshot).toList();
+      return posts;
     } catch (e) {
-      throw Exception('Failed to get feed posts: $e');
+      debugPrint('getFeedPosts error: $e');
+      // Fallback: try simple query without visibility filter
+      try {
+        final fallbackQuery = await _postsCollection
+            .orderBy('timestamp', descending: true)
+            .limit(limit)
+            .get();
+        return fallbackQuery.docs.map(Post.fromSnapshot).toList();
+      } catch (fallbackError) {
+        throw Exception('Failed to get feed posts: $e (fallback also failed: $fallbackError)');
+      }
     }
   }
 
@@ -1011,6 +1055,18 @@ class FirestoreService {
       return sortedTags.take(limit).map((entry) => entry.key).toList();
     } catch (e) {
       throw Exception('Failed to get popular tags: $e');
+    }
+  }
+
+  // Get user by ID
+  Future<User?> getUserById(String userId) async {
+    try {
+      final doc = await _usersCollection.doc(userId).get();
+      if (!doc.exists) return null;
+      return User.fromSnapshot(doc);
+    } catch (e) {
+      debugPrint('Error fetching user by ID: $e');
+      return null;
     }
   }
 

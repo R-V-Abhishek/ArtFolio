@@ -47,8 +47,8 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     if (_done) return widget.next;
 
-    // Electric Blue -> Coral gradient
-    const electricBlue = Color(0xFF00C6FF);
+    // Luminous Canvas theme colors
+    const turquoiseMint = Color(0xFF4ECDC4);
     const coral = Color(0xFFFF6B6B);
 
     return DecoratedBox(
@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [electricBlue, coral],
+          colors: [turquoiseMint, coral],
         ),
       ),
       child: Center(

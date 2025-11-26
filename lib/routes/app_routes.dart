@@ -27,4 +27,9 @@ class AppRoutes {
   // Utility routes
   static const String comments = '/comments';
   static const String notifications = '/notifications';
+
+  // Messaging routes
+  static const String conversations = '/conversations';
+  static const String chat = '/chat';
+  static const String newMessage = '/new-message';
 }

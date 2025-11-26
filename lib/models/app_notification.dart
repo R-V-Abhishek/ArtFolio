@@ -9,6 +9,7 @@ enum NotificationType {
   collab,
   sponsor,
   orgUpdate,
+  message,
 }
 
 class AppNotification {

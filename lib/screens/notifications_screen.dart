@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 
 import '../models/app_notification.dart';
+import '../routes/app_routes.dart';
+import '../routes/route_arguments.dart';
 import '../services/firestore_service.dart';
 import '../services/share_service.dart';
 
@@ -104,6 +106,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.business_center;
       case NotificationType.orgUpdate:
         return Icons.apartment;
+      case NotificationType.message:
+        return Icons.message;
     }
   }
 
@@ -210,6 +214,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               read: true,
                             ),
                           );
+
+                          // Handle navigation based on notification type
+                          if (n.type == NotificationType.message) {
+                            await _handleMessageNotification(n);
+                          }
                         },
                       );
                     },
@@ -218,6 +227,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
       ),
     );
+  }
+
+  Future<void> _handleMessageNotification(AppNotification notification) async {
+    if (notification.actorId == null) return;
+
+    try {
+      final otherUser = await _firestore.getUserById(notification.actorId!);
+      if (otherUser == null || !mounted) return;
+
+      await Navigator.of(context).pushNamed(
+        AppRoutes.chat,
+        arguments: ChatArguments(otherUser: otherUser),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open chat: $e')),
+        );
+      }
+    }
   }
 
   String _timeAgo(DateTime dt) {
