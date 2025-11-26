@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/message.dart';
 
@@ -141,14 +142,18 @@ class MessagingService {
         .orderBy('createdAt', descending: true)
         .snapshots(includeMetadataChanges: true)
         .handleError((error) {
-      print('Error loading messages: $error');
+      if (kDebugMode) {
+        debugPrint('Error loading messages: $error');
+      }
       // If index is building, try without orderBy
       return _firestore
           .collection('messages')
           .where('conversationId', isEqualTo: conversationId)
           .snapshots(includeMetadataChanges: true);
     }).map((snapshot) {
-      print('Stream update: ${snapshot.docs.length} messages, fromCache: ${snapshot.metadata.isFromCache}');
+      if (kDebugMode) {
+        debugPrint('Stream update: ${snapshot.docs.length} messages, fromCache: ${snapshot.metadata.isFromCache}');
+      }
       final messages = snapshot.docs.map(Message.fromSnapshot).toList();
       // Sort manually if we couldn't use orderBy
       messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));

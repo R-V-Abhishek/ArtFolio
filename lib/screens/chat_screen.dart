@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/message.dart';
@@ -122,7 +123,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
                       // Handle errors (like missing index)
                       if (snapshot.hasError) {
-                        print('Chat screen error: ${snapshot.error}');
+                        if (kDebugMode) {
+                          debugPrint('Chat screen error: ${snapshot.error}');
+                        }
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -153,7 +156,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       }
 
                       final messages = snapshot.data ?? [];
-                      print('Loaded ${messages.length} messages for conversation $_conversationId');
+                      if (kDebugMode) {
+                        debugPrint('Loaded ${messages.length} messages for conversation $_conversationId');
+                      }
 
                       if (messages.isEmpty) {
                         return Center(
