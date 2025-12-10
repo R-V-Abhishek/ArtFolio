@@ -105,7 +105,11 @@ class _FeedScreenState extends State<FeedScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load feed: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text('Could not load feed. Please try again.'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -140,7 +144,11 @@ class _FeedScreenState extends State<FeedScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load more: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text('Could not load more posts. Please try again.'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _loading = false);

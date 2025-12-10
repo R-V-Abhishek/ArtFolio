@@ -25,6 +25,7 @@ class _ChatScreenState extends State<ChatScreen> {
   late Stream<List<Message>>? _messagesStream;
   StreamSubscription<List<Message>>? _streamSubscription;
   List<Message> _messages = [];
+  Timer? _autoRefreshTimer;
 
   @override
   void initState() {
@@ -37,6 +38,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _controller.dispose();
     _scrollController.dispose();
     _streamSubscription?.cancel();
+     _autoRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -65,6 +67,16 @@ class _ChatScreenState extends State<ChatScreen> {
     });
     
     await MessagingService.instance.markAsRead(conversationId);
+
+    // Set up periodic auto-refresh every 2 seconds to fetch new messages
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) {
+        if (!mounted || _conversationId.isEmpty) return;
+        _refreshMessages();
+      },
+    );
   }
 
   Future<void> _refreshMessages() async {

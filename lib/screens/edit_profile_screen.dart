@@ -50,7 +50,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to save profile: $e')));
+      ).showSnackBar(
+        const SnackBar(
+          content: Text('Could not save profile. Please try again.'),
+        ),
+      );
     }
   }
 

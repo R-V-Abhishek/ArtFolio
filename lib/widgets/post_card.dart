@@ -134,7 +134,11 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text('Could not delete this post. Please try again.'),
+          ),
+        );
       }
     }
   }
@@ -217,7 +221,11 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to report: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text('Could not submit your report. Please try again.'),
+          ),
+        );
       }
     }
   }
@@ -332,8 +340,8 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
           _isSaved = !_isSaved;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to ${_isSaved ? 'unsave' : 'save'} post: $e'),
+          const SnackBar(
+            content: Text('Could not update saved posts. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -404,7 +412,11 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
         });
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to update kudos: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text('Could not update kudos. Please try again.'),
+          ),
+        );
       }
     }
   }
@@ -460,7 +472,12 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
         });
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content:
+                Text('Could not update follow status. Please try again.'),
+          ),
+        );
       }
     }
   }
@@ -738,7 +755,10 @@ class _PostCardState extends State<PostCard> with TickerProviderStateMixin {
                   } catch (e) {
                     if (mounted && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to share: $e')),
+                        const SnackBar(
+                          content:
+                              Text('Could not share this post. Please try again.'),
+                        ),
                       );
                     }
                   }

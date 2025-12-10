@@ -54,7 +54,11 @@ class _ProfileReadmeEditorScreenState extends State<ProfileReadmeEditorScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
+      ).showSnackBar(
+        const SnackBar(
+          content: Text('Could not save your About section. Please try again.'),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _saving = false);
@@ -188,7 +192,11 @@ class _ProfileReadmeEditorScreenState extends State<ProfileReadmeEditorScreen> {
       Navigator.of(context).pop(); // Close loading if open
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
+      ).showSnackBar(
+        const SnackBar(
+          content: Text('Could not upload image. Please try again.'),
+        ),
+      );
     }
   }
 
@@ -666,7 +674,7 @@ class _BlockEditorState extends State<_BlockEditor> {
           child: _FirestoreImageWidget(
             key: ValueKey('image_${widget.block.imageUrl}'),
             imageId: widget.block.imageUrl!,
-            height: 150,
+            height: 100,
           ),
         ),
         const SizedBox(height: 8),
@@ -876,6 +884,20 @@ class _FirestoreImageWidgetState extends State<_FirestoreImageWidget> {
   void initState() {
     super.initState();
     _loadImage();
+  }
+
+  @override
+  void didUpdateWidget(_FirestoreImageWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reload image if imageId changed
+    if (oldWidget.imageId != widget.imageId) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+        _base64Data = null;
+      });
+      _loadImage();
+    }
   }
 
   Future<void> _loadImage() async {

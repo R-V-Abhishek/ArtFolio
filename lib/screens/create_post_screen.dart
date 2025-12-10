@@ -420,7 +420,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isUploading = false);
-      _showError('Failed to create post: $e');
+      _showError('Could not create your post. Please try again.');
     }
   }
 

@@ -199,8 +199,9 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to create account: $e'),
+          const SnackBar(
+            content:
+                Text('Could not finish setting up your account. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );

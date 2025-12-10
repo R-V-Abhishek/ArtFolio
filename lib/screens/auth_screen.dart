@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../routes/app_routes.dart';
 import '../services/auth_service.dart';
 import '../services/session_state.dart';
 import '../theme/scale.dart';
@@ -54,7 +55,10 @@ class _AuthScreenState extends State<AuthScreen> {
     } on FirebaseAuthException catch (e) {
       setState(() => _error = AuthService.instance.humanizeAuthError(e));
     } catch (e) {
-      setState(() => _error = 'Failed to send reset email: $e');
+      setState(
+        () => _error =
+            'Could not send reset email. Please check your connection and try again.',
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -83,13 +87,19 @@ class _AuthScreenState extends State<AuthScreen> {
           await _createUserProfile(userCredential.user!);
         }
       }
+      if (mounted && AuthService.instance.currentUser != null) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.splash,
+          (route) => false,
+        );
+      }
     } on FirebaseAuthException catch (e) {
       setState(() {
         _error = AuthService.instance.humanizeAuthError(e);
       });
     } catch (e) {
       setState(() {
-        _error = 'Unexpected error: $e';
+        _error = 'Something went wrong. Please try again.';
       });
     } finally {
       if (mounted) {
@@ -109,14 +119,17 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       final credential = await AuthService.instance.signInWithGoogle();
       if (credential?.user != null) {
-        // Let the AuthStateHandler handle navigation
-        // The auth state change will trigger the proper flow
+        if (!mounted) return;
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.splash,
+          (route) => false,
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google sign-in failed: $e'),
+          const SnackBar(
+            content: Text('Google sign-in did not complete. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -146,10 +159,10 @@ class _AuthScreenState extends State<AuthScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            SvgPicture.asset(
-              'assets/icons/logo.svg',
+            Image.asset(
+              'assets/icons/logo.png',
               height: s.size(28),
-              semanticsLabel: 'ArtFolio',
+              semanticLabel: 'ArtFolio',
             ),
             SizedBox(width: s.size(10)),
             Text(
@@ -163,13 +176,16 @@ class _AuthScreenState extends State<AuthScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            tooltip: 'Toggle theme',
-            onPressed: themeController.toggle,
-            icon: Icon(
-              themeController.value == ThemeMode.dark
-                  ? Icons.nightlight_round
-                  : Icons.wb_sunny,
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: themeController,
+            builder: (context, mode, _) => IconButton(
+              tooltip: 'Toggle theme',
+              onPressed: themeController.toggle,
+              icon: Icon(
+                mode == ThemeMode.dark
+                    ? Icons.nightlight_round
+                    : Icons.wb_sunny,
+              ),
             ),
           ),
         ],

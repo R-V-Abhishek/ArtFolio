@@ -68,7 +68,11 @@ class _FollowListScreenState extends State<FollowListScreen> {
       setState(() => _loading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load: $e')));
+      ).showSnackBar(
+        const SnackBar(
+          content: Text('Could not load users. Please try again.'),
+        ),
+      );
     }
   }
 
@@ -102,7 +106,12 @@ class _FollowListScreenState extends State<FollowListScreen> {
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      ).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Could not update follow status. Please try again.'),
+        ),
+      );
     }
   }
 

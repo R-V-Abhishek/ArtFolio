@@ -144,13 +144,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
-          IconButton(
-            tooltip: 'Toggle theme',
-            onPressed: themeController.toggle,
-            icon: Icon(
-              themeController.value == ThemeMode.dark
-                  ? Icons.nightlight_round
-                  : Icons.wb_sunny,
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: themeController,
+            builder: (context, mode, _) => IconButton(
+              tooltip: 'Toggle theme',
+              onPressed: themeController.toggle,
+              icon: Icon(
+                mode == ThemeMode.dark
+                    ? Icons.nightlight_round
+                    : Icons.wb_sunny,
+              ),
             ),
           ),
         ],

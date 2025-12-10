@@ -104,7 +104,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         unawaited(
           Navigator.of(
             context,
-          ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false),
+          ).pushNamedAndRemoveUntil(AppRoutes.splash, (route) => false),
         );
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -139,8 +139,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete account: $e'),
+          const SnackBar(
+            content:
+                Text('Could not delete your account. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -218,8 +219,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                   if (context.mounted) {
                     Navigator.of(context).pop(false);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Re-authentication failed: $e'),
+                      const SnackBar(
+                        content: Text(
+                          'We could not confirm your identity. Please try again.',
+                        ),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -279,8 +282,10 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                   if (context.mounted) {
                     Navigator.of(context).pop(false);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Re-authentication failed: $e'),
+                      const SnackBar(
+                        content: Text(
+                          'We could not confirm your identity. Please try again.',
+                        ),
                         backgroundColor: Colors.red,
                       ),
                     );

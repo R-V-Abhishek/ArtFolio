@@ -99,7 +99,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update bio: $e')));
+      ).showSnackBar(
+        const SnackBar(
+          content: Text('Could not update bio. Please try again.'),
+        ),
+      );
     }
   }
 
@@ -151,7 +155,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       setState(() => _loading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load profile: $e')));
+      ).showSnackBar(
+        const SnackBar(
+          content: Text('Could not load profile. Please try again.'),
+        ),
+      );
     }
   }
 
@@ -208,7 +216,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      ).showSnackBar(
+        const SnackBar(
+          content: Text('Could not update follow status. Please try again.'),
+        ),
+      );
     }
   }
 
@@ -318,7 +330,10 @@ class _ProfileScreenState extends State<ProfileScreen>
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Failed to share profile: $e')),
+                const SnackBar(
+                  content:
+                      Text('Could not share profile. Please try again.'),
+                ),
               );
             }
           }
@@ -341,14 +356,15 @@ class _ProfileScreenState extends State<ProfileScreen>
         unawaited(
           Navigator.of(
             context,
-          ).pushNamedAndRemoveUntil(AppRoutes.auth, (route) => false),
+          ).pushNamedAndRemoveUntil(AppRoutes.splash, (route) => false),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to sign out: $e'),
+          const SnackBar(
+            content:
+                Text('Could not sign out. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -480,8 +496,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                       } catch (e) {
                         if (mounted && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Failed to share profile: $e'),
+                            const SnackBar(
+                              content: Text(
+                                'Could not share profile. Please try again.',
+                              ),
                             ),
                           );
                         }
@@ -768,7 +786,13 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to update photo: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not update profile photo. Please try again.',
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _updatingPhoto = false);
@@ -804,7 +828,13 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to remove photo: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not remove profile photo. Please try again.',
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _updatingPhoto = false);

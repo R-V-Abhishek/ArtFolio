@@ -42,7 +42,7 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to select image: $e';
+        _errorMessage = 'Could not select image. Please try again.';
       });
     }
   }
@@ -105,7 +105,7 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
     } catch (e) {
       setState(() {
         _isUploading = false;
-        _errorMessage = 'Upload failed: $e';
+        _errorMessage = 'Image upload did not complete. Please try again.';
       });
     }
   }
@@ -129,7 +129,7 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Delete failed: $e';
+        _errorMessage = 'Could not delete the image. Please try again.';
       });
     }
   }

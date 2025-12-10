@@ -65,6 +65,11 @@ class _SearchScreenState extends State<SearchScreen> {
       });
       return;
     }
+
+    // Normalize hashtag queries like "#singing" to "singing" for searching
+    final normalizedQuery = q.startsWith('#') ? q.substring(1).trim() : q;
+    final effectiveQuery = normalizedQuery.isEmpty ? q : normalizedQuery;
+
     setState(() {
       _loading = true;
       _lastQuery = q;
@@ -75,10 +80,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
       if (_searchType == 'posts') {
         futures
-          ..add(_service.searchPosts(q))
+          ..add(_service.searchPosts(effectiveQuery))
           ..add(_service.getReportedPostIdsForCurrentUser());
       } else if (_searchType == 'users') {
-        futures.add(_service.searchUsers(q));
+        futures.add(_service.searchUsers(effectiveQuery));
       } else if (_searchType == 'tags') {
         futures.add(_service.getPopularTags(limit: 50));
       }
@@ -96,7 +101,11 @@ class _SearchScreenState extends State<SearchScreen> {
         } else if (_searchType == 'tags') {
           final allTags = results[0] as List<String>;
           _tagResults = allTags
-              .where((tag) => tag.toLowerCase().contains(q.toLowerCase()))
+              .where(
+                (tag) => tag
+                    .toLowerCase()
+                    .contains(effectiveQuery.toLowerCase()),
+              )
               .toList();
         }
       });
@@ -105,7 +114,11 @@ class _SearchScreenState extends State<SearchScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Search failed: $e')));
+      ).showSnackBar(
+        const SnackBar(
+          content: Text('Search couldn\'t complete. Please try again.'),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }

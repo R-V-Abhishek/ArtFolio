@@ -47,7 +47,11 @@ class _CommentsSheetState extends State<CommentsSheet> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to comment: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text('Could not post your comment. Please try again.'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _sending = false);

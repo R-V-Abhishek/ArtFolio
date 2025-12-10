@@ -74,7 +74,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text('Could not load notifications. Please try again.'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _loadingMore = false);
@@ -126,7 +130,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 if (mounted) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to share app: $e')),
+                      const SnackBar(
+                        content:
+                            Text('Could not share the app. Please try again.'),
+                      ),
                     );
                   }
                 }
@@ -244,7 +251,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to open chat: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open chat. Please try again.'),
+          ),
+        );
       }
     }
   }

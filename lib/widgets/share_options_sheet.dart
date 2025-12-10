@@ -116,7 +116,11 @@ class ShareOptionsSheet extends StatelessWidget {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to share post: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text('Could not share this post. Please try again.'),
+          ),
+        );
       }
     }
   }
@@ -138,7 +142,11 @@ class ShareOptionsSheet extends StatelessWidget {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to share profile: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text('Could not share this profile. Please try again.'),
+          ),
+        );
       }
     }
   }
@@ -158,7 +166,11 @@ class ShareOptionsSheet extends StatelessWidget {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to share app: $e')));
+        ).showSnackBar(
+          const SnackBar(
+            content: Text('Could not share the app. Please try again.'),
+          ),
+        );
       }
     }
   }

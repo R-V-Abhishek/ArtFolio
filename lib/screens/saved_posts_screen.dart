@@ -153,8 +153,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to refresh: $e'),
+          const SnackBar(
+            content: Text('Could not refresh saved posts. Please try again.'),
             backgroundColor: Colors.orange,
           ),
         );

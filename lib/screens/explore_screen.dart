@@ -103,7 +103,9 @@ class _ExploreScreenState extends State<ExploreScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load explore content: $e')),
+          const SnackBar(
+            content: Text('Could not load explore content. Please try again.'),
+          ),
         );
       }
     } finally {
