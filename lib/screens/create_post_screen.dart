@@ -436,16 +436,42 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) => PopScope(
-    canPop: !_hasUnsavedChanges,
+    canPop: false,
     onPopInvokedWithResult: (didPop, result) async {
       if (didPop) return;
-      final navigator = Navigator.of(context);
-      final shouldSave = await _confirmDiscardOrSave();
-      if (shouldSave ?? false) {
+      
+      if (!_hasUnsavedChanges) {
+        Navigator.of(context).pop();
+        return;
+      }
+      
+      final shouldSave = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Leave without posting?'),
+          content: const Text('You have unsaved changes. Save as draft?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Discard'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Save draft'),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldSave == null) return; // User dismissed dialog
+      
+      if (shouldSave) {
         await _saveDraft();
       }
-      // Use navigator captured before await to avoid using context after async gap
-      unawaited(navigator.maybePop());
+      
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
     },
     child: Scaffold(
       // Ensure content shifts for the keyboard on small screens
@@ -550,24 +576,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       _tags.isNotEmpty ||
       _skills.isNotEmpty ||
       _location != null;
-
-  Future<bool?> _confirmDiscardOrSave() async => showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Leave without posting?'),
-      content: const Text('You have unsaved changes. Save as draft?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Discard'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Save draft'),
-        ),
-      ],
-    ),
-  );
 
   Widget _buildMediaPane() {
     final isIdea = _type == PostType.idea;

@@ -36,6 +36,8 @@ void main() async {
     Firebase.app();
   }
 
+  // Note: Firestore offline persistence is enabled by default on Android/iOS
+
   // Ensure Firebase App Check is activated to prevent placeholder token warnings
   try {
     await FirebaseAppCheck.instance.activate(

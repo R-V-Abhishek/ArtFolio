@@ -301,7 +301,7 @@ class _FirestoreImageWidgetState extends State<_FirestoreImageWidget> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Container(
-        height: 200,
+        height: 150,
         color: Colors.grey.shade100,
         child: const Center(child: CircularProgressIndicator()),
       );
@@ -309,7 +309,7 @@ class _FirestoreImageWidgetState extends State<_FirestoreImageWidget> {
 
     if (_error != null || _base64Data == null) {
       return Container(
-        height: 200,
+        height: 150,
         color: Colors.grey.shade300,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -337,14 +337,14 @@ class _FirestoreImageWidgetState extends State<_FirestoreImageWidget> {
         bytes,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => Container(
-          height: 200,
+          height: 150,
           color: Colors.grey.shade300,
           child: const Icon(Icons.broken_image, size: 48),
         ),
       );
     } catch (e) {
       return Container(
-        height: 200,
+        height: 150,
         color: Colors.grey.shade300,
         child: const Icon(Icons.broken_image, size: 48),
       );

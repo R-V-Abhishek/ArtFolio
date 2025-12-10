@@ -126,7 +126,7 @@ class MessagingService {
         .collection('conversations')
         .where('participants', arrayContains: currentUserId)
         .orderBy('lastMessageTime', descending: true)
-        .snapshots()
+        .snapshots(includeMetadataChanges: true)
         .map(
           (snapshot) => snapshot.docs.map(Conversation.fromSnapshot).toList(),
         );
@@ -138,7 +138,7 @@ class MessagingService {
         .collection('messages')
         .where('conversationId', isEqualTo: conversationId)
         .orderBy('createdAt', descending: true)
-        .snapshots(includeMetadataChanges: true)
+        .snapshots(includeMetadataChanges: true) // Include pending writes
         .handleError((error) {
           if (kDebugMode) {
             debugPrint('Error loading messages: $error');
@@ -152,7 +152,9 @@ class MessagingService {
         .map((snapshot) {
           if (kDebugMode) {
             debugPrint(
-              'Stream update: ${snapshot.docs.length} messages, fromCache: ${snapshot.metadata.isFromCache}',
+              'Stream update: ${snapshot.docs.length} messages, '
+              'fromCache: ${snapshot.metadata.isFromCache}, '
+              'hasPendingWrites: ${snapshot.metadata.hasPendingWrites}',
             );
           }
           final messages = snapshot.docs.map(Message.fromSnapshot).toList();

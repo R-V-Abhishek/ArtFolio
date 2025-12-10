@@ -1,13 +1,9 @@
-import 'dart:async';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../routes/app_routes.dart';
-import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/messaging_service.dart';
-import '../services/session_state.dart';
 import '../theme/scale.dart';
 import '../theme/theme.dart';
 import 'explore_screen.dart';
@@ -27,8 +23,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final s = Scale(context);
-    final user = FirebaseAuth.instance.currentUser;
-    final isGuest = SessionState.instance.guestMode.value || user == null;
 
     return Scaffold(
       appBar: AppBar(
@@ -158,65 +152,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? Icons.nightlight_round
                   : Icons.wb_sunny,
             ),
-          ),
-          PopupMenuButton<String>(
-            tooltip: 'Menu',
-            icon: const Icon(Icons.more_vert),
-            onSelected: (value) async {
-              switch (value) {
-                case 'logout':
-                  if (isGuest) {
-                    SessionState.instance.exitGuest();
-                  } else {
-                    await AuthService.instance.signOut();
-                  }
-                  break;
-                case 'test_firestore':
-                  final firestoreService = FirestoreService();
-                  await firestoreService.testFetchPosts();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Firestore test completed! Check console for results.',
-                        ),
-                        backgroundColor: Colors.blue,
-                      ),
-                    );
-                  }
-                  break;
-                case 'test_storage':
-                  unawaited(
-                    Navigator.of(context).pushNamed(AppRoutes.imageUploadTest),
-                  );
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'logout',
-                child: ListTile(
-                  leading: Icon(isGuest ? Icons.login : Icons.logout),
-                  title: Text(isGuest ? 'Sign In' : 'Sign Out'),
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'test_firestore',
-                child: ListTile(
-                  leading: Icon(Icons.cloud),
-                  title: Text('Test Firestore'),
-                  subtitle: Text('Fetch posts from database'),
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'test_storage',
-                child: ListTile(
-                  leading: Icon(Icons.cloud_upload),
-                  title: Text('Test Storage'),
-                  subtitle: Text('Upload images to Firebase'),
-                ),
-              ),
-            ],
           ),
         ],
       ),

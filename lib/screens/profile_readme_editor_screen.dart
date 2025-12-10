@@ -666,7 +666,7 @@ class _BlockEditorState extends State<_BlockEditor> {
           child: _FirestoreImageWidget(
             key: ValueKey('image_${widget.block.imageUrl}'),
             imageId: widget.block.imageUrl!,
-            height: 200,
+            height: 150,
           ),
         ),
         const SizedBox(height: 8),

@@ -22,9 +22,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String _conversationId = '';
-  bool _isLoading = true;
-  Stream<List<Message>>? _messagesStream;
-  int _streamKey = 0; // Key to force stream rebuild
+  late Stream<List<Message>>? _messagesStream;
+  StreamSubscription<List<Message>>? _streamSubscription;
+  List<Message> _messages = [];
 
   @override
   void initState() {
@@ -36,52 +36,132 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    _streamSubscription?.cancel();
     super.dispose();
   }
 
   Future<void> _initConversation() async {
     final conversationId = await MessagingService.instance
         .getOrCreateConversation(widget.otherUser.id);
+    
+    if (!mounted) return;
+    
     setState(() {
       _conversationId = conversationId;
-      _messagesStream = MessagingService.instance.getMessagesStream(
-        conversationId,
-      );
-      _isLoading = false;
     });
+    
+    // Set up the stream and actively listen to it
+    _messagesStream = MessagingService.instance.getMessagesStream(
+      conversationId,
+    );
+    
+    // Subscribe to stream updates
+    _streamSubscription = _messagesStream!.listen((messages) {
+      if (mounted) {
+        setState(() {
+          _messages = messages;
+        });
+      }
+    });
+    
     await MessagingService.instance.markAsRead(conversationId);
+  }
+
+  Future<void> _refreshMessages() async {
+    if (kDebugMode) {
+      debugPrint('Manually refreshing messages...');
+    }
+    // Cancel old subscription
+    await _streamSubscription?.cancel();
+    
+    // Recreate stream and subscription
+    _messagesStream = MessagingService.instance.getMessagesStream(
+      _conversationId,
+    );
+    
+    _streamSubscription = _messagesStream!.listen((messages) {
+      if (mounted) {
+        setState(() {
+          _messages = messages;
+        });
+      }
+    });
   }
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _conversationId.isEmpty) return;
 
     _controller.clear();
 
-    // Send message
+    // Send message - Firestore stream will automatically update both sender and receiver
     await MessagingService.instance.sendMessage(
       conversationId: _conversationId,
       receiverId: widget.otherUser.id,
       text: text,
     );
 
-    // Force stream to refresh by updating key
-    setState(() {
-      _streamKey++;
-      _messagesStream = MessagingService.instance.getMessagesStream(
-        _conversationId,
-      );
-    });
+    // Refresh messages after sending to ensure immediate visibility
+    await _refreshMessages();
 
-    // Scroll to bottom after sending
-    await Future.delayed(const Duration(milliseconds: 100));
+    // Scroll to bottom to show new message
+    _scrollToBottomIfNeeded();
+  }
+
+  void _scrollToBottomIfNeeded() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         0, // Scroll to top since list is reversed
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
       );
     }
+  }
+
+  Widget _buildMessagesList() {
+    // Auto-scroll when new messages arrive
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients &&
+          _scrollController.position.pixels < 100) {
+        _scrollToBottomIfNeeded();
+      }
+    });
+
+    if (_messages.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _refreshMessages,
+        child: ListView(
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: Center(
+                child: Text(
+                  'Start the conversation!',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _refreshMessages,
+      child: ListView.builder(
+        reverse: true,
+        controller: _scrollController,
+        padding: const EdgeInsets.all(16),
+        itemCount: _messages.length,
+        itemBuilder: (context, index) {
+          final message = _messages[index];
+          final isMe =
+              message.senderId == FirebaseAuth.instance.currentUser?.uid;
+
+          return _MessageBubble(message: message, isMe: isMe);
+        },
+      ),
+    );
   }
 
   @override
@@ -111,98 +191,20 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh messages',
+            onPressed: _refreshMessages,
+          ),
+        ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
+      body: Column(
               children: [
                 Expanded(
-                  child: StreamBuilder<List<Message>>(
-                    key: ValueKey(_streamKey), // Force rebuild on new messages
-                    stream: _messagesStream,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      // Handle errors (like missing index)
-                      if (snapshot.hasError) {
-                        if (kDebugMode) {
-                          debugPrint('Chat screen error: ${snapshot.error}');
-                        }
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.hourglass_empty, size: 48),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Setting up messaging...',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'This may take a few minutes.\nPlease wait and refresh.',
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    // Force rebuild to retry
-                                  });
-                                },
-                                child: const Text('Retry'),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      final messages = snapshot.data ?? [];
-                      if (kDebugMode) {
-                        debugPrint(
-                          'Loaded ${messages.length} messages for conversation $_conversationId',
-                        );
-                      }
-
-                      if (messages.isEmpty) {
-                        return Center(
-                          child: Text(
-                            'Start the conversation!',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                        );
-                      }
-
-                      // Auto-scroll to newest message when data updates
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (_scrollController.hasClients &&
-                            _scrollController.offset > 0) {
-                          _scrollController.animateTo(
-                            0,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOut,
-                          );
-                        }
-                      });
-
-                      return ListView.builder(
-                        reverse: true,
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(16),
-                        itemCount: messages.length,
-                        itemBuilder: (context, index) {
-                          final message = messages[index];
-                          final isMe =
-                              message.senderId ==
-                              FirebaseAuth.instance.currentUser?.uid;
-
-                          return _MessageBubble(message: message, isMe: isMe);
-                        },
-                      );
-                    },
-                  ),
+                  child: _conversationId.isEmpty
+                      ? const SizedBox.shrink()
+                      : _buildMessagesList(),
                 ),
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -323,7 +325,7 @@ class _MessageBubble extends StatelessWidget {
               ),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
                   message.text,

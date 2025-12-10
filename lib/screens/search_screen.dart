@@ -30,6 +30,14 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _loading = false;
   String _lastQuery = '';
   final List<String> _recent = [];
+  List<Post> _randomPosts = []; // Random posts for empty search state
+  bool _loadingRandomPosts = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRandomPosts();
+  }
 
   @override
   void dispose() {
@@ -114,6 +122,23 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_recent.length > 8) _recent.removeLast();
   }
 
+  Future<void> _loadRandomPosts() async {
+    if (!mounted) return;
+    setState(() => _loadingRandomPosts = true);
+    try {
+      final posts = await _service.getFeedPosts(limit: 50);
+      final reportedIds = await _service.getReportedPostIdsForCurrentUser();
+      if (!mounted) return;
+      setState(() {
+        _randomPosts = posts.where((p) => !reportedIds.contains(p.id)).toList();
+        _loadingRandomPosts = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadingRandomPosts = false);
+    }
+  }
+
   List<dynamic> _getCurrentResults() {
     switch (_searchType) {
       case 'users':
@@ -170,8 +195,10 @@ class _SearchScreenState extends State<SearchScreen> {
             title: Text('#$tag'),
             subtitle: const Text('Tap to search posts with this tag'),
             onTap: () {
-              _searchType = 'posts';
-              _controller.text = '#$tag';
+              setState(() {
+                _searchType = 'posts';
+                _controller.text = '#$tag';
+              });
               _search('#$tag');
             },
           ),
@@ -307,7 +334,44 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
             ],
           ),
+          const SizedBox(height: 24),
         ],
+
+        // Random Posts Grid
+        Row(
+          children: [
+            Icon(
+              Icons.explore_outlined,
+              size: 20,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Explore Posts',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (_loadingRandomPosts)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (_randomPosts.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text(
+                'No posts to show',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          )
+        else
+          _PostsGrid(posts: _randomPosts),
       ],
     );
   }
@@ -567,5 +631,80 @@ class _UserRow extends StatelessWidget {
       case model.UserRole.audience:
         return 'Fan';
     }
+  }
+}
+
+class _PostsGrid extends StatelessWidget {
+  const _PostsGrid({required this.posts});
+  final List<Post> posts;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Fixed 3 columns for consistent grid
+        const crossAxisCount = 3;
+        const spacing = 2.0;
+        
+        // Calculate item height (square items)
+        final itemHeight = (constraints.maxWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+        
+        // Calculate grid height based on all posts
+        final rows = (posts.length / crossAxisCount).ceil();
+        final gridHeight = (itemHeight * rows) + (spacing * (rows - 1));
+        
+        return SizedBox(
+          height: gridHeight,
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(), // Parent ListView handles scroll
+            padding: EdgeInsets.zero,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: spacing,
+              mainAxisSpacing: spacing,
+            ),
+            itemCount: posts.length,
+            itemBuilder: (context, index) {
+              final p = posts[index];
+              final ref = p.thumbnailUrl ?? p.primaryMediaUrl;
+              if (ref.isEmpty) {
+                return Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                );
+              }
+              final isUrl =
+                  ref.startsWith('http://') || ref.startsWith('https://');
+              final media = isUrl
+                  ? Image.network(
+                      ref,
+                      key: ValueKey(ref),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.broken_image),
+                      ),
+                    )
+                  : FirestoreImage(
+                      key: ValueKey(ref),
+                      imageId: ref,
+                    );
+              return GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  Navigator.of(context).pushNamed(
+                    AppRoutes.postDetail,
+                    arguments: PostDetailArguments(posts: posts, initialIndex: index),
+                  );
+                },
+                child: media,
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 }

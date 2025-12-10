@@ -18,6 +18,7 @@ import '../services/share_service.dart';
 import '../theme/scale.dart';
 import '../widgets/firestore_image.dart';
 import '../widgets/profile_readme_display.dart';
+import 'chat_screen.dart';
 import 'follow_list_screen.dart';
 import 'profile_readme_editor_screen.dart';
 
@@ -227,14 +228,14 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                _isOwnProfile ? 'Create Your README' : 'No README Yet',
+                _isOwnProfile ? 'Create Your About' : 'No About Yet',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
               Text(
                 _isOwnProfile
-                    ? 'Tell your story with a custom profile README'
-                    : 'This user hasn\'t created a README yet',
+                    ? 'Tell your story with a custom profile about section'
+                    : 'This user hasn\'t created an about section yet',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.outline,
                 ),
@@ -255,7 +256,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     }
                   },
                   icon: const Icon(Icons.add),
-                  label: const Text('Create README'),
+                  label: const Text('Create About'),
                 ),
               ],
             ],
@@ -459,9 +460,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                   icon: const Icon(Icons.mail_outline),
                   tooltip: 'Message',
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Messaging coming soon')),
-                    );
+                    if (_user != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatScreen(otherUser: _user!),
+                        ),
+                      );
+                    }
                   },
                 ),
                 IconButton(
@@ -571,7 +577,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 labelColor: Theme.of(context).colorScheme.primary,
                 unselectedLabelColor: Theme.of(context).colorScheme.outline,
                 tabs: const [
-                  Tab(icon: Icon(Icons.article_outlined), text: 'README'),
+                  Tab(icon: Icon(Icons.article_outlined), text: 'About'),
                   Tab(icon: Icon(Icons.grid_on_rounded), text: 'Posts'),
                   Tab(icon: Icon(Icons.assignment_outlined), text: 'Projects'),
                   Tab(icon: Icon(Icons.group_outlined), text: 'Collabs'),
