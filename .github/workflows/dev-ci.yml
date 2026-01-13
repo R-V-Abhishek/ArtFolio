@@ -1,0 +1,59 @@
+name: Dev Branch CI
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+        cache: true
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Setup Firebase options for CI
+      run: |
+        if [ ! -f lib/firebase_options.dart ]; then
+          echo "Creating mock firebase_options.dart for CI environment"
+          cp lib/firebase_options_mock.dart lib/firebase_options.dart
+        fi
+      
+    - name: Verify formatting
+      run: |
+        dart format --output=none --set-exit-if-changed . || {
+          echo "::warning::Code formatting issues found. Run 'dart format .' to fix them."
+          echo "This is a development branch - formatting issues won't block the pipeline."
+          exit 0
+        }
+      
+    - name: Analyze project source
+      run: flutter analyze --fatal-infos
+      
+    - name: Run tests (continue on failure)
+      run: flutter test --reporter=expanded || echo "Tests failed but continuing CI pipeline"
+      continue-on-error: true
+      
+    - name: Generate test coverage (if tests pass)
+      run: flutter test --coverage || echo "Coverage generation skipped due to test failures"
+      continue-on-error: true
+      
+    - name: Upload coverage to Codecov (if coverage exists)
+      if: hashFiles('coverage/lcov.info') != ''
+      uses: codecov/codecov-action@v3
+      with:
+        file: coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false

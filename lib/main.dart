@@ -1,111 +1,83 @@
-import 'package:flutter/material.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import 'firebase_options.dart';
+import 'routes/route_generator.dart';
+import 'services/session_state.dart';
+import 'theme/responsive.dart';
+import 'theme/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  // Attach to auto-initialized default app when present (Android/iOS via Google Services),
+  // otherwise initialize with our options. Add a short wait to avoid race conditions
+  // where native auto-init completes between the check and explicit initialization.
+  if (Firebase.apps.isEmpty) {
+    // Wait up to ~1s for native auto-init (10 x 100ms)
+    for (var i = 0; i < 10 && Firebase.apps.isEmpty; i++) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+  }
+
+  if (Firebase.apps.isEmpty) {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } on FirebaseException catch (e) {
+      // Ignore duplicate-app if native auto-init completed between check and call
+      if (e.code != 'duplicate-app') rethrow;
+    } catch (_) {}
+  } else {
+    Firebase.app();
+  }
+
+  // Note: Firestore offline persistence is enabled by default on Android/iOS
+
+  // Ensure Firebase App Check is activated to prevent placeholder token warnings
+  try {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: kDebugMode
+          ? AndroidProvider.debug
+          : AndroidProvider.playIntegrity,
+    );
+  } catch (_) {
+    // In older emulators or missing Play Services, activation may fail; continue gracefully
+  }
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ArtFolio',
-      theme: ThemeData(
-        // Professional network theme for creatives
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'ArtFolio - Creative Network'),
-    );
-  }
-}
+  Widget build(BuildContext context) => ValueListenableBuilder<ThemeMode>(
+    valueListenable: themeController,
+    builder: (context, mode, _) => ValueListenableBuilder<bool>(
+      valueListenable: SessionState.instance.guestMode,
+      builder: (context, isGuest, _) => ScreenUtilInit(
+        designSize: const Size(375, 812),
+        minTextAdapt: true,
+        builder: (context, child) => MaterialApp(
+          title: 'ArtFolio',
+          debugShowCheckedModeBanner: false,
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: mode,
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+          builder: (context, innerChild) =>
+              ResponsiveScaffold(child: innerChild ?? const SizedBox.shrink()),
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Icon(
-              Icons.palette,
-              size: 80,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Welcome to ArtFolio',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'A professional network where creatives\ncan showcase their project stories.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 40),
-            Text(
-              'Counter: $_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+          // Use route generator for named navigation
+          onGenerateRoute: RouteGenerator.generateRoute,
+          initialRoute: '/',
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
+    ),
+  );
 }

@@ -1,0 +1,242 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isPostOwner(postId) {
+      return isAuthenticated() && 
+        request.auth.uid == get(/databases/$(database)/documents/posts/$(postId)).data.userId;
+    }
+    
+    // Users collection - users can read all profiles, write their own
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update, delete: if isOwner(userId);
+    }
+    
+    // Role-specific collections - linked to users
+    match /artists/{artistId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == artistId;
+      allow update, delete: if isOwner(artistId);
+    }
+    
+    match /audiences/{audienceId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == audienceId;
+      allow update, delete: if isOwner(audienceId);
+    }
+    
+    match /sponsors/{sponsorId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == sponsorId;
+      allow update, delete: if isOwner(sponsorId);
+    }
+    
+    match /organisations/{organisationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == organisationId;
+      allow update, delete: if isOwner(organisationId);
+    }
+    
+    // Posts collection - comprehensive rules for all post operations
+    match /posts/{postId} {
+      // Allow reading all posts for feed, search, and profile views
+      allow read: if isAuthenticated();
+      
+      // Allow creating posts with proper userId
+      allow create: if isAuthenticated() && 
+        request.auth.uid == request.resource.data.userId &&
+        request.resource.data.keys().hasAll(['userId', 'type', 'caption', 'timestamp']);
+      
+      // Allow post owners to update their posts (edit caption, description, etc.)
+      allow update: if isAuthenticated() && (
+        // Owner can update any field
+        request.auth.uid == resource.data.userId ||
+        // Any user can update engagement metrics (likes, comments, shares, views, kudos)
+        (request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['likesCount', 'commentsCount', 'sharesCount', 'viewsCount', 
+                    'likedBy', 'kudosCount', 'kudosByType', 'kudosGivenBy',
+                    'lastEngagement', 'demographics']))
+      );
+      
+      // Allow post owners to delete their posts
+      allow delete: if isOwner(resource.data.userId);
+      
+      // Comments subcollection
+      match /comments/{commentId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && 
+          request.auth.uid == request.resource.data.userId &&
+          request.resource.data.keys().hasAll(['userId', 'text', 'createdAt']);
+        allow update, delete: if isAuthenticated() && (
+          // Comment author can modify/delete their comment
+          request.auth.uid == resource.data.userId ||
+          // Post owner can delete comments on their post
+          isPostOwner(postId)
+        );
+      }
+    }
+    
+    // Comments collection (if used as top-level) - for backward compatibility
+    match /comments/{commentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+    
+    match /savedPosts/{savedPostId} {
+      // Allow reading individual saved post documents (get)
+      // Check if document exists first, or allow by ID pattern (userId_postId)
+      allow get: if isAuthenticated() && (
+        (resource != null && resource.data.userId == request.auth.uid) ||
+        (resource == null && savedPostId.matches(request.auth.uid + '_.*'))
+      );
+      
+      // Allow listing/querying saved posts (list)
+      // Note: Client MUST filter by userId - we trust our own client code
+      allow list: if isAuthenticated();
+
+      // Allow creating saved posts
+      allow create: if isAuthenticated() &&
+        request.auth.uid == request.resource.data.userId &&
+        request.resource.data.keys().hasAll(['userId', 'postId', 'savedAt']);
+
+      // Allow deleting saved posts
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Follow system - supports both follows and userFollows collections
+    match /follows/{followId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+        request.auth.uid == request.resource.data.followerId;
+      allow delete: if isAuthenticated() && (
+        request.auth.uid == resource.data.followerId ||
+        request.auth.uid == resource.data.targetId
+      );
+    }
+    
+    match /userFollows/{followId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (
+        request.auth.uid == request.resource.data.followerId ||
+        request.auth.uid == request.resource.data.viewerId
+      );
+      allow delete: if isAuthenticated() && (
+        request.auth.uid == resource.data.followerId ||
+        request.auth.uid == resource.data.viewerId ||
+        request.auth.uid == resource.data.targetId
+      );
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      // Users can only read their own notifications
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      // System and other users can create notifications
+      allow create: if isAuthenticated();
+      // Users can update/delete their own notifications (mark as read)
+      allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+    
+    // Images collection - for Firestore-based image storage (base64)
+    match /images/{imageId} {
+      // Allow all authenticated users to read images (for feed, profile, sharing)
+      // Allow reads even for non-existent documents (to check if image exists)
+      allow read: if isAuthenticated();
+      // Only image owner can create/upload images
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.keys().hasAll(['userId', 'fileName', 'base64Data', 'uploadedAt']);
+      // Only image owner can update/delete their images
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+    
+    // Public data collection (for counters, analytics, etc.)
+    match /public/{document} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated(); // System operations
+    }
+    
+    // Search indexes (if used)
+    match /searchIndexes/{indexId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // System-only writes
+    }
+    
+    // Analytics and metrics (if implemented)
+    match /analytics/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated(); // For tracking user events
+    }
+    
+    // Profile READMEs - custom profile pages
+    match /profileReadmes/{userId} {
+      // Anyone can read READMEs (public profile content)
+      allow read: if isAuthenticated();
+      // Only the user can create/update/delete their own README
+      allow create, update, delete: if isOwner(userId);
+    }
+    
+    // Post reports collection - for content moderation
+    match /postReports/{reportId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+        request.auth.uid == request.resource.data.reportedBy;
+      allow update, delete: if false; // Only system/admin can modify reports
+    }
+
+    // Conversations collection - for direct messaging
+    match /conversations/{conversationId} {
+      // Allow reading if user is a participant OR if checking for existence (conversationId contains user's uid)
+      allow read: if isAuthenticated() && (
+        (resource != null && request.auth.uid in resource.data.participants) ||
+        (resource == null && conversationId.matches('.*' + request.auth.uid + '.*'))
+      );
+      
+      // Allow creating if user is one of the participants and conversationId follows pattern
+      allow create: if isAuthenticated() && 
+        request.auth.uid in request.resource.data.participants &&
+        request.resource.data.participants.size() == 2 &&
+        conversationId.matches('.*' + request.auth.uid + '.*');
+      
+      // Allow updating if user is a participant (for lastMessage, unreadCount)
+      allow update: if isAuthenticated() && 
+        request.auth.uid in resource.data.participants;
+      
+      // No deletion of conversations
+      allow delete: if false;
+    }
+
+    // Messages collection - for direct messaging
+    match /messages/{messageId} {
+      // Allow reading if user is sender or receiver
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.senderId ||
+        request.auth.uid == resource.data.receiverId
+      );
+      
+      // Allow creating if user is the sender
+      allow create: if isAuthenticated() && 
+        request.auth.uid == request.resource.data.senderId;
+      
+      // Allow updating if user is the receiver (for marking as read)
+      allow update: if isAuthenticated() && 
+        request.auth.uid == resource.data.receiverId;
+      
+      // No deletion of messages
+      allow delete: if false;
+    }
+  }
+}
